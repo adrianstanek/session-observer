@@ -1,5 +1,7 @@
 # Session Observer — a Claude Code plugin
 
+[![CI](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml/badge.svg)](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml)
+
 See everything that happens in your Claude Code sessions on a live local dashboard:
 prompts, every tool call (with timing), **skills loaded**, **questions Claude asks you**
 (AskUserQuestion + MCP elicitations), subagents, tasks, MCP calls, permission prompts,
@@ -121,6 +123,21 @@ each turn is captured via `Stop`).
 
 The log holds your prompts, commands and tool outputs in plain text. Use **Clear log** in
 the dashboard or delete `~/.claude/session-observer/events.jsonl`.
+
+## Development
+
+```bash
+node test/check.js                 # JSON, JS syntax, hook wiring, version
+node --test test/smoke.test.js     # hook → log → server → API, end to end
+claude plugin validate .           # plugin + marketplace manifests
+```
+
+CI (`.github/workflows/ci.yml`) runs all three on every push and PR, on Node 18–24 (Linux)
+and Node 22 on macOS and Windows.
+
+**Releasing:** bump `version` in `.claude-plugin/plugin.json`, commit, then
+`git tag vX.Y.Z && git push origin vX.Y.Z`. The release workflow re-runs CI, checks the tag
+matches the version, and publishes a GitHub release with a zip and its SHA-256.
 
 ## Credits
 
