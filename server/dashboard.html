@@ -84,6 +84,96 @@
   #map .core-s { fill: var(--muted); font-size: 11px; text-anchor: middle; }
   #map .xn { font-size: 11px; font-weight: 700; text-anchor: middle; }
 
+  /* layout switcher + alternative stage designs (lanes / board / route) */
+  .layouts { position: absolute; top: 0; left: 0; z-index: 2; display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
+  .layouts button { border: 0; border-radius: 0; background: transparent; padding: 3px 11px; font-size: 12px; color: var(--muted); }
+  .layouts button + button { border-left: 1px solid var(--line); }
+  .layouts button.cur { background: var(--accent-bg); color: var(--text); }
+  #alt { display: none; position: absolute; inset: 32px 0 0 0; }
+  .stage:not([data-layout="hub"]) #map, .stage:not([data-layout="hub"]) .credit { display: none; }
+  .stage:not([data-layout="hub"]) #alt { display: block; }
+  .stage[data-layout="lanes"] .stage-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .seg { padding: 1px 8px; font-size: 11.5px; border-radius: 5px; }
+  .seg.cur { border-color: var(--accent); background: var(--accent-bg); }
+
+  .ahead { display: flex; align-items: center; gap: 8px; height: 28px; font-size: 12px; }
+  .ahead .grow { flex: 1; }
+  svg.lanes { display: block; }
+  .lanes .lane { cursor: pointer; }
+  .lanes .lbg { fill: transparent; }
+  .lanes .lane.zebra .lbg { fill: var(--panel-2); fill-opacity: .55; }
+  .lanes .lane:hover .lbg { fill: var(--panel-2); fill-opacity: 1; }
+  .lanes .lane.sel .lbg { fill: var(--accent-bg); fill-opacity: 1; }
+  .lanes .lane:not(.used) { opacity: .45; }
+  .lanes .ico { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .lanes .ll { fill: var(--text); font-size: 12px; }
+  .lanes .lane.sel .ll { font-weight: 700; }
+  .lanes .lc { fill: var(--muted); font-size: 11px; text-anchor: end; font-variant-numeric: tabular-nums; }
+  .lanes .gl { stroke: var(--line-2); }
+  .lanes .gt { fill: var(--faint); font-size: 10.5px; }
+  .lanes .nowl { stroke: var(--accent); stroke-width: 1.5; }
+  .lanes .bar, .lanes .pt { cursor: pointer; }
+  .lanes .bar.fail, .lanes .pt.fail { fill: var(--err) !important; }
+  .lanes .bar.run { animation: blink 1.2s infinite; }
+  .lanes .dim { opacity: .16; }
+  .lanes .tm { stroke-width: 1.2; stroke-dasharray: 3 3; opacity: .8; }
+  .lanes .tm.you { stroke: var(--s-you); } .lanes .tm.end { stroke: var(--ok); } .lanes .tm.fail { stroke: var(--err); }
+
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; height: 100%; }
+  .bcard, .bcore { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+  .bcard { padding: 7px 10px 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+  .bcard:hover { border-color: var(--muted); }
+  .bcard:not(.used) { opacity: .5; }
+  .bcard.dim { opacity: .3; }
+  .bcard.hot { border-color: var(--c); background: color-mix(in srgb, var(--c) 8%, var(--panel)); }
+  .bcard.hot::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 35%; background: var(--c); animation: slide 1.4s linear infinite; animation-delay: var(--d, 0ms); }
+  .bcard.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  .bh2 { display: flex; align-items: center; gap: 6px; color: var(--c); min-width: 0; }
+  .bh2 .nm { color: var(--text); font-weight: 600; }
+  .bh2 .x { color: var(--err); font-size: 11.5px; font-weight: 600; }
+  .bh2 .n { margin-left: auto; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+  .spark { flex: 1; min-height: 8px; width: 100%; display: block; }
+  .spark rect { fill: var(--c, var(--accent)); }
+  .spark line { stroke: var(--line); vector-effect: non-scaling-stroke; }
+  .bcard .ft { font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bcard .ft.run { color: var(--c); }
+  .bcore { grid-column: span 2; grid-row: span 2; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .bcore .ct { display: flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: .06em; }
+  .bcore .ct .state { margin-left: auto; letter-spacing: 0; }
+  .bcore .cm { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gauge { height: 8px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line-2); overflow: hidden; }
+  .gauge i { display: block; height: 100%; border-radius: 4px; }
+  .bcore .gl { display: flex; gap: 8px; font-size: 12px; align-items: baseline; }
+  .cstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .cstats div { display: flex; flex-direction: column; }
+  .cstats b { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cstats span { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .cspark { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 0; font-size: 11px; color: var(--muted); }
+
+  .lhead { height: 50px; display: flex; flex-direction: column; gap: 4px; }
+  .lhead .lp { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lhead .lm { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; }
+  .lhead .grow { flex: 1; }
+  svg.metro { display: block; }
+  .metro .ml { fill: none; stroke-width: 6; stroke-linecap: round; opacity: .75; }
+  .metro .ml.flow { stroke-dasharray: 2 9; animation: dash .7s linear infinite; opacity: 1; }
+  @keyframes dash { to { stroke-dashoffset: -11; } }
+  .metro .stop, .metro .md { cursor: pointer; }
+  .metro .sn { fill: var(--panel); stroke: currentColor; stroke-width: 3; }
+  .metro .stop:hover .sn { fill: var(--panel-2); }
+  .metro .stop.fail { color: var(--err); } .metro .stop.fail .sn { fill: var(--err-bg); }
+  .metro .ico { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .metro .ring { fill: none; stroke: currentColor; stroke-width: 2; animation: blink 1s infinite; }
+  .metro .sl { fill: var(--text); font-size: 11.5px; text-anchor: middle; }
+  .metro .ss { fill: var(--muted); font: 10.5px var(--mono); text-anchor: middle; }
+  .metro .ss.err { fill: var(--err); } .metro .ss.run { fill: currentColor; }
+  .lhist { height: 40px; display: flex; gap: 6px; align-items: center; overflow: hidden; font-size: 12px; border-top: 1px solid var(--line-2); margin-top: 8px; }
+  .ht { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font-size: 11.5px; color: var(--muted); }
+  .ht.bad { border-color: var(--err); }
+  .ht .dots { display: inline-flex; gap: 2px; }
+  .ht .dots i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
   .feed-wrap { display: flex; flex-direction: column; min-height: 0; }
   .feed-head { padding: 2px 0 8px; }
   .feed-head .last { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -186,6 +276,7 @@
   @media (max-width: 1200px) {
     .stage-grid { grid-template-columns: 1fr; height: auto; }
     #map { height: 400px; } #feed { max-height: 360px; }
+    .stage:not([data-layout="hub"]) .map-wrap { height: 440px; }
     .bottom { grid-template-columns: 280px minmax(0, 1fr); height: auto; }
     .bottom > .panel { max-height: 80vh; }
     #detail { grid-column: 1 / -1; }
@@ -198,6 +289,7 @@
     #rlabel, #speed { display: none; }
     .bottom { grid-template-columns: 1fr; }
     #map { height: 300px; }
+    .stage:not([data-layout="hub"]) .map-wrap { height: 400px; }
     .frow { grid-template-columns: 14px 70px minmax(0, 1fr); } .frow .who span { display: none; }
   }
 </style>
@@ -235,8 +327,10 @@
 <section class="panel stage">
   <div class="stage-grid">
     <div class="map-wrap">
+      <div class="layouts" id="layouts" role="tablist" aria-label="Stage layout"></div>
       <!-- Hub map design based on lot-map by alexeyw: https://github.com/alexeyw/lot-map -->
       <svg id="map" viewBox="0 0 660 440" preserveAspectRatio="xMidYMid meet" aria-label="Live hub map of the session"></svg>
+      <div id="alt"></div>
       <a class="credit" href="https://github.com/alexeyw/lot-map" target="_blank" rel="noopener">map based on lot-map ↗</a>
     </div>
     <div class="feed-wrap">
@@ -399,7 +493,7 @@ const state = {
   range: Number(ls.get('so.range', 86400000)), q: '', station: '', category: '', problems: false,
   cursor: null, playing: false, speed: Number(ls.get('so.speed', 5)), replayIdx: 0, lastTick: 0,
   paused: false, buffer: [], theme: ls.get('so.theme', 'auto'), connected: false, updated: null,
-  showRunning: true,
+  showRunning: true, layout: 'hub', lanesWin: Number(ls.get('so.lanesWin', 300000)),
 };
 let TURNS = [], TURN_BY_SEQ = new Map();
 
@@ -626,6 +720,250 @@ function drawDynamic(now) {
   fx.waves = wk;
   if (now - M.modelPing < 3000) { const s = ST.model; h += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${27 + ((now - M.modelPing) % 1000) / 100}" fill="none" stroke="var(--s-model)" stroke-width="2" opacity=".6"/>`; }
   if (h !== lastDyn) { $('dyn').innerHTML = h; lastDyn = h; }
+}
+
+// ---------------------------------------------------------------- alternative stage layouts
+// Three alternatives to the hub map, drawn from the same state (M, state.events, cursor):
+//   lanes — a swimlane timeline: one row per station, a bar per call (length = duration)
+//   board — a grid of station cards with counts, 15-min sparklines and live "running" state
+//   route — the current turn as a metro line: every model step and tool call is a stop
+const LAYOUTS = [['hub', 'Hub'], ['lanes', 'Lanes'], ['board', 'Board'], ['route', 'Route']];
+const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
+let altDirty = true, lastAltT = 0, lastAltRaw = '';
+const lanes = { key: '', anchor: 0, k: 1 };
+const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
+const agoMs = ms => ms < 60000 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m` : ms < 86400000 ? `${Math.floor(ms / 3600000)}h` : `${Math.floor(ms / 86400000)}d`;
+const trunc = (s, n) => { s = String(s ?? ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+const evTip = ev => esc(describe(ev).map(x => short(x, 160)).join(' · '));
+const svgIcon = (id, x, y, sc) => `<g class="ico" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc})">${ICONS[id] || ICONS.other}</g>`;
+
+function setLayout(id) {
+  if (!LAYOUTS.some(l => l[0] === id)) id = 'hub';
+  state.layout = id; ls.set('so.layout', id);
+  document.querySelector('.stage').dataset.layout = id;
+  $('layouts').innerHTML = LAYOUTS.map(([k, l]) => `<button role="tab" aria-selected="${k === id}" data-layout="${k}" class="${k === id ? 'cur' : ''}">${l}</button>`).join('');
+  $('alt').innerHTML = ''; lastAltRaw = ''; lanes.key = ''; altDirty = true; mapDirty = true;
+}
+function drawAlt(now) {
+  if (state.layout === 'lanes') return drawLanes();
+  if (!altDirty && now - lastAltT < 250) return;
+  altDirty = false; lastAltT = now;
+  const raw = state.layout === 'board' ? boardHtml() : routeHtml();
+  if (raw === lastAltRaw) return;
+  lastAltRaw = raw;
+  // keep CSS animations in phase across re-renders
+  $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
+}
+
+// ---- lanes: swimlane timeline
+function drawLanes() {
+  const box = $('alt'), W = box.clientWidth, H = box.clientHeight - 28;
+  if (W < 80 || H < 80) return;
+  const sn = simNow(), win = state.lanesWin;
+  const key = [evEnd(), state.events.length, M.running.size, M.agents.size, win, W, H, state.station, state.category, state.problems, state.q, state.scope].join('|');
+  if (key !== lanes.key || altDirty || sn - lanes.anchor > win / 3 || sn < lanes.anchor) { altDirty = false; buildLanes(W, H, sn); lanes.key = key; }
+  const g = $('lcontent'); if (g) g.setAttribute('transform', `translate(${(-(sn - lanes.anchor) * lanes.k).toFixed(1)},0)`);
+}
+function buildLanes(W, H, sn) {
+  const GUT = 104, PR = 8, TOP = 2, BOT = 16, win = state.lanesWin;
+  const plotW = Math.max(40, W - GUT - PR), k = plotW / win, rowH = (H - TOP - BOT) / STATIONS.length;
+  lanes.anchor = sn; lanes.k = k;
+  const X = t => GUT + plotW + (t - sn) * k, yOf = st => TOP + ROW[st] * rowH;
+  const evs = state.events, end = evEnd(), lo = sn - win * 1.5, fa = filtersActive();
+  let i = end; while (i > 0 && tms(evs[i - 1]) >= lo && end - i < 5000) i--;
+  const spans = [], open = new Map(), pts = [], marks = [];
+  for (; i < end; i++) {
+    const ev = evs[i], t = tms(ev), d = ev.data || {}, st = stationOf(ev) || 'other', dim = fa && !evMatches(ev);
+    switch (ev.event) {
+      case 'PreToolUse': case 'SubagentStart': {
+        const id = ev.event === 'SubagentStart' ? 'ag:' + (d.agent_id ?? ev.seq) : d.tool_use_id;
+        const s = { st, a: t, b: id ? null : t, id, seq: ev.seq, dim, tip: evTip(ev) };
+        spans.push(s); if (id) open.set(id, s); break;
+      }
+      case 'PostToolUse': case 'PostToolUseFailure': case 'SubagentStop': {
+        const id = ev.event === 'SubagentStop' ? 'ag:' + d.agent_id : d.tool_use_id;
+        let s = id && open.get(id);
+        if (s) open.delete(id); else { s = { st, a: t - (ev.duration_ms || 0), dim }; spans.push(s); }
+        Object.assign(s, { b: t, seq: ev.seq, fail: ev.event === 'PostToolUseFailure', tip: evTip(ev), dim: s.dim && dim });
+        break;
+      }
+      case 'UserPromptSubmit': marks.push({ t, cls: 'you', seq: ev.seq }); pts.push({ st: 'you', t, seq: ev.seq, dim, tip: evTip(ev) }); break;
+      case 'Stop': marks.push({ t, cls: 'end', seq: ev.seq }); break;
+      case 'StopFailure': marks.push({ t, cls: 'fail', seq: ev.seq }); break;
+      case 'ModelStep': pts.push({ st: 'model', t, seq: ev.seq, dim, tip: evTip(ev), dia: true }); break;
+      default:
+        if (stationOf(ev) && !FEED_HIDE.has(ev.event) && ev.category !== 'lifecycle' && ev.category !== 'env') pts.push({ st, t, seq: ev.seq, dim, fail: isProblem(ev), tip: evTip(ev) });
+    }
+  }
+  for (const [id, s] of open) {
+    const live = id.startsWith('ag:') ? [...M.agents.keys()].some(a => 'ag:' + a === id) : M.running.has(id);
+    if (live) { s.run = true; s.b = sn + win; } else s.b = s.a;
+  }
+  for (const [id, r] of M.running) if (!open.has(id) && r.start < lo) spans.push({ st: r.st, a: r.start, b: sn + win, run: true, tip: esc(ST[r.st].label + ' · running') });
+  // stack overlapping (parallel) calls on up to 3 tracks per lane
+  spans.sort((p, q) => p.a - q.a);
+  const ends = {};
+  for (const s of spans) {
+    const e = (ends[s.st] ||= []); let j = e.findIndex(x => x <= s.a);
+    if (j < 0) { if (e.length < 3) { j = e.length; e.push(0); } else j = e.indexOf(Math.min(...e)); }
+    e[j] = Math.max(s.b, s.a + 4 / k); s.tr = j;
+  }
+  let h = `<div class="ahead"><b>Timeline</b><span class="muted">bar = one call, length = duration · ◆ model step · ┆ turn</span><span class="grow"></span>${[[60000, '1m'], [300000, '5m'], [900000, '15m']].map(([w, l]) => `<button class="seg ${w === win ? 'cur' : ''}" data-win="${w}">${l}</button>`).join('')}</div>`;
+  h += `<svg class="lanes" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><clipPath id="lclip"><rect x="${GUT}" y="0" width="${plotW}" height="${H}"/></clipPath></defs>`;
+  STATIONS.forEach((s, r) => {
+    const y = yOf(s.id), n = M.counts[s.id] || 0, cy = y + rowH / 2;
+    h += `<g class="lane ${r % 2 ? '' : 'zebra'} ${n ? 'used' : ''} ${state.station === s.id ? 'sel' : ''}" data-st="${s.id}" style="color:var(--s-${s.id})"><rect class="lbg" x="0" y="${y.toFixed(1)}" width="${W}" height="${rowH.toFixed(1)}"/>
+      ${svgIcon(s.id, 6, cy - 7, 0.6)}<text class="ll" x="26" y="${(cy + 4).toFixed(1)}">${s.label}</text><text class="lc" x="${GUT - 8}" y="${(cy + 4).toFixed(1)}">${n || ''}</text><title>${s.label} — click to filter</title></g>`;
+  });
+  const step = { 60000: 15000, 300000: 60000, 900000: 300000 }[win] || win / 4;
+  for (let ago = 0; ago <= win + 1; ago += step) {
+    const x = GUT + plotW - ago * k;
+    h += `<line class="gl" x1="${x.toFixed(1)}" y1="${TOP}" x2="${x.toFixed(1)}" y2="${H - BOT}"/><text class="gt" x="${x.toFixed(1)}" y="${H - 3}" text-anchor="${ago === 0 ? 'end' : ago >= win ? 'start' : 'middle'}">${ago === 0 ? 'now' : '−' + (ago < 60000 ? ago / 1000 + 's' : ago / 60000 + 'm')}</text>`;
+  }
+  h += `<g clip-path="url(#lclip)"><g id="lcontent">`;
+  for (const m of marks) h += `<line class="tm ${m.cls}" x1="${X(m.t).toFixed(1)}" y1="${TOP}" x2="${X(m.t).toFixed(1)}" y2="${H - BOT}"/>`;
+  for (const s of spans) {
+    const n = ends[s.st].length, pad = 3, th = Math.max(2, (rowH - 2 * pad) / n - 1), y = yOf(s.st) + pad + s.tr * (th + 1);
+    const x = X(s.a), w = Math.max(3, X(s.b) - x);
+    h += `<rect class="bar ${s.fail ? 'fail' : ''} ${s.run ? 'run' : ''} ${s.dim ? 'dim' : ''}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${th.toFixed(1)}" rx="2" style="fill:var(--s-${s.st})"${s.seq != null ? ` data-seq="${s.seq}"` : ''}><title>${s.tip}</title></rect>`;
+  }
+  for (const p of pts) {
+    const x = X(p.t), cy = yOf(p.st) + rowH / 2, cls = `pt ${p.fail ? 'fail' : ''} ${p.dim ? 'dim' : ''}`;
+    h += p.dia
+      ? `<path class="${cls}" d="M${x.toFixed(1)} ${(cy - 5).toFixed(1)}l5 5l-5 5l-5 -5z" style="fill:var(--s-model)" data-seq="${p.seq}"><title>${p.tip}</title></path>`
+      : `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" style="fill:var(--s-${p.st})" data-seq="${p.seq}"><title>${p.tip}</title></circle>`;
+  }
+  h += `</g></g><line class="nowl" x1="${GUT + plotW}" y1="${TOP}" x2="${GUT + plotW}" y2="${H - BOT}"/></svg>`;
+  $('alt').innerHTML = h;
+}
+
+// ---- board: station cards
+function spark(arr, max) {
+  const n = arr.length; let r = '';
+  arr.forEach((v, j) => { if (v) { const hh = 1 + 11 * Math.sqrt(v / max); r += `<rect x="${j + 0.15}" y="${(12 - hh).toFixed(2)}" width=".7" height="${hh.toFixed(2)}"/>`; } });
+  return `<svg class="spark" viewBox="0 0 ${n} 12" preserveAspectRatio="none"><line x1="0" y1="12" x2="${n}" y2="12"/>${r}</svg>`;
+}
+function boardHtml() {
+  const evs = state.events, end = evEnd(), sn = simNow();
+  const BINS = 30, SPAN = 15 * 60000, b0 = sn - SPAN;
+  const bins = {}, errs = {}, last = {}, total = new Array(BINS).fill(0);
+  const COUNTED = new Set(['PreToolUse', 'ModelStep', 'UserPromptSubmit', 'SubagentStart', 'PermissionRequest', 'InstructionsLoaded', 'PreCompact', 'TaskCreated']);
+  for (let i = 0; i < end; i++) {
+    const ev = evs[i], st = stationOf(ev); if (!st) continue;
+    if (isProblem(ev)) errs[st] = (errs[st] || 0) + 1;
+    last[st] = ev;
+    const t = tms(ev);
+    if (COUNTED.has(ev.event) && t >= b0) { const j = Math.min(BINS - 1, Math.floor((t - b0) / SPAN * BINS)); (bins[st] ||= new Array(BINS).fill(0))[j]++; total[j]++; }
+  }
+  const max = Math.max(1, ...Object.values(bins).flat());
+  const runBy = {};
+  for (const r of M.running.values()) { const o = (runBy[r.st] ||= { n: 0, start: r.start }); o.n++; o.start = Math.min(o.start, r.start); }
+  if (M.agents.size && !runBy.agents) runBy.agents = { n: M.agents.size, start: Math.min(...[...M.agents.values()].map(a => a.start)) };
+  const c = ctxInfo(), busy = M.busy.size > 0, pct = c ? Math.round(c.pct * 100) : 0;
+  const gcol = !c ? 'var(--faint)' : c.pct >= 0.9 ? 'var(--err)' : c.pct >= 0.7 ? 'var(--warn)' : 'var(--ok)';
+  let h = `<div class="board"><div class="bcore">
+    <div class="ct">${icon('core')}<b>CLAUDE</b><span class="state"><span class="dot ${busy ? 'busy' : ''}"></span>${busy ? 'working' : state.cursor != null ? 'replay' : 'idle'}</span></div>
+    <div class="cm mono">${M.lastModel ? esc(M.lastModel) + (M.lastModelTs ? ' · ' + agoMs(sn - M.lastModelTs) + ' ago' : '') : 'no model steps yet'}</div>
+    <div class="gauge"><i style="width:${pct}%;background:${gcol}"></i></div>
+    <div class="gl"><span class="muted">context</span><b>${c ? pct + '%' : '–'}</b><span class="muted">${c ? fmtN(c.tokens) + ' / ' + fmtN(c.window) : ''}</span></div>
+    <div class="cstats">${[['turns', M.turns], ['steps', M.steps], ['tools', M.tools], ['errors', M.errors]].map(([l, v]) => `<div><b class="${l === 'errors' && v ? 'err' : ''}">${v}</b><span>${l}</span></div>`).join('')}</div>
+    <div class="cspark"><span>all activity · last 15 min</span>${spark(total, Math.max(1, ...total))}</div></div>`;
+  for (const s of STATIONS) {
+    const n = M.counts[s.id] || 0, run = runBy[s.id], e = errs[s.id] || 0, L = last[s.id];
+    const what = L ? esc(short(describe(L)[1] || describe(L)[0], 80)) : '';
+    const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${agoMs(sn - tms(L))} · ${what}` : 'no activity';
+    const cls = [n && 'used', run && 'hot', state.station === s.id && 'sel', state.station && state.station !== s.id && 'dim'].filter(Boolean).join(' ');
+    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" title="${s.label} — click to filter">
+      <div class="bh2">${icon(s.id)}<span class="nm">${s.label}</span>${e ? `<span class="x">✕${e}</span>` : ''}<span class="n">${n || '–'}</span></div>
+      ${spark(bins[s.id] || new Array(BINS).fill(0), max)}<div class="ft ${run ? 'run' : ''}">${foot}</div></div>`;
+  }
+  return h + '</div>';
+}
+
+// ---- route: the current turn as a metro line
+function routeHtml() {
+  const box = $('alt'), W = box.clientWidth, H = box.clientHeight, sn = simNow();
+  if (W < 120 || H < 160) return '';
+  const lim = state.cursor ?? Infinity;
+  const pinned = state.turnSel ? TURNS.find(x => x.key === state.turnSel) : null;
+  let t = pinned; if (!t) for (const x of TURNS) if (Date.parse(x.start) <= lim) t = x;
+  if (!t) return '<div class="empty">No turns yet — the next prompt draws its route here.</div>';
+  const evs = t.events.filter(e => tms(e) <= lim);
+  const stops = [], open = new Map(); let steps = 0, tools = 0, errs = 0, ended = null;
+  for (const ev of evs) {
+    const d = ev.data || {}, st = stationOf(ev) || 'other';
+    switch (ev.event) {
+      case 'UserPromptSubmit': stops.push({ st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
+      case 'ModelStep': steps++; stops.push({ st: d.subagent ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PreToolUse': case 'SubagentStart': {
+        const sub = ev.event === 'SubagentStart'; if (!sub) tools++;
+        const s = { st, label: sub ? (d.agent_type || 'subagent') : toolLabel(d.tool_name), sub: sub ? 'subagent' : toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: sub ? (d.agent_id ?? ev.seq) : d.tool_use_id };
+        stops.push(s); if (s.id != null) open.set((sub ? 'ag:' : '') + s.id, s); break;
+      }
+      case 'PostToolUse': case 'PostToolUseFailure': case 'SubagentStop': {
+        const key = ev.event === 'SubagentStop' ? 'ag:' + d.agent_id : d.tool_use_id, s = open.get(key);
+        if (s) { open.delete(key); s.dur = ev.duration_ms ?? tms(ev) - s.a; s.seq = ev.seq; s.tip = evTip(ev); if (ev.event === 'PostToolUseFailure') { s.fail = true; errs++; } }
+        break;
+      }
+      case 'PermissionRequest': stops.push({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionDenied': errs++; stops.push({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PreCompact': case 'InstructionsLoaded': stops.push({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
+    }
+  }
+  for (const [key, s] of open) s.run = key.startsWith('ag:') ? M.agents.has(s.id) : M.running.has(key);
+  const live = !ended && (state.cursor != null || turnRunning(t));
+  if (ended) stops.push({ end: true, fail: ended.event === 'StopFailure', seq: ended.seq });
+  else if (live && !stops.some(s => s.run)) stops.push({ end: true, pending: true });
+
+  const SH = H - 50 - 48, PADX = 46, ROWH = 76, TOPY = 20;
+  const maxRows = Math.max(1, Math.floor((SH - TOPY - 44) / ROWH) + 1);
+  const gap = s => s.small ? 24 : s.end ? 58 : 72;
+  const place = list => {
+    let x = PADX, dir = 1, row = 0; const pts = [];
+    list.forEach((s, i) => {
+      let turn = 0;
+      if (i) { const nx = x + dir * gap(s); if (nx > W - PADX || nx < PADX) { turn = dir; row++; dir = -dir; } else x = nx; }
+      pts.push({ x, y: TOPY + row * ROWH, turn });
+    });
+    return { pts, rows: row + 1 };
+  };
+  let from = 0, L = place(stops);
+  while (L.rows > maxRows && from < stops.length - 1) { from += Math.max(1, Math.ceil(stops.length * 0.08)); L = place(stops.slice(from)); }
+  const shown = stops.slice(from), P = L.pts;
+  let svg = `<svg class="metro" width="${W}" height="${SH}" viewBox="0 0 ${W} ${SH}">`;
+  for (let i = 1; i < shown.length; i++) {
+    const a = P[i - 1], b = P[i], s = shown[i];
+    const col = s.end ? (s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)') : `var(--s-${s.st})`;
+    const d = b.turn ? `M${a.x.toFixed(1)} ${a.y}A${ROWH / 2} ${ROWH / 2} 0 0 ${b.turn > 0 ? 1 : 0} ${b.x.toFixed(1)} ${b.y}` : `M${a.x.toFixed(1)} ${a.y}L${b.x.toFixed(1)} ${b.y}`;
+    svg += `<path class="ml ${s.run || s.pending ? 'flow' : ''}" d="${d}" style="stroke:${col}"/>`;
+  }
+  shown.forEach((s, i) => {
+    const { x, y } = P[i];
+    if (s.small) { svg += `<path class="md" d="M${x.toFixed(1)} ${y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; return; }
+    if (s.end) {
+      const col = s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)';
+      svg += `<g class="stop" transform="translate(${x.toFixed(1)},${y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
+        <text class="sl" y="31">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="43">${esc(fmtDur((ended ? tms(ended) : sn) - Date.parse(t.start)))}</text></g>`;
+      return;
+    }
+    const arg = String(s.sub ?? ''), subTxt = s.run ? `running ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
+    svg += `<g class="stop ${s.fail ? 'fail' : ''}" transform="translate(${x.toFixed(1)},${y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
+      <circle class="sn" r="12"/>${svgIcon(s.st, -7.4, -7.4, 0.62)}${s.run ? '<circle class="ring" r="17"/>' : ''}
+      <text class="sl" y="28">${esc(trunc(s.label, 11))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="40">${esc(trunc(subTxt, 12))}</text>
+      <title>${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
+  });
+  svg += '</svg>';
+  const state2 = live ? '<span class="dot busy"></span>running' : ended ? (ended.event === 'StopFailure' ? '<span class="err">✕</span> failed' : '<span style="color:var(--ok)">✓</span> done') : '<span class="dot"></span>unfinished';
+  const head = `<div class="lhead"><div class="lp">${t.prompt !== null ? esc(short(t.prompt, 240)) : '<span class="muted">Session start</span>'}</div>
+    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${steps} steps · ${tools} tools</span>${errs ? `·<span class="err">${errs} problems</span>` : ''}${from ? `·<span>last ${shown.length} of ${stops.length} stops</span>` : ''}
+    <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Follow latest</button>' : '<span>following latest turn</span>'}</div></div>`;
+  const idx = TURNS.indexOf(t), prev = TURNS.slice(Math.max(0, idx - 5), idx).filter(p => Date.parse(p.start) <= lim);
+  const hist = `<div class="lhist"><span class="muted">earlier</span>${prev.map(p => {
+    const dots = p.events.filter(e => e.event === 'PreToolUse').slice(0, 14).map(e => `<i style="background:var(--s-${stationOf(e)})"></i>`).join('');
+    return `<button class="ht ${p.errors ? 'bad' : ''}" data-key="${esc(p.key)}" title="${esc(short(p.prompt, 120))}">${fmtTime(p.start)}<span class="dots">${dots}</span></button>`;
+  }).join('') || '<span class="muted">—</span>'}</div>`;
+  return head + svg + hist;
 }
 
 // ---------------------------------------------------------------- feed
@@ -921,6 +1259,7 @@ function flush() {
   if (dirty.has('replay')) renderReplay();
   if (dirty.has('map')) drawStatic();
   dirty.clear();
+  altDirty = true;
 }
 const ALL = ['turns', 'header', 'sessions', 'feed', 'cats', 'mid', 'detail', 'replay', 'map'];
 
@@ -928,8 +1267,8 @@ function loop(now) {
   requestAnimationFrame(loop);
   if (document.hidden) return;
   if (state.playing) advanceReplay(now);
-  if (mapDirty) { mapDirty = false; drawStatic(); }
-  drawDynamic(now);
+  if (mapDirty) { mapDirty = false; drawStatic(); altDirty = true; }
+  if (state.layout === 'hub') drawDynamic(now); else drawAlt(now);
 }
 
 // ---------------------------------------------------------------- data
@@ -1034,6 +1373,17 @@ function initControls() {
     const g = e.target.closest('.st'); if (!g) return;
     state.station = state.station === g.dataset.st ? '' : g.dataset.st; $('station').value = state.station; refilter();
   });
+  $('layouts').onclick = e => { const b = e.target.closest('[data-layout]'); if (b) setLayout(b.dataset.layout); };
+  $('alt').addEventListener('click', e => {
+    const w = e.target.closest('[data-win]');
+    if (w) { state.lanesWin = Number(w.dataset.win); ls.set('so.lanesWin', state.lanesWin); altDirty = true; return; }
+    if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
+    const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
+    const q = e.target.closest('[data-seq]');
+    if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
+    const st = e.target.closest('[data-st]');
+    if (st) { state.station = state.station === st.dataset.st ? '' : st.dataset.st; $('station').value = state.station; refilter(); }
+  });
   $('cats').onclick = e => {
     const c = e.target.closest('[data-cat]'); if (!c) return;
     state.category = state.category === c.dataset.cat ? '' : c.dataset.cat; $('category').value = state.category; refilter();
@@ -1068,6 +1418,7 @@ function initControls() {
 
 async function boot() {
   buildMap(); initControls();
+  setLayout(new URLSearchParams(location.search).get('layout') || ls.get('so.layout', 'hub'));
   try { const list = await (await fetch('/api/sessions')).json(); state.sessions = new Map(list.map(s => [s.id, s])); } catch { /* server down */ }
   const m = location.hash.match(/session=([^&]+)/);
   if (m && state.sessions.has(decodeURIComponent(m[1]))) state.scope = decodeURIComponent(m[1]);
