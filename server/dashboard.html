@@ -53,71 +53,28 @@
   @keyframes blink { 50% { opacity: .35; } }
 
   /* filter bar */
-  .filters { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 10px; align-items: end; padding: 10px 14px; margin-bottom: 10px; }
+  .filters { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 10px; align-items: end; padding: 10px 14px; margin-bottom: 10px; }
   .filters label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .filters label > * { text-transform: none; letter-spacing: 0; font-size: 13px; }
   .filters .check { flex-direction: row; align-items: center; gap: 6px; padding-bottom: 6px; text-transform: none; font-size: 13px; color: var(--text); letter-spacing: 0; }
 
-  /* stage: hub map + feed + replay */
-  .stage { padding: 10px 14px 12px; margin-bottom: 10px; }
-  .stage-grid { display: grid; grid-template-columns: minmax(0, 700px) minmax(0, 1fr); gap: 18px; height: 440px; }
+  /* stage: route / board view + replay */
+  /* the stage fills the whole viewport, so scrolling to it gives one screen to navigate in */
+  .stage { box-sizing: border-box; height: calc(100vh - 20px); min-height: 520px; display: flex; flex-direction: column; gap: 12px;
+    padding: 18px 22px 16px; margin: 10px 0 14px; scroll-margin-top: 10px; }
+  .stage-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; flex: 1; min-height: 0; }
+  .stage #detail { overflow-y: auto; min-height: 0; padding: 4px 6px 4px 22px; border-left: 1px solid var(--line-2); }
   .map-wrap { position: relative; min-height: 0; }
-  #map { width: 100%; height: 100%; display: block; user-select: none; }
-  .credit { position: absolute; left: 2px; bottom: 0; font-size: 11px; color: var(--faint); text-decoration: none; }
-  .credit:hover { color: var(--accent); text-decoration: underline; }
-  #map .spoke { stroke: var(--spoke); stroke-linecap: round; transition: stroke-width .4s; }
-  #map .st { cursor: pointer; }
-  #map .st .node { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
-  #map .st.used .node { stroke: currentColor; stroke-opacity: .55; }
-  #map .st.sel .node { stroke-width: 3; stroke-opacity: 1; }
-  #map .st.hot .node { fill: var(--panel-2); stroke-opacity: 1; }
-  #map .st .ico { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  #map .st:not(.used) .ico { opacity: .45; }
-  #map .lbl { fill: var(--text); font-size: 13px; text-anchor: middle; }
-  #map .cnt { fill: var(--muted); font-size: 11.5px; }
-  #map .core { fill: var(--panel); stroke: var(--text); stroke-opacity: .7; stroke-width: 2; }
-  #map .ctx-track { fill: none; stroke: var(--line); stroke-width: 5; }
-  #map .deco { fill: none; stroke: var(--line); stroke-width: 9; stroke-dasharray: 2 5; transform-box: fill-box; transform-origin: center; }
-  #map .deco.spin { animation: spin 14s linear infinite; stroke: var(--spoke); }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #map .core-t { fill: var(--text); font-weight: 700; font-size: 13px; text-anchor: middle; letter-spacing: .05em; }
-  #map .core-s { fill: var(--muted); font-size: 11px; text-anchor: middle; }
-  #map .xn { font-size: 11px; font-weight: 700; text-anchor: middle; }
 
-  /* layout switcher + alternative stage designs (lanes / board / route) */
+  /* layout switcher + alternative stage designs (board / route) */
   .layouts { position: absolute; top: 0; left: 0; z-index: 2; display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
   .layouts button { border: 0; border-radius: 0; background: transparent; padding: 3px 11px; font-size: 12px; color: var(--muted); }
   .layouts button + button { border-left: 1px solid var(--line); }
   .layouts button.cur { background: var(--accent-bg); color: var(--text); }
-  #alt { display: none; position: absolute; inset: 32px 0 0 0; }
-  .stage:not([data-layout="hub"]) #map, .stage:not([data-layout="hub"]) .credit { display: none; }
-  .stage:not([data-layout="hub"]) #alt { display: block; }
-  .stage[data-layout="lanes"] .stage-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  #alt { position: absolute; inset: 32px 0 0 0; }
   .seg { padding: 1px 8px; font-size: 11.5px; border-radius: 5px; }
   .seg.cur { border-color: var(--accent); background: var(--accent-bg); }
-
-  .ahead { display: flex; align-items: center; gap: 8px; height: 28px; font-size: 12px; }
-  .ahead .grow { flex: 1; }
-  svg.lanes { display: block; }
-  .lanes .lane { cursor: pointer; }
-  .lanes .lbg { fill: transparent; }
-  .lanes .lane.zebra .lbg { fill: var(--panel-2); fill-opacity: .55; }
-  .lanes .lane:hover .lbg { fill: var(--panel-2); fill-opacity: 1; }
-  .lanes .lane.sel .lbg { fill: var(--accent-bg); fill-opacity: 1; }
-  .lanes .lane:not(.used) { opacity: .45; }
-  .lanes .ico { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .lanes .ll { fill: var(--text); font-size: 12px; }
-  .lanes .lane.sel .ll { font-weight: 700; }
-  .lanes .lc { fill: var(--muted); font-size: 11px; text-anchor: end; font-variant-numeric: tabular-nums; }
-  .lanes .gl { stroke: var(--line-2); }
-  .lanes .gt { fill: var(--faint); font-size: 10.5px; }
-  .lanes .nowl { stroke: var(--accent); stroke-width: 1.5; }
-  .lanes .bar, .lanes .pt { cursor: pointer; }
-  .lanes .bar.fail, .lanes .pt.fail { fill: var(--err) !important; }
-  .lanes .bar.run { animation: blink 1.2s infinite; }
-  .lanes .dim { opacity: .16; }
-  .lanes .tm { stroke-width: 1.2; stroke-dasharray: 3 3; opacity: .8; }
-  .lanes .tm.you { stroke: var(--s-you); } .lanes .tm.end { stroke: var(--ok); } .lanes .tm.fail { stroke: var(--err); }
 
   .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; height: 100%; }
   .bcard, .bcore { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; min-height: 0; overflow: hidden; position: relative; }
@@ -158,8 +115,21 @@
   svg.metro { display: block; }
   .metro .ml { fill: none; stroke-width: 6; stroke-linecap: round; opacity: .75; }
   .metro .ml.br { stroke: var(--s-agents); stroke-width: 4; opacity: .7; }
-  .metro .bl { fill: var(--s-agents); font-size: 13px; }
-  .mscroll { overflow: auto; }
+  .metro .halo { fill: none; stroke: var(--panel); stroke-width: 12; stroke-linecap: butt; }
+  .mscroll { overflow-x: auto; overflow-y: auto; }
+  .metro .dim { opacity: .3; }
+  /* hovering a line highlights that whole line (a subagent's branch or a turn's main line) and its stops */
+  .metro .hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+  .metro.hl .ml:not(.on), .metro.hl .stop:not(.on), .metro.hl .md:not(.on) { opacity: .2; }
+  .metro .ml.on { opacity: 1; stroke-width: 8; }
+  .metro .ml.br.on { stroke-width: 7; }
+  .metro .stop.on .sn { stroke-width: 4; }
+  .metro .tdiv { cursor: pointer; }
+  .metro .tdiv line { stroke: var(--line); stroke-width: 1; }
+  .metro .tdiv text { fill: var(--muted); font-size: 14px; }
+  .metro .tdiv.cur line { stroke: var(--accent); }
+  .metro .tdiv.cur text { fill: var(--text); font-weight: 600; }
+  .metro .tdiv:hover text { fill: var(--text); }
   .metro .ml.flow { stroke-dasharray: 2 9; animation: dash .7s linear infinite; opacity: 1; }
   @keyframes dash { to { stroke-dashoffset: -11; } }
   .metro .stop, .metro .md { cursor: pointer; }
@@ -172,21 +142,16 @@
   .metro .ss { fill: var(--muted); font: 10.5px var(--mono); text-anchor: middle; }
   .metro .ss.err { fill: var(--err); } .metro .ss.run { fill: currentColor; }
   .lhist { height: 40px; display: flex; gap: 6px; align-items: center; overflow: hidden; font-size: 12px; border-top: 1px solid var(--line-2); margin-top: 8px; }
-  .ht { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font-size: 11.5px; color: var(--muted); }
-  .ht.bad { border-color: var(--err); }
-  .ht .dots { display: inline-flex; gap: 2px; }
-  .ht .dots i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .lhist .grow { flex: 1; }
+  .lhist .seg { padding: 3px 10px; }
+  .lhist .seg:disabled { opacity: .4; cursor: default; }
 
-  .feed-wrap { display: flex; flex-direction: column; min-height: 0; }
-  .feed-head { padding: 2px 0 8px; }
-  .feed-head .last { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); white-space: nowrap; }
   .chip b { font-weight: 500; color: var(--muted); }
   .chip.click { cursor: pointer; } .chip.click:hover { border-color: var(--muted); }
   .chip.sel { border-color: var(--accent); background: var(--accent-bg); }
   .chip .x { color: var(--err); font-weight: 600; }
-  #feed { overflow-y: auto; flex: 1; min-height: 0; font-size: 12.5px; }
   .frow { display: grid; grid-template-columns: 14px 86px 104px minmax(0, 1fr); gap: 8px; padding: 4px 4px; border-radius: 4px; cursor: pointer; align-items: baseline; }
   .frow:hover { background: var(--panel-2); }
   .frow .mk { color: var(--faint); text-align: center; }
@@ -213,9 +178,9 @@
   #rlabel { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #rlabel b { color: var(--text); font-weight: 600; }
 
-  /* bottom three panels */
-  .bottom { display: grid; grid-template-columns: 330px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; height: max(560px, calc(100vh - 40px)); }
-  .bottom > .panel { overflow-y: auto; min-height: 0; }
+  /* top three panels: sessions · turns · details */
+  .panels { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 10px; height: max(480px, 62vh); margin-bottom: 10px; }
+  .panels > .panel { overflow-y: auto; min-height: 0; }
   #sessions { padding: 10px; }
   .card { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; cursor: pointer; margin-bottom: 4px; }
   .card:hover { background: var(--panel-2); }
@@ -277,12 +242,12 @@
   .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
 
   @media (max-width: 1200px) {
-    .stage-grid { grid-template-columns: 1fr; height: auto; }
-    #map { height: 400px; } #feed { max-height: 360px; }
-    .stage:not([data-layout="hub"]) .map-wrap { height: 440px; }
-    .bottom { grid-template-columns: 280px minmax(0, 1fr); height: auto; }
-    .bottom > .panel { max-height: 80vh; }
-    #detail { grid-column: 1 / -1; }
+    .stage { height: auto; }
+    .stage-grid { grid-template-columns: 1fr; flex: none; }
+    .stage #detail { max-height: 80vh; border-left: 0; padding: 12px 0 0; border-top: 1px solid var(--line-2); }
+    .map-wrap { height: 440px; }
+    .panels { grid-template-columns: 280px minmax(0, 1fr); height: auto; }
+    .panels > .panel { max-height: 80vh; }
   }
   @media (max-width: 760px) {
     body { padding: 0 8px 8px; }
@@ -290,9 +255,8 @@
     .filters .search { grid-column: 1 / -1; }
     .replay { grid-template-columns: auto minmax(0, 1fr) auto; }
     #rlabel, #speed { display: none; }
-    .bottom { grid-template-columns: 1fr; }
-    #map { height: 300px; }
-    .stage:not([data-layout="hub"]) .map-wrap { height: 400px; }
+    .panels { grid-template-columns: 1fr; }
+    .map-wrap { height: 400px; }
     .frow { grid-template-columns: 14px 70px minmax(0, 1fr); } .frow .who span { display: none; }
   }
 </style>
@@ -302,10 +266,8 @@
   <h1>Session Observer</h1>
   <span class="pill" title="Live connection to the local server"><span class="dot" id="conn"></span><span id="connTxt">connecting…</span></span>
   <span class="grow"></span>
-  <span class="pill" id="hdrBusy"></span>
-  <span class="pill" id="hdrCtx"></span>
-  <span class="pill" id="updated"></span>
-  <button id="pause" title="Stop applying live updates">Pause</button>
+  <span class="pill" id="hdrBusy" title="Sessions currently in the middle of a turn"></span>
+  <button id="pause" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
   <button id="theme">Theme: auto</button>
   <button id="clearLog" title="Delete the local event log">Clear log</button>
 </header>
@@ -321,28 +283,23 @@
     </select>
   </label>
   <label class="search">Search<input type="search" id="q" placeholder="prompts, replies, commands, paths, errors…"></label>
-  <label>Station<select id="station"></select></label>
-  <label>Category<select id="category"></select></label>
+  <label title="Which part of the map: Files, Shell, Git, MCP…">Tool group<select id="station"></select></label>
   <label class="check"><input type="checkbox" id="problems"> only problems</label>
-  <button id="clearFilters" style="margin-bottom:1px">Clear</button>
+  <button id="clearFilters" style="margin-bottom:1px">Reset filters</button>
+</section>
+
+<section class="panels">
+  <aside class="panel" id="sessions"></aside>
+  <main class="panel" id="mid"></main>
 </section>
 
 <section class="panel stage">
   <div class="stage-grid">
     <div class="map-wrap">
       <div class="layouts" id="layouts" role="tablist" aria-label="Stage layout"></div>
-      <!-- Hub map design based on lot-map by alexeyw: https://github.com/alexeyw/lot-map -->
-      <svg id="map" viewBox="0 0 660 440" preserveAspectRatio="xMidYMid meet" aria-label="Live hub map of the session"></svg>
       <div id="alt"></div>
-      <a class="credit" href="https://github.com/alexeyw/lot-map" target="_blank" rel="noopener">map based on lot-map ↗</a>
     </div>
-    <div class="feed-wrap">
-      <div class="feed-head">
-        <div class="last" id="feedLast"></div>
-        <div class="chips" id="feedChips"></div>
-      </div>
-      <div id="feed"></div>
-    </div>
+    <aside id="detail"></aside>
   </div>
   <div class="cats" id="cats"></div>
   <div class="replay">
@@ -354,12 +311,6 @@
     </select>
     <button id="live" class="on">Live</button>
   </div>
-</section>
-
-<section class="bottom">
-  <aside class="panel" id="sessions"></aside>
-  <main class="panel" id="mid"></main>
-  <aside class="panel" id="detail"></aside>
 </section>
 
 <script>
@@ -384,9 +335,7 @@ const ICONS = {
 const STATIONS = [
   ['you', 'You'], ['model', 'Model'], ['files', 'Files'], ['shell', 'Shell'], ['git', 'Git'], ['mcp', 'MCP'],
   ['network', 'Network'], ['browser', 'Browser'], ['agents', 'Agents'], ['skills', 'Skills'], ['context', 'Context'], ['other', 'Other'],
-].map(([id, label], i) => ({ id, label, angle: (-90 + i * 30) * Math.PI / 180 }));
-const CX = 330, CY = 212, RX = 238, RY = 158;
-for (const s of STATIONS) { s.x = CX + RX * Math.cos(s.angle); s.y = CY + RY * Math.sin(s.angle); }
+].map(([id, label]) => ({ id, label }));
 const ST = Object.fromEntries(STATIONS.map(s => [s.id, s]));
 const CATS = {
   model: 'Model', prompt: 'Prompt', tool: 'Tool', skill: 'Skill', question: 'Question', subagent: 'Subagent',
@@ -406,6 +355,7 @@ const fmtTime = ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', min
 const fmtDur = ms => ms == null || isNaN(ms) ? '' : ms < 1000 ? `${Math.round(ms)}ms` : ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m ${String(Math.round(ms % 60000 / 1000)).padStart(2, '0')}s` : `${Math.floor(ms / 3600000)}h ${String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0')}m`;
 const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) return `${Math.max(0, Math.round(ms / 1000))}s ago`; if (ms < 3600000) return `${Math.floor(ms / 60000)}m ago`; if (ms < 86400000) return `${Math.floor(ms / 3600000)}h ${Math.floor(ms % 3600000 / 60000)}m ago`; return `${Math.floor(ms / 86400000)}d ago`; };
 const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n ?? 0);
+const clean = s => String(s ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
 const base = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || p || '';
 const icon = (id, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
 const tms = ev => ev._t ?? (ev._t = Date.parse(ev.ts));
@@ -438,6 +388,8 @@ function stationOf(ev) {
   }
   return (ev._st = s);
 }
+// a model step that only announces tool calls: the tool rows that follow already show them
+const isToolStep = ev => ev.event === 'ModelStep' && (ev.data?.tools?.length || 0) > 0;
 const isProblem = ev => ev.category === 'error' || ev.event === 'PermissionDenied';
 
 function toolArg(d) {
@@ -446,7 +398,7 @@ function toolArg(d) {
   if (tool === 'AskUserQuestion') return (ti.questions || []).map(q => q.question).join(' | ');
   if (tool === 'Agent' || tool === 'Task') return [ti.subagent_type, ti.description].filter(Boolean).join(' — ');
   if (/^(WebFetch)$/.test(tool) && ti.url) { try { return new URL(ti.url).host + new URL(ti.url).pathname; } catch { return ti.url; } }
-  return ti.command || ti.file_path || ti.notebook_path || ti.path || ti.pattern || ti.url || ti.query || ti.description || ti.subject || ti.prompt || (Object.keys(ti).length ? JSON.stringify(ti) : '');
+  return ti.command || ti.file_path || ti.notebook_path || ti.path || ti.pattern || ti.url || ti.query || ti.description || ti.subject || ti.prompt || Object.values(ti).find(v => typeof v === 'string') || (Object.keys(ti).length ? JSON.stringify(ti) : '');
 }
 function toolLabel(tool) {
   if (!tool) return '?';
@@ -457,7 +409,7 @@ function toolLabel(tool) {
 function describe(ev) {
   const d = ev.data || {}, tool = d.tool_name;
   switch (ev.event) {
-    case 'ModelStep': return [d.subagent ? 'Subagent' : 'Model', `${d.model || '?'}${d.tools && d.tools.length ? ' → ' + d.tools.map(toolLabel).join(', ') : d.stop_reason === 'end_turn' ? ' · reply' : ''}`];
+    case 'ModelStep': return [d.subagent ? 'Subagent' : 'Model', d.tools && d.tools.length ? 'calls ' + d.tools.map(toolLabel).join(', ') : `${d.stop_reason === 'end_turn' ? 'replied' : 'thought'}${d.tokens?.output ? ' · ' + fmtN(d.tokens.output) + ' output tokens' : ''}`];
     case 'UserPromptSubmit': return ['You', d.prompt];
     case 'UserPromptExpansion': return ['Expanded', d.prompt || d.expanded_prompt];
     case 'PreToolUse': case 'PostToolUse': {
@@ -496,7 +448,7 @@ const state = {
   range: Number(ls.get('so.range', 86400000)), q: '', station: '', category: '', problems: false,
   cursor: null, playing: false, speed: Number(ls.get('so.speed', 5)), replayIdx: 0, lastTick: 0,
   paused: false, buffer: [], theme: ls.get('so.theme', 'auto'), connected: false, updated: null,
-  showRunning: true, layout: 'hub', sel: { board: '', lanes: '' }, lanesWin: Number(ls.get('so.lanesWin', 300000)),
+  layout: 'route', sel: { board: '' },
 };
 let TURNS = [], TURN_BY_SEQ = new Map();
 
@@ -512,11 +464,15 @@ const filtersActive = () => !!(state.station || state.category || state.problems
 
 // ---------------------------------------------------------------- turns
 function computeTurns(evs) {
-  const cur = new Map(), turns = [];
+  const cur = new Map(), turns = [], owner = new Map();
   TURN_BY_SEQ = new Map();
   for (const ev of evs) {
     let t = cur.get(ev.session_id);
-    if (ev.event === 'UserPromptSubmit' || !t) {
+    // a subagent's events stay with the turn that started it, even after a later prompt (a background
+    // subagent's hand-back arrives as a new prompt) — so its branch can still merge back on the route
+    const aid = ev.data?.agent_id != null ? ev.session_id + '/' + ev.data.agent_id : null;
+    if (aid && ev.event !== 'SubagentStart' && owner.has(aid)) t = owner.get(aid);
+    else if (ev.event === 'UserPromptSubmit' || !t) {
       t = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : null,
         events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
       cur.set(ev.session_id, t); turns.push(t);
@@ -525,7 +481,7 @@ function computeTurns(evs) {
     const st = stationOf(ev), d = ev.data || {};
     if (ev.event === 'PreToolUse') { t.tools++; t.stations[st] = (t.stations[st] || 0) + 1; }
     else if (ev.event === 'ModelStep') { t.steps++; t.out += d.tokens?.output || 0; }
-    else if (ev.event === 'SubagentStart') t.stations.agents = (t.stations.agents || 0) + 1;
+    else if (ev.event === 'SubagentStart') { t.stations.agents = (t.stations.agents || 0) + 1; if (aid) owner.set(aid, t); }
     if (ev.duration_ms) t.toolMs += ev.duration_ms;
     if (isProblem(ev)) t.errors++;
     if (ev.event === 'Stop') { t.done = true; t.answer = d.last_assistant_message || t.answer; }
@@ -547,25 +503,14 @@ function turnRunning(t) {
   return last === t;
 }
 
-// ---------------------------------------------------------------- hub map engine
-// Design based on lot-map by alexeyw (https://github.com/alexeyw/lot-map): centre with a
-// context ring, stations on spokes, pulses out/back per call, clock hands on running calls,
-// orbiting subagents, and a fading dashed route through recently visited stations.
-function newMap() { return { counts: {}, running: new Map(), agents: new Map(), route: [], ctx: null, lastModel: null, lastModelTs: null, busy: new Set(), flash: {}, steps: 0, tools: 0, turns: 0, events: 0, errors: 0, modelPing: 0 }; }
+// ---------------------------------------------------------------- stage state
+// Running totals for the Route / Board views, rebuilt up to the replay cursor.
+function newMap() { return { counts: {}, running: new Map(), agents: new Map(), ctx: null, lastModel: null, lastModelTs: null, busy: new Set(), steps: 0, tools: 0, turns: 0, events: 0, errors: 0 }; }
 let M = newMap();
-const fx = { pulses: [], waves: [] };
 const simNow = () => state.cursor ?? Date.now();
-
-function visit(st, t) {
-  if (!st || st === 'model') return;
-  const last = M.route[M.route.length - 1];
-  if (last && last.st === st) { last.t = t; return; }
-  M.route.push({ st, t }); if (M.route.length > 6) M.route.shift();
-}
-function pulse(st, dir, err) { if (!st) return; fx.pulses.push({ st, dir, err, t0: performance.now() }); if (fx.pulses.length > 80) fx.pulses.shift(); }
 function bump(st) { M.counts[st] = (M.counts[st] || 0) + 1; }
 
-function applyEvent(ev, animate) {
+function applyEvent(ev) {
   const t = tms(ev), d = ev.data || {}, st = stationOf(ev), key = d.tool_use_id;
   M.events++;
   switch (ev.event) {
@@ -573,167 +518,57 @@ function applyEvent(ev, animate) {
       bump(st); M.tools++;
       if (key) M.running.set(key, { st, start: t, sid: ev.session_id });
       M.busy.add(ev.session_id);
-      visit(st, t); if (animate) pulse(st, 'out');
       break;
-    case 'PostToolUse': case 'PostToolUseFailure': {
+    case 'PostToolUse': case 'PostToolUseFailure':
       if (key) M.running.delete(key);
-      const fail = ev.event === 'PostToolUseFailure';
-      if (fail) { M.errors++; M.flash[st] = t; }
-      if (animate) pulse(st, 'in', fail);
+      if (ev.event === 'PostToolUseFailure') M.errors++;
       break;
-    }
     case 'ModelStep':
       bump('model'); M.steps++; M.lastModel = d.model; M.lastModelTs = t;
       if (!d.subagent && d.tokens) M.ctx = d.tokens.context;
-      if (animate) pulse('model', 'both');
       break;
-    case 'UserPromptSubmit':
-      bump('you'); M.turns++; M.busy.add(ev.session_id); visit('you', t);
-      if (animate) pulse('you', 'in');
-      break;
+    case 'UserPromptSubmit': bump('you'); M.turns++; M.busy.add(ev.session_id); break;
     case 'Stop': case 'StopFailure': case 'SessionEnd':
       for (const [k, r] of M.running) if (r.sid === ev.session_id) M.running.delete(k);
       for (const [k, a] of M.agents) if (a.sid === ev.session_id) M.agents.delete(k);
       M.busy.delete(ev.session_id);
-      if (ev.event === 'StopFailure') { M.errors++; }
-      if (animate && ev.event !== 'SessionEnd') fx.waves.push({ t0: performance.now(), err: ev.event === 'StopFailure' });
+      if (ev.event === 'StopFailure') M.errors++;
       break;
-    case 'SubagentStart': bump('agents'); M.agents.set(d.agent_id || ev.seq, { sid: ev.session_id, start: t }); if (animate) pulse('agents', 'out'); break;
-    case 'SubagentStop': M.agents.delete(d.agent_id); if (animate) pulse('agents', 'in'); break;
-    case 'PermissionRequest': case 'Elicitation': bump('you'); if (animate) pulse('you', 'out'); break;
-    case 'PermissionDenied': bump('you'); M.errors++; M.flash.you = t; if (animate) pulse('you', 'in', true); break;
-    case 'InstructionsLoaded': case 'PreCompact': case 'PostCompact': bump('context'); if (animate) pulse('context', ev.event === 'InstructionsLoaded' ? 'in' : 'out'); break;
-    case 'TaskCreated': case 'TaskCompleted': bump('other'); if (animate) pulse('other', 'out'); break;
-    case 'PreModelSwitch': case 'PostModelSwitch': M.modelPing = performance.now(); break;
+    case 'SubagentStart': bump('agents'); M.agents.set(d.agent_id || ev.seq, { sid: ev.session_id, start: t }); break;
+    case 'SubagentStop': M.agents.delete(d.agent_id); break;
+    case 'PermissionRequest': case 'Elicitation': bump('you'); break;
+    case 'PermissionDenied': bump('you'); M.errors++; break;
+    case 'InstructionsLoaded': case 'PreCompact': case 'PostCompact': bump('context'); break;
+    case 'TaskCreated': case 'TaskCompleted': bump('other'); break;
   }
   mapDirty = true;
 }
 
 function rebuildMap() {
-  M = newMap(); fx.pulses = []; fx.waves = [];
+  M = newMap();
   const lim = state.cursor ?? Infinity;
   let i = 0;
-  for (; i < state.events.length; i++) { const ev = state.events[i]; if (tms(ev) > lim) break; applyEvent(ev, false); }
+  for (; i < state.events.length; i++) { const ev = state.events[i]; if (tms(ev) > lim) break; applyEvent(ev); }
   state.replayIdx = i;
   mapDirty = true;
 }
 
-// ---------------------------------------------------------------- hub map drawing
 let mapDirty = true;
-function arcPath(cx, cy, r, f) {
-  f = Math.max(0.002, Math.min(0.999, f));
-  const a0 = -Math.PI / 2, a1 = a0 + f * 2 * Math.PI;
-  return `M${(cx + r * Math.cos(a0)).toFixed(1)} ${(cy + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 ${f > 0.5 ? 1 : 0} 1 ${(cx + r * Math.cos(a1)).toFixed(1)} ${(cy + r * Math.sin(a1)).toFixed(1)}`;
-}
-function buildMap() {
-  let h = '<g id="spokes">' + STATIONS.map(s => `<line class="spoke" id="sp-${s.id}" x1="${CX}" y1="${CY}" x2="${s.x.toFixed(1)}" y2="${s.y.toFixed(1)}" stroke-width="1.5"/>`).join('') + '</g>';
-  h += '<g id="dyn"></g>';
-  h += `<circle class="deco" id="deco" cx="${CX}" cy="${CY}" r="66"/>`;
-  h += `<circle class="ctx-track" cx="${CX}" cy="${CY}" r="54"/><path id="ctxArc" fill="none" stroke-width="5" stroke-linecap="round"/>`;
-  h += `<circle class="core" cx="${CX}" cy="${CY}" r="44"/>`;
-  h += `<g transform="translate(${CX - 9},${CY - 30}) scale(.75)" style="color:var(--text)"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${ICONS.core}</g></g>`;
-  h += `<text class="core-t" x="${CX}" y="${CY + 8}">CLAUDE</text><text class="core-s" id="coreSub" x="${CX}" y="${CY + 23}"></text>`;
-  h += STATIONS.map(s => `<g class="st" id="st-${s.id}" data-st="${s.id}" transform="translate(${s.x.toFixed(1)},${s.y.toFixed(1)})" style="color:var(--s-${s.id})">
-      <circle class="node" r="22"/><g class="ico" transform="translate(-11,-11) scale(.92)">${ICONS[s.id]}</g>
-      <text class="lbl" y="40">${s.label}<tspan class="cnt" id="cnt-${s.id}" dx="5"></tspan></text><title>${s.label} — click to filter</title></g>`).join('');
-  $('map').innerHTML = h;
-}
 function ctxInfo() {
   if (M.ctx == null) return null;
   const sess = state.scope !== 'all' ? state.sessions.get(state.scope) : null;
   const win = sess?.context?.window || (M.ctx > 200000 ? 1000000 : 200000);
   return { tokens: M.ctx, window: win, pct: Math.min(1, M.ctx / win) };
 }
-function drawStatic() {
-  const max = Math.max(1, ...STATIONS.map(s => M.counts[s.id] || 0));
-  const hot = new Set([...M.running.values()].map(r => r.st));
-  if (M.agents.size) hot.add('agents');
-  for (const s of STATIONS) {
-    const n = M.counts[s.id] || 0, f = Math.sqrt(n / max);
-    const sp = $('sp-' + s.id);
-    sp.setAttribute('stroke-width', n ? (1.5 + f * 6).toFixed(1) : 1.2);
-    sp.style.opacity = n ? (0.55 + f * 0.45).toFixed(2) : 0.5;
-    $('cnt-' + s.id).textContent = n ? String(n) : '';
-    const g = $('st-' + s.id);
-    g.classList.toggle('used', n > 0); g.classList.toggle('hot', hot.has(s.id)); g.classList.toggle('sel', state.station === s.id);
-  }
-  const c = ctxInfo();
-  const arc = $('ctxArc');
-  if (c) { arc.setAttribute('d', arcPath(CX, CY, 54, c.pct)); arc.setAttribute('stroke', c.pct >= 0.9 ? 'var(--err)' : c.pct >= 0.7 ? 'var(--warn)' : 'var(--ok)'); }
-  else arc.setAttribute('d', '');
-  const busy = M.busy.size > 0;
-  $('deco').classList.toggle('spin', busy);
-  $('coreSub').textContent = c ? `ctx ${Math.round(c.pct * 100)}%` : busy ? 'working' : state.cursor ? 'replay' : 'idle';
-}
+function markStage() { altDirty = true; }
 
-let lastDyn = '';
-function drawDynamic(now) {
-  const sn = simNow();
-  let h = '';
-  // route through the last stations visited
-  const R = M.route;
-  for (let i = 1; i < R.length; i++) {
-    const age = sn - R[i].t;
-    const op = age < 40000 ? 0.85 : age < 60000 ? 0.85 * (1 - (age - 40000) / 20000) : 0;
-    if (op <= 0.01) continue;
-    const a = ST[R[i - 1].st], b = ST[R[i].st];
-    h += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="4 4" opacity="${op.toFixed(2)}"/>`;
-  }
-  // running calls: colored spoke, two clock hands, ×N
-  const runBy = {};
-  for (const r of M.running.values()) { (runBy[r.st] ||= []).push(r); }
-  for (const [st, rs] of Object.entries(runBy)) {
-    const s = ST[st]; const el = Math.max(0, sn - Math.min(...rs.map(r => r.start)));
-    h += `<line x1="${CX}" y1="${CY}" x2="${s.x.toFixed(1)}" y2="${s.y.toFixed(1)}" stroke="var(--s-${st})" stroke-width="2.5" opacity=".75"/>`;
-    h += `<path d="${arcPath(s.x, s.y, 27, (el % 60000) / 60000)}" fill="none" stroke="var(--s-${st})" stroke-width="3" stroke-linecap="round"/>`;
-    if (el > 2000) h += `<path d="${arcPath(s.x, s.y, 32, (el % 600000) / 600000)}" fill="none" stroke="var(--s-${st})" stroke-width="2" stroke-linecap="round" opacity=".6"/>`;
-    if (rs.length > 1) h += `<text class="xn" x="${(s.x + 26).toFixed(1)}" y="${(s.y - 22).toFixed(1)}" fill="var(--s-${st})">×${rs.length}</text>`;
-  }
-  // subagents orbiting the Agents station
-  if (M.agents.size) {
-    const s = ST.agents; let i = 0; const n = M.agents.size;
-    for (const a of M.agents.values()) {
-      const ang = now / 900 + (i++ / n) * Math.PI * 2;
-      h += `<circle cx="${(s.x + 34 * Math.cos(ang)).toFixed(1)}" cy="${(s.y + 34 * Math.sin(ang)).toFixed(1)}" r="3.5" fill="var(--s-agents)"/>`;
-    }
-  }
-  // recent failures: red halo for 6 s
-  for (const [st, t] of Object.entries(M.flash)) {
-    const age = sn - t; if (age < 0 || age > 6000) continue;
-    const s = ST[st]; h += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="27" fill="none" stroke="var(--err)" stroke-width="2.5" opacity="${(1 - age / 6000).toFixed(2)}"/>`;
-  }
-  // pulses along spokes
-  const keep = [];
-  for (const p of fx.pulses) {
-    const dur = p.dir === 'both' ? 1000 : 650, k = (now - p.t0) / dur;
-    if (k >= 1) continue; keep.push(p);
-    let f = p.dir === 'out' ? k : p.dir === 'in' ? 1 - k : (k < 0.5 ? k * 2 : 2 - k * 2);
-    f = 0.16 + f * 0.7; // start outside the core, stop before the node
-    const s = ST[p.st]; const x = CX + (s.x - CX) * f, y = CY + (s.y - CY) * f;
-    const col = p.err ? 'var(--err)' : `var(--s-${p.st})`;
-    h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${p.dir === 'both' ? 4 : 5}" fill="${col}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="${col}" opacity=".18"/>`;
-  }
-  fx.pulses = keep;
-  // turn finished: ring leaves the core
-  const wk = [];
-  for (const w of fx.waves) {
-    const k = (now - w.t0) / 1300; if (k >= 1) continue; wk.push(w);
-    h += `<circle cx="${CX}" cy="${CY}" r="${(46 + k * 110).toFixed(1)}" fill="none" stroke="${w.err ? 'var(--err)' : 'var(--ok)'}" stroke-width="${(3 * (1 - k) + 0.5).toFixed(2)}" opacity="${(0.8 * (1 - k)).toFixed(2)}"/>`;
-  }
-  fx.waves = wk;
-  if (now - M.modelPing < 3000) { const s = ST.model; h += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${27 + ((now - M.modelPing) % 1000) / 100}" fill="none" stroke="var(--s-model)" stroke-width="2" opacity=".6"/>`; }
-  if (h !== lastDyn) { $('dyn').innerHTML = h; lastDyn = h; }
-}
-
-// ---------------------------------------------------------------- alternative stage layouts
-// Three alternatives to the hub map, drawn from the same state (M, state.events, cursor):
-//   lanes — a swimlane timeline: one row per station, a bar per call (length = duration)
+// ---------------------------------------------------------------- stage views
+// Two views of the same state (M, state.events, cursor):
 //   board — a grid of station cards with counts, 15-min sparklines and live "running" state
 //   route — the current turn as a metro line: every model step and tool call is a stop
-const LAYOUTS = [['hub', 'Hub'], ['lanes', 'Lanes'], ['board', 'Board'], ['route', 'Route']];
+const LAYOUTS = [['route', 'Route'], ['board', 'Board']];
 const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
 let altDirty = true, lastAltT = 0, lastAltRaw = '';
-const lanes = { key: '', anchor: 0, k: 1 };
 const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
 const agoMs = ms => ms < 60000 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m` : ms < 86400000 ? `${Math.floor(ms / 3600000)}h` : `${Math.floor(ms / 86400000)}d`;
 const trunc = (s, n) => { s = String(s ?? ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
@@ -741,108 +576,26 @@ const evTip = ev => esc(describe(ev).map(x => short(x, 160)).join(' · '));
 const svgIcon = (id, x, y, sc) => `<g class="ico" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc})">${ICONS[id] || ICONS.other}</g>`;
 
 function setLayout(id) {
-  if (!LAYOUTS.some(l => l[0] === id)) id = 'hub';
+  if (!LAYOUTS.some(l => l[0] === id)) id = 'route';
   state.layout = id; ls.set('so.layout', id);
   document.querySelector('.stage').dataset.layout = id;
   $('layouts').innerHTML = LAYOUTS.map(([k, l]) => `<button role="tab" aria-selected="${k === id}" data-layout="${k}" class="${k === id ? 'cur' : ''}">${l}</button>`).join('');
-  $('alt').innerHTML = ''; lastAltRaw = ''; lanes.key = ''; altDirty = true; mapDirty = true;
+  $('alt').innerHTML = ''; lastAltRaw = ''; altDirty = true; mapDirty = true;
 }
 function drawAlt(now) {
-  if (state.layout === 'lanes') return drawLanes();
   if (!altDirty && now - lastAltT < 250) return;
   altDirty = false; lastAltT = now;
   const raw = state.layout === 'board' ? boardHtml() : routeHtml();
   if (raw === lastAltRaw) return;
   lastAltRaw = raw;
   // keep CSS animations in phase across re-renders
-  // keep the route scrolled to its newest stop unless the user scrolled back
+  // route: jump to the focused turn when it changes; when following live, stay at the bottom unless the user scrolled up
   const sc = $('alt').querySelector('.mscroll');
-  const stick = !sc || sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 8, left = sc ? sc.scrollLeft : 0;
+  const prevKey = sc?.dataset.focus, atBottom = !sc || sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 8, top = sc ? sc.scrollTop : 0;
   $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
   const sc2 = $('alt').querySelector('.mscroll');
-  if (sc2) sc2.scrollLeft = stick ? sc2.scrollWidth : left;
-}
-
-// ---- lanes: swimlane timeline
-function drawLanes() {
-  const box = $('alt'), W = box.clientWidth, H = box.clientHeight - 28;
-  if (W < 80 || H < 80) return;
-  const sn = simNow(), win = state.lanesWin;
-  const key = [evEnd(), state.events.length, M.running.size, M.agents.size, win, W, H, state.sel.lanes, state.station, state.category, state.problems, state.q, state.scope].join('|');
-  if (key !== lanes.key || altDirty || sn - lanes.anchor > win / 3 || sn < lanes.anchor) { altDirty = false; buildLanes(W, H, sn); lanes.key = key; }
-  const g = $('lcontent'); if (g) g.setAttribute('transform', `translate(${(-(sn - lanes.anchor) * lanes.k).toFixed(1)},0)`);
-}
-function buildLanes(W, H, sn) {
-  const GUT = 104, PR = 8, TOP = 2, BOT = 16, win = state.lanesWin;
-  const plotW = Math.max(40, W - GUT - PR), k = plotW / win, rowH = (H - TOP - BOT) / STATIONS.length;
-  lanes.anchor = sn; lanes.k = k;
-  const X = t => GUT + plotW + (t - sn) * k, yOf = st => TOP + ROW[st] * rowH;
-  const evs = state.events, end = evEnd(), lo = sn - win * 1.5, fa = filtersActive();
-  let i = end; while (i > 0 && tms(evs[i - 1]) >= lo && end - i < 5000) i--;
-  const spans = [], open = new Map(), pts = [], marks = [];
-  for (; i < end; i++) {
-    const ev = evs[i], t = tms(ev), d = ev.data || {}, st = stationOf(ev) || 'other', dim = fa && !evMatches(ev);
-    switch (ev.event) {
-      case 'PreToolUse': case 'SubagentStart': {
-        const id = ev.event === 'SubagentStart' ? 'ag:' + (d.agent_id ?? ev.seq) : d.tool_use_id;
-        const s = { st, a: t, b: id ? null : t, id, seq: ev.seq, dim, tip: evTip(ev) };
-        spans.push(s); if (id) open.set(id, s); break;
-      }
-      case 'PostToolUse': case 'PostToolUseFailure': case 'SubagentStop': {
-        const id = ev.event === 'SubagentStop' ? 'ag:' + d.agent_id : d.tool_use_id;
-        let s = id && open.get(id);
-        if (s) open.delete(id); else { s = { st, a: t - (ev.duration_ms || 0), dim }; spans.push(s); }
-        Object.assign(s, { b: t, seq: ev.seq, fail: ev.event === 'PostToolUseFailure', tip: evTip(ev), dim: s.dim && dim });
-        break;
-      }
-      case 'UserPromptSubmit': marks.push({ t, cls: 'you', seq: ev.seq }); pts.push({ st: 'you', t, seq: ev.seq, dim, tip: evTip(ev) }); break;
-      case 'Stop': marks.push({ t, cls: 'end', seq: ev.seq }); break;
-      case 'StopFailure': marks.push({ t, cls: 'fail', seq: ev.seq }); break;
-      case 'ModelStep': pts.push({ st: 'model', t, seq: ev.seq, dim, tip: evTip(ev), dia: true }); break;
-      default:
-        if (stationOf(ev) && !FEED_HIDE.has(ev.event) && ev.category !== 'lifecycle' && ev.category !== 'env') pts.push({ st, t, seq: ev.seq, dim, fail: isProblem(ev), tip: evTip(ev) });
-    }
-  }
-  for (const [id, s] of open) {
-    const live = id.startsWith('ag:') ? [...M.agents.keys()].some(a => 'ag:' + a === id) : M.running.has(id);
-    if (live) { s.run = true; s.b = sn + win; } else s.b = s.a;
-  }
-  for (const [id, r] of M.running) if (!open.has(id) && r.start < lo) spans.push({ st: r.st, a: r.start, b: sn + win, run: true, tip: esc(ST[r.st].label + ' · running') });
-  // stack overlapping (parallel) calls on up to 3 tracks per lane
-  spans.sort((p, q) => p.a - q.a);
-  const ends = {};
-  for (const s of spans) {
-    const e = (ends[s.st] ||= []); let j = e.findIndex(x => x <= s.a);
-    if (j < 0) { if (e.length < 3) { j = e.length; e.push(0); } else j = e.indexOf(Math.min(...e)); }
-    e[j] = Math.max(s.b, s.a + 4 / k); s.tr = j;
-  }
-  let h = `<div class="ahead"><b>Timeline</b><span class="muted">bar = one call, length = duration · ◆ model step · ┆ turn</span><span class="grow"></span>${[[60000, '1m'], [300000, '5m'], [900000, '15m']].map(([w, l]) => `<button class="seg ${w === win ? 'cur' : ''}" data-win="${w}">${l}</button>`).join('')}</div>`;
-  h += `<svg class="lanes" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><clipPath id="lclip"><rect x="${GUT}" y="0" width="${plotW}" height="${H}"/></clipPath></defs>`;
-  STATIONS.forEach((s, r) => {
-    const y = yOf(s.id), n = M.counts[s.id] || 0, cy = y + rowH / 2;
-    h += `<g class="lane ${r % 2 ? '' : 'zebra'} ${n ? 'used' : ''} ${state.sel.lanes === s.id ? 'sel' : ''}" data-st="${s.id}" style="color:var(--s-${s.id})"><rect class="lbg" x="0" y="${y.toFixed(1)}" width="${W}" height="${rowH.toFixed(1)}"/>
-      ${svgIcon(s.id, 6, cy - 7, 0.6)}<text class="ll" x="26" y="${(cy + 4).toFixed(1)}">${s.label}</text><text class="lc" x="${GUT - 8}" y="${(cy + 4).toFixed(1)}">${n || ''}</text><title>${s.label} — click to highlight</title></g>`;
-  });
-  const step = { 60000: 15000, 300000: 60000, 900000: 300000 }[win] || win / 4;
-  for (let ago = 0; ago <= win + 1; ago += step) {
-    const x = GUT + plotW - ago * k;
-    h += `<line class="gl" x1="${x.toFixed(1)}" y1="${TOP}" x2="${x.toFixed(1)}" y2="${H - BOT}"/><text class="gt" x="${x.toFixed(1)}" y="${H - 3}" text-anchor="${ago === 0 ? 'end' : ago >= win ? 'start' : 'middle'}">${ago === 0 ? 'now' : '−' + (ago < 60000 ? ago / 1000 + 's' : ago / 60000 + 'm')}</text>`;
-  }
-  h += `<g clip-path="url(#lclip)"><g id="lcontent">`;
-  for (const m of marks) h += `<line class="tm ${m.cls}" x1="${X(m.t).toFixed(1)}" y1="${TOP}" x2="${X(m.t).toFixed(1)}" y2="${H - BOT}"/>`;
-  for (const s of spans) {
-    const n = ends[s.st].length, pad = 3, th = Math.max(2, (rowH - 2 * pad) / n - 1), y = yOf(s.st) + pad + s.tr * (th + 1);
-    const x = X(s.a), w = Math.max(3, X(s.b) - x);
-    h += `<rect class="bar ${s.fail ? 'fail' : ''} ${s.run ? 'run' : ''} ${s.dim ? 'dim' : ''}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${th.toFixed(1)}" rx="2" style="fill:var(--s-${s.st})"${s.seq != null ? ` data-seq="${s.seq}"` : ''}><title>${s.tip}</title></rect>`;
-  }
-  for (const p of pts) {
-    const x = X(p.t), cy = yOf(p.st) + rowH / 2, cls = `pt ${p.fail ? 'fail' : ''} ${p.dim ? 'dim' : ''}`;
-    h += p.dia
-      ? `<path class="${cls}" d="M${x.toFixed(1)} ${(cy - 5).toFixed(1)}l5 5l-5 5l-5 -5z" style="fill:var(--s-model)" data-seq="${p.seq}"><title>${p.tip}</title></path>`
-      : `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" style="fill:var(--s-${p.st})" data-seq="${p.seq}"><title>${p.tip}</title></circle>`;
-  }
-  h += `</g></g><line class="nowl" x1="${GUT + plotW}" y1="${TOP}" x2="${GUT + plotW}" y2="${H - BOT}"/></svg>`;
-  $('alt').innerHTML = h;
+  applyHover();
+  if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? (state.turnSel ? Number(sc2.dataset.fy) : sc2.scrollHeight) : (!state.turnSel && atBottom ? sc2.scrollHeight : top);
 }
 
 // ---- board: station cards
@@ -874,7 +627,7 @@ function boardHtml() {
     <div class="cm mono">${M.lastModel ? esc(M.lastModel) + (M.lastModelTs ? ' · ' + agoMs(sn - M.lastModelTs) + ' ago' : '') : 'no model steps yet'}</div>
     <div class="gauge"><i style="width:${pct}%;background:${gcol}"></i></div>
     <div class="gl"><span class="muted">context</span><b>${c ? pct + '%' : '–'}</b><span class="muted">${c ? fmtN(c.tokens) + ' / ' + fmtN(c.window) : ''}</span></div>
-    <div class="cstats">${[['turns', M.turns], ['steps', M.steps], ['tools', M.tools], ['errors', M.errors]].map(([l, v]) => `<div><b class="${l === 'errors' && v ? 'err' : ''}">${v}</b><span>${l}</span></div>`).join('')}</div>
+    <div class="cstats">${[['turns', M.turns], ['steps', M.steps], ['tools', M.tools], ['problems', M.errors]].map(([l, v]) => `<div><b class="${l === 'problems' && v ? 'err' : ''}">${v}</b><span>${l}</span></div>`).join('')}</div>
     <div class="cspark"><span>all activity · last 15 min</span>${spark(total, Math.max(1, ...total))}</div></div>`;
   for (const s of STATIONS) {
     const n = M.counts[s.id] || 0, run = runBy[s.id], e = errs[s.id] || 0, L = last[s.id];
@@ -891,20 +644,30 @@ function boardHtml() {
 // ---- route: the current turn as a metro line; each subagent forks a branch below and merges back
 function routeModel(t, lim) {
   const evs = t.events.filter(e => tms(e) <= lim);
-  const stops = [], open = new Map(), branches = new Map(), pendingAgent = [], laneBusy = [], last = [];
-  let steps = 0, tools = 0, errs = 0, ended = null, maxLane = 0;
-  const add = s => { s.i = stops.length; s.prev = last[s.lane]; last[s.lane] = s.i; stops.push(s); return s; };
+  const stops = [], open = new Map(), branches = new Map(), pendingAgent = [];
+  let steps = 0, tools = 0, errs = 0, ended = null, maxLane = 0, mainLast;
+  // every lane keeps its own left→right position (px along the unwrapped route), so a busy subagent
+  // never pushes the main line or the other subagents apart
+  const add = s => {
+    s.i = stops.length; s.br = br0;
+    const p = br0 ? br0.last : mainLast, ps = p != null ? stops[p] : null;
+    s.prev = p; s.pos = ps ? ps.pos + routeGap(ps, s) : 0;
+    if (br0) br0.last = s.i; else mainLast = s.i;
+    stops.push(s); return s;
+  };
+  let br0 = null;
   const branchOf = d => { const b = d.agent_id != null && branches.get(String(d.agent_id)); return b && !b.closed ? b : null; };
   for (const ev of evs) {
-    const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d), lane = br ? br.lane : 0;
+    const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d);
+    br0 = br;
     switch (ev.event) {
-      case 'UserPromptSubmit': add({ lane: 0, st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
+      case 'UserPromptSubmit': br0 = null; add({ st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
       case 'ModelStep':
         if (d.subagent && !br) break; // internal helper agents with no branch: not part of the route
-        steps++; add({ lane, st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
+        steps++; add({ st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
       case 'PreToolUse': {
         tools++;
-        const s = add({ lane, st, label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
+        const s = add({ st, label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
         if (s.id) open.set(s.id, s);
         if (!br && (d.tool_name === 'Agent' || d.tool_name === 'Task')) { s.desc = d.tool_input?.description; pendingAgent.push(s); }
         break;
@@ -915,30 +678,45 @@ function routeModel(t, lim) {
         break;
       }
       case 'SubagentStart': {
-        let k = 1; while (laneBusy[k]) k++; laneBusy[k] = true; maxLane = Math.max(maxLane, k);
-        const from = pendingAgent.shift() ?? stops[last[0]];
-        const b = { id: String(d.agent_id ?? ev.seq), lane: k, type: d.agent_type || 'subagent', a: tms(ev) };
-        branches.set(b.id, b);
-        add({ lane: k, st: 'agents', label: b.type, sub: from?.desc || 'subagent', seq: ev.seq, tip: evTip(ev), fork: from ? from.i : null, branch: b });
+        const from = pendingAgent.shift() ?? (mainLast != null ? stops[mainLast] : null);
+        const b = { id: String(d.agent_id ?? ev.seq), type: d.agent_type || 'subagent', a: tms(ev), last: null };
+        branches.set(b.id, b); br0 = b;
+        const s = add({ st: 'agents', label: b.type, sub: from?.desc || 'subagent', seq: ev.seq, tip: evTip(ev), fork: from ? from.i : null, branch: b });
+        s.prev = null; s.pos = from ? from.pos + 64 : 0; b.first = s.i;
         break;
       }
       case 'SubagentStop': {
         if (!br) break; // helper agent that never started a branch
-        br.closed = true; laneBusy[br.lane] = false;
-        add({ lane: 0, st: 'agents', label: '⤶ ' + br.type, sub: 'merged ' + fmtDur(tms(ev) - br.a), seq: ev.seq, tip: evTip(ev), merge: last[br.lane] });
-        last[br.lane] = undefined;
+        br.closed = true; br0 = null;
+        const tail = stops[br.last];
+        const s = add({ st: 'agents', label: '⤴ ' + br.type, sub: 'back · ' + fmtDur(tms(ev) - br.a), seq: ev.seq, tip: evTip(ev), merge: br.last });
+        s.pos = Math.max(s.pos, tail.pos + 64); br.mergeAt = s.i;
         break;
       }
-      case 'PermissionRequest': add({ lane, st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PermissionDenied': errs++; add({ lane, st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PreCompact': case 'InstructionsLoaded': add({ lane: 0, st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionRequest': add({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionDenied': errs++; add({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PreCompact': case 'InstructionsLoaded': br0 = null; add({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }
   }
   for (const [key, s] of open) s.run = M.running.has(key);
   for (const b of branches.values()) if (!b.closed) b.run = [...M.agents.keys()].some(k => String(k) === b.id);
-  return { stops, branches, steps, tools, errs, ended, maxLane };
+
+  // lanes: the subagent forked last gets the lane nearest the main line, so parallel forks nest
+  // (└┘ inside └──┘) instead of crossing; a lane is reused once its previous subagent has finished
+  const span = b => [stops[b.first].pos - 64, b.mergeAt != null ? stops[b.mergeAt].pos : stops[b.last].pos + (b.run ? 40 : 0)];
+  const taken = [];
+  for (const b of [...branches.values()].sort((x, y) => stops[y.first].pos - stops[x.first].pos || y.first - x.first)) {
+    const [a, z] = span(b);
+    let k = 1; while ((taken[k] ||= []).some(([p, q]) => a < q + 40 && p < z + 40)) k++;
+    taken[k].push([a, z]); b.lane = k; maxLane = Math.max(maxLane, k);
+  }
+  for (const s of stops) s.lane = s.br ? s.br.lane : 0;
+  return { stops, branches, steps, tools, errs, ended, maxLane, mainLast };
 }
+// spacing between two consecutive stops on one lane
+const routeW = s => s.small ? 24 : s.end ? 58 : 80;
+const routeGap = (a, b) => (routeW(a) + routeW(b)) / 2;
 function routeHtml() {
   const box = $('alt'), W = box.clientWidth, H = box.clientHeight, sn = simNow();
   if (W < 120 || H < 160) return '';
@@ -946,61 +724,175 @@ function routeHtml() {
   const pinned = state.turnSel ? TURNS.find(x => x.key === state.turnSel) : null;
   let t = pinned; if (!t) for (const x of TURNS) if (Date.parse(x.start) <= lim) t = x;
   if (!t) return '<div class="empty">No turns yet — the next prompt draws its route here.</div>';
-  const R = routeModel(t, lim), { stops, ended } = R;
-  const live = !ended && (state.cursor != null || turnRunning(t));
-  if (ended) stops.push({ lane: 0, end: true, fail: ended.event === 'StopFailure', seq: ended.seq, prev: stops.reduce((p, s) => s.lane === 0 ? s.i : p, undefined) });
-  else if (live && !stops.some(s => s.run && s.lane === 0)) stops.push({ lane: 0, end: true, pending: true, prev: stops.reduce((p, s) => s.lane === 0 ? s.i : p, undefined) });
 
-  const PADX = 36, LANEH = 74, TOPY = 20;
-  let x = PADX;
-  stops.forEach((s, i) => { if (i) x += s.small ? 24 : s.end ? 58 : 80; s.x = x; s.y = TOPY + s.lane * LANEH; });
-  const SW = Math.max(W, x + PADX + 20), SH = TOPY + R.maxLane * LANEH + 50;
-  const P = (s, k) => `${s.x.toFixed(1)} ${s.y}`;
-  const curve = (a, b) => { const m = ((a.x + b.x) / 2).toFixed(1); return `M${P(a)}C${m} ${a.y} ${m} ${b.y} ${P(b)}`; };
+  // chain this session's turns, oldest → newest (at most CAP, always including the focused one)
+  const sess = TURNS.filter(x => x.sid === t.sid && Date.parse(x.start) <= lim), CAP = 30;
+  let from = Math.max(0, sess.length - CAP); const fi = sess.indexOf(t); if (fi >= 0 && fi < from) from = fi;
+  const chain = sess.slice(from, from + CAP);
+  const stops = [], models = new Map(), tails = [];
+  chain.forEach((tt, ci) => {
+    const R = routeModel(tt, lim), off = stops.length;
+    models.set(tt.key, R);
+    let maxPos = 0;
+    for (const s of R.stops) {
+      s.i += off; for (const k of ['prev', 'fork', 'merge']) if (s[k] != null) s[k] += off;
+      s.turn = tt.key; stops.push(s); maxPos = Math.max(maxPos, s.pos);
+    }
+    const live = !R.ended && ci === chain.length - 1 && (state.cursor != null || turnRunning(tt));
+    const endAt = R.ended ? tms(R.ended) : sn;
+    if (R.ended || (live && !R.stops.some(s => s.run && s.lane === 0))) {
+      // the main line always runs to the end of the turn: past every subagent stop, not just its own last stop
+      const lastMain = R.mainLast != null ? R.mainLast + off : null;
+      const e = { lane: 0, end: true, fail: R.ended?.event === 'StopFailure', pending: !R.ended, seq: R.ended?.seq, prev: lastMain, turn: tt.key, dur: endAt - Date.parse(tt.start) };
+      e.pos = Math.max(lastMain != null ? stops[lastMain].pos + routeGap(stops[lastMain], e) : 0, R.stops.length ? maxPos + 70 : 0);
+      e.i = stops.length; stops.push(e);
+    }
+    for (const b of R.branches.values()) if (!b.closed && b.run) tails.push(b.last + off);
+  });
+
+  // layout: each turn starts on a fresh band under a divider ("Turn N · time · prompt"). A turn too long
+  // for one band wraps like text — the whole band (main line + its subagent lanes) continues on the next one,
+  // each lane running off the right edge and picking up again at the left edge of the row underneath
+  const PAD = 56, TOPY = 18, LANEH = 52, BASEH = 50, ROWGAP = 34, DIVH = 50;
+  const usable = Math.max(160, W - 2 * PAD - 30), SW = usable + 2 * PAD;
+  const byKey = new Map(chain.map(tt => [tt.key, tt]));
+  const rows = [];
+  let rowBase = 0, curTurn = null;
+  for (const s of stops) {
+    if (s.turn !== curTurn) { curTurn = s.turn; rowBase = rows.length; rows.push({ maxLane: 0, div: byKey.get(s.turn) }); }
+    const k = Math.floor(s.pos / usable);
+    while (rows.length <= rowBase + k) rows.push({ maxLane: 0 });
+    s.row = rowBase + k; s.x = PAD + s.pos - k * usable;
+  }
+  // every link between two stops; a link's travel lane is where it runs horizontally
+  const links = [];
+  for (const s of stops) {
+    if (s.fork != null) links.push({ a: stops[s.fork], b: s, kind: 'fork', L: s.lane });
+    else if (s.prev != null) links.push({ a: stops[s.prev], b: s, kind: 'line', L: s.lane });
+    if (s.merge != null) links.push({ a: stops[s.merge], b: s, kind: 'merge', L: stops[s.merge].lane });
+  }
+  for (const s of stops) rows[s.row].maxLane = Math.max(rows[s.row].maxLane, s.lane);
+  for (const g of links) for (let r = g.a.row; r <= g.b.row; r++) rows[r].maxLane = Math.max(rows[r].maxLane, g.L);
+  // the main line runs along the TOP of each band (You first) and subagent lanes hang BELOW it (lane 1 nearest),
+  // so every fork drops from its Agent call and every merge rises back into the main line from underneath.
+  // Main-line labels sit above their stops (MAINL), out of the way of the forks leaving underneath
+  const MAINL = 32;
+  let y = TOPY;
+  for (const r of rows) {
+    if (r.div) { r.divY = y; y += DIVH; }
+    r.y0 = y; r.main = y + MAINL; y = r.main + r.maxLane * LANEH + BASEH + ROWGAP;
+  }
+  const SH = y - ROWGAP + 10;
+  const laneY = (r, L) => rows[r].main + L * LANEH, LE = 18, RE = SW - 18;
+  for (const s of stops) s.y = laneY(s.row, s.lane);
+
+  const P = s => `${s.x.toFixed(1)} ${s.y}`, poly = routePoly;
+  // a fork drops from the Agent call then runs along its lane; a merge runs along the subagent's lane then
+  // rises into the main line. Across a wrap there is no connecting loop: each line runs off the right edge
+  // and continues from the left edge of the next row on the same lane
+  const linkPaths = ({ a, b, kind, L }) => {
+    if (a.row === b.row) {
+      if (kind === 'fork') return [poly([a, { x: a.x, y: b.y }, b])];
+      if (kind === 'merge') return [poly([a, { x: b.x, y: a.y }, b])];
+      return [poly([a, b])];
+    }
+    // wrap: no return loop — the line runs off the right edge and the row underneath picks it up at its left edge
+    const out = [];
+    out.push(poly(kind === 'fork' ? [a, { x: a.x, y: laneY(a.row, L) }, { x: RE, y: laneY(a.row, L) }] : [a, { x: RE, y: a.y }]));
+    for (let r = a.row + 1; r < b.row; r++) out.push(poly([{ x: LE, y: laneY(r, L) }, { x: RE, y: laneY(r, L) }]));
+    out.push(poly(kind === 'merge' ? [{ x: LE, y: laneY(b.row, L) }, { x: b.x, y: laneY(b.row, L) }, b] : [{ x: LE, y: b.y }, b]));
+    return out;
+  };
+  const dim = s => pinned && s.turn !== t.key ? ' dim' : '', sl = stopLn(stops);
   let svg = `<svg class="metro" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}">`;
-  // branch lane guides
-  for (const b of R.branches.values()) svg += `<text class="bl" x="4" y="${TOPY + b.lane * LANEH + 4}">↳</text>`;
-  for (const s of stops) {
-    const col = s.end ? (s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)') : s.lane ? 'var(--s-agents)' : `var(--s-${s.st})`;
-    if (s.fork != null) svg += `<path class="ml br" d="${curve(stops[s.fork], s)}"/>`;
-    else if (s.prev != null) svg += `<path class="ml ${s.lane ? 'br' : ''} ${s.run || s.pending ? 'flow' : ''}" d="M${P(stops[s.prev])}L${P(s)}" style="stroke:${col}"/>`;
-    if (s.merge != null) svg += `<path class="ml br" d="${curve(stops[s.merge], s)}"/>`;
+  // turn dividers
+  for (const r of rows) {
+    if (!r.div) continue;
+    const tt = r.div, n = sess.indexOf(tt) + 1, cur = tt.key === t.key, dy = r.divY + 6;
+    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), 90)}`;
+    svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/><text x="10" y="${dy + 20}">${esc(label)}</text><title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
   }
-  // a branch that is still running: dashed tail from its last stop toward "now"
-  const lastOnLane = {};
-  for (const s of stops) if (s.lane) lastOnLane[s.lane] = s;
-  for (const b of R.branches.values()) {
-    if (b.closed) continue;
-    const s = lastOnLane[b.lane];
-    if (s && b.run) svg += `<path class="ml br flow" d="M${P(s)}L${(x + 30).toFixed(1)} ${s.y}"/>`;
+  // draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one
+  // has to cross another lane it passes over it with a small gap), then the main line on top
+  const order = g => g.L === 0 ? 2 : g.kind === 'line' ? 0 : 1;
+  for (const g of [...links].sort((p, q) => order(p) - order(q))) {
+    const s = g.b, col = s.end ? (s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)') : `var(--s-${s.st})`;
+    const cls = g.L ? 'ml br' : `ml ${s.run || s.pending ? 'flow' : ''}`, sty = g.L ? '' : ` style="stroke:${col}"`;
+    for (const d of linkPaths(g)) {
+      if (order(g) === 1) svg += `<path class="halo${dim(s)}" d="${d}"/>`;
+      svg += `<path class="${cls}${dim(s)}" data-ln="${linkKey(g)}" d="${d}"${sty}/><path class="hit" data-ln="${linkKey(g)}" d="${d}"/>`;
+    }
   }
+  // subagent still running: short dashed tail from its last stop
+  for (const i of tails) { const s = stops[i]; if (s) svg += `<path class="ml br flow${dim(s)}" data-ln="${lnKey(s)}" d="M${P(s)}l${Math.min(30, RE - s.x)} 0"/>`; }
   for (const s of stops) {
-    if (s.small) { svg += `<path class="md" d="M${s.x.toFixed(1)} ${s.y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; continue; }
+    if (s.small) { svg += `<path class="md${dim(s)}" data-ln="${sl(s)}" d="M${s.x.toFixed(1)} ${s.y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; continue; }
     if (s.end) {
       const col = s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)';
-      svg += `<g class="stop" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
-        <text class="sl" y="31">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="43">${esc(fmtDur((ended ? tms(ended) : sn) - Date.parse(t.start)))}</text></g>`;
+      svg += `<g class="stop${dim(s)}" data-ln="${sl(s)}" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
+        <text class="sl" y="-33">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="-21">${esc(fmtDur(s.dur))}</text></g>`;
       continue;
     }
     const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
     const r = s.lane && !s.branch ? 10 : 12;
-    svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
+    svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}${dim(s)}" data-ln="${sl(s)}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
       <circle class="sn" r="${r}"/>${svgIcon(s.st, -r * 0.62, -r * 0.62, (r * 0.052).toFixed(3))}${s.run ? `<circle class="ring" r="${r + 5}"/>` : ''}
-      <text class="sl" y="${r + 16}">${esc(trunc(s.label, 12))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="${r + 28}">${esc(trunc(subTxt, 12))}</text>
+      <text class="sl" y="${s.lane ? r + 16 : -r - 20}">${esc(trunc(s.label, 12))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="${s.lane ? r + 28 : -r - 8}">${esc(trunc(subTxt, 12))}</text>
       <title>${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
   }
   svg += '</svg>';
+  const fr = rows.find(r => r.div === t), fy = fr ? Math.max(0, fr.divY - 6) : 0;
+  return routeFrame(t, pinned, sess, models, lim, H, svg, fy);
+}
+
+// line keys for hover highlighting: every stop and link belongs to its turn's main line or to one subagent's branch
+const lnKey = s => `${s.turn}|${s.br ? s.br.id : 'main'}`.replace(/[\s"]/g, '_');
+const linkKey = g => lnKey(g.kind === 'merge' ? g.a : g.b);
+// a stop's keys: its own line, plus the branch it starts (Agent call) or brings back (⤴ stop)
+function stopLn(stops) {
+  const extra = new Map(), add = (i, k) => extra.set(i, (extra.get(i) || '') + ' ' + k);
+  for (const s of stops) { if (s.fork != null) add(s.fork, lnKey(s)); if (s.merge != null) add(s.i, lnKey(stops[s.merge])); }
+  return s => lnKey(s) + (extra.get(s.i) || '');
+}
+let hoverLn = null;
+function applyHover() {
+  const svg = $('alt').querySelector('svg.metro'); if (!svg) return;
+  svg.classList.toggle('hl', !!hoverLn);
+  for (const e of svg.querySelectorAll('.on')) e.classList.remove('on');
+  if (hoverLn) for (const e of svg.querySelectorAll(`[data-ln~="${CSS.escape(hoverLn)}"]`)) e.classList.add('on');
+}
+
+// polyline with rounded corners
+function routePoly(pts) {
+  const f = n => n.toFixed(1), P = s => `${f(s.x)} ${f(s.y)}`;
+  pts = pts.filter((p, i) => !i || p.x !== pts[i - 1].x || p.y !== pts[i - 1].y);
+  let d = `M${P(pts[0])}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [p, q, n] = [pts[i - 1], pts[i], pts[i + 1]];
+    const r = Math.min(12, Math.hypot(q.x - p.x, q.y - p.y) / 2, Math.hypot(n.x - q.x, n.y - q.y) / 2);
+    const u = (s, t) => { const l = Math.hypot(t.x - s.x, t.y - s.y) || 1; return [(t.x - s.x) / l, (t.y - s.y) / l]; };
+    const [ix, iy] = u(p, q), [ox, oy] = u(q, n);
+    d += `L${f(q.x - ix * r)} ${f(q.y - iy * r)}Q${f(q.x)} ${f(q.y)} ${f(q.x + ox * r)} ${f(q.y + oy * r)}`;
+  }
+  return d + `L${P(pts[pts.length - 1])}`;
+}
+
+// header + scroll box + turn navigator around a drawn route
+function routeFrame(t, pinned, sess, models, lim, H, svg, fy) {
+  const R = models.get(t.key) || routeModel(t, lim), ended = R.ended;
+  const live = !ended && (state.cursor != null || turnRunning(t));
   const nb = R.branches.size;
   const state2 = live ? '<span class="dot busy"></span>running' : ended ? (ended.event === 'StopFailure' ? '<span class="err">✕</span> failed' : '<span style="color:var(--ok)">✓</span> done') : '<span class="dot"></span>unfinished';
-  const head = `<div class="lhead"><div class="lp">${t.prompt !== null ? esc(short(t.prompt, 240)) : '<span class="muted">Session start</span>'}</div>
+  const head = `<div class="lhead"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
     <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
-    <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Follow latest</button>' : '<span>following latest turn</span>'}</div></div>`;
-  const idx = TURNS.indexOf(t), prev = TURNS.slice(Math.max(0, idx - 5), idx).filter(p => Date.parse(p.start) <= lim);
-  const hist = `<div class="lhist"><span class="muted">earlier</span>${prev.map(p => {
-    const dots = p.events.filter(e => e.event === 'PreToolUse' && e.data?.agent_id == null).slice(0, 14).map(e => `<i style="background:var(--s-${stationOf(e)})"></i>`).join('');
-    return `<button class="ht ${p.errors ? 'bad' : ''}" data-key="${esc(p.key)}" title="${esc(short(p.prompt, 120))}">${fmtTime(p.start)}<span class="dots">${dots}</span></button>`;
-  }).join('') || '<span class="muted">—</span>'}</div>`;
-  return head + `<div class="mscroll" style="height:${H - 50 - 48}px">${svg}</div>` + hist;
+</div></div>`;
+  // turn navigator: previous / next turn, position, and a way back to the live (latest) turn
+  const list = sess, idx = list.indexOf(t);
+  const prevT = list[idx - 1], nextT = list[idx + 1];
+  const nav = (p, txt) => p ? `<button class="seg" data-key="${esc(p.key)}" title="${esc(fmtTime(p.start) + ' · ' + short(p.prompt ?? 'Session start', 120))}">${txt}</button>` : `<button class="seg" disabled>${txt}</button>`;
+  const hist = `<div class="lhist">${nav(prevT, '‹ Previous turn')}<span class="muted">Turn <b style="color:var(--text)">${idx + 1}</b> of ${list.length}</span>${nav(nextT, 'Next turn ›')}
+    <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Back to latest ⟳</button>' : '<span class="muted"><span class="dot busy"></span> showing the latest turn · updates live</span>'}</div>`;
+  return head + `<div class="mscroll" data-focus="${esc(t.key)}" data-fy="${isFinite(fy) ? fy : 0}" style="height:${H - 50 - 48}px">${svg}</div>` + hist;
 }
 
 // ---------------------------------------------------------------- feed
@@ -1024,41 +916,10 @@ function feedRow(ev, running, opts = {}) {
   return `<div class="frow ${isProblem(ev) ? 'fail' : ''}" data-seq="${ev.seq}">${feedMarker(ev, running)}<span class="t">${fmtTime(ev.ts)}</span>
     <span class="who" style="color:${color}">${icon(st)}<span>${esc(label)}</span></span><span class="what">${proj}${esc(short(sub, 300))}</span>${dur}</div>`;
 }
-function doneIds(evs, lim) {
-  const s = new Set();
-  for (const e of evs) { if (tms(e) > lim) break; if ((e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') && e.data?.tool_use_id) s.add(e.data.tool_use_id); }
-  return s;
-}
-function renderFeed() {
-  const lim = state.cursor ?? Infinity;
-  const evs = state.events;
-  const done = doneIds(evs, lim);
-  const rows = [];
-  let end = evs.length - 1;
-  while (end >= 0 && tms(evs[end]) > lim) end--;
-  for (let i = end; i >= 0 && rows.length < 120; i--) {
-    const ev = evs[i];
-    if (FEED_HIDE.has(ev.event) || ev.category === 'env' || ev.category === 'lifecycle' && ev.event !== 'Stop' && ev.event !== 'StopFailure') continue;
-    const id = ev.data?.tool_use_id;
-    if (ev.event === 'PreToolUse' && id && done.has(id)) continue; // shown by its result row
-    if (!evMatches(ev)) continue;
-    const running = ev.event === 'PreToolUse' && !(id && done.has(id)) && M.running.has(id);
-    const proj = state.scope === 'all' ? base(state.sessions.get(ev.session_id)?.cwd) : null;
-    rows.push(feedRow(ev, running, { proj }));
-  }
-  const f = $('feed'); const top = f.scrollTop;
-  f.innerHTML = rows.join('') || `<div class="empty">${state.events.length ? 'No events match the filters.' : 'Waiting for events — start Claude Code with the plugin enabled.'}</div>`;
-  f.scrollTop = top;
-  const last = M.lastModel ? `Last model · <span class="mono">${esc(M.lastModel)}</span> · ${M.lastModelTs ? fmtAgo(new Date(M.lastModelTs).toISOString()) : ''}` : 'No model steps yet';
-  $('feedLast').innerHTML = (state.cursor ? '<b>Replay</b> · ' : '') + last;
-  $('feedChips').innerHTML = [['Steps', M.steps], ['Tools', M.tools], ['Turns', M.turns], ['Events', M.events], ['Errors', M.errors, M.errors ? 'x' : '']]
-    .map(([l, n, c]) => `<span class="chip">${l} <b class="${c || ''}">${n}</b></span>`).join('');
-}
-
 function renderCats() {
   const counts = {}, errs = {};
   for (const ev of state.events) { counts[ev.category] = (counts[ev.category] || 0) + 1; if (isProblem(ev)) errs[ev.category] = (errs[ev.category] || 0) + 1; }
-  $('cats').innerHTML = `<span class="ttl">${icon('core')} categories</span>` + Object.entries(CATS).filter(([k]) => counts[k]).map(([k, l]) =>
+  $('cats').innerHTML = `<span class="ttl">${icon('core')} Event types</span>` + Object.entries(CATS).filter(([k]) => counts[k]).map(([k, l]) =>
     `<span class="chip click ${state.category === k ? 'sel' : ''}" data-cat="${k}"><i style="background:${CAT_COLOR[k] === 'err' ? 'var(--err)' : `var(--s-${CAT_COLOR[k]})`}"></i>${l} <b>${counts[k]}</b>${errs[k] && k !== 'error' ? ` <span class="x">✕${errs[k]}</span>` : ''}</span>`).join('');
 }
 
@@ -1090,12 +951,12 @@ function renderReplay() {
   for (const el of document.querySelectorAll('#mid .turn')) el.classList.toggle('cur', !!cur && el.dataset.key === cur.key && state.cursor != null);
 }
 function setCursor(ts) {
-  state.cursor = ts; rebuildMap(); renderFeed(); renderReplay(); drawStatic();
+  state.cursor = ts; rebuildMap(); renderReplay(); markStage();
 }
 function goLive() {
   state.playing = false; state.cursor = null;
   if (state.buffer.length && !state.paused) flushBuffer();
-  rebuildMap(); renderFeed(); renderReplay(); drawStatic();
+  rebuildMap(); renderReplay(); markStage();
 }
 function startReplay() {
   if (!state.events.length) return;
@@ -1105,7 +966,7 @@ function startReplay() {
     state.cursor = start - 1; rebuildMap();
   }
   state.playing = true; state.lastTick = performance.now();
-  renderReplay(); renderFeed(); drawStatic();
+  renderReplay(); markStage();
 }
 let lastReplayRender = 0;
 function advanceReplay(now) {
@@ -1116,11 +977,11 @@ function advanceReplay(now) {
   const nt = tms(evs[i]);
   if (nt - state.cursor > 1500 * state.speed) next = Math.max(next, nt - 400 * state.speed); // skip idle gaps
   let changed = false;
-  while (i < evs.length && tms(evs[i]) <= next) { applyEvent(evs[i], true); i++; changed = true; }
+  while (i < evs.length && tms(evs[i]) <= next) { applyEvent(evs[i]); i++; changed = true; }
   state.replayIdx = i; state.cursor = next;
   if (i >= evs.length) { goLive(); return; }
-  if (changed) drawStatic();
-  if (now - lastReplayRender > 200) { lastReplayRender = now; renderReplay(); if (changed) renderFeed(); }
+  if (changed) markStage();
+  if (now - lastReplayRender > 200) { lastReplayRender = now; renderReplay(); }
 }
 function trackSeek(clientX) {
   const dm = domain(); if (!dm) return;
@@ -1147,23 +1008,21 @@ function visibleSessions() {
 function rangeLabel() { const o = $('range').selectedOptions[0]; return o ? o.textContent : ''; }
 function renderSessions() {
   const list = visibleSessions();
-  const all = [...state.sessions.values()].filter(s => !cutoffIso() || (s.last || '') >= cutoffIso());
-  const working = all.filter(s => s.busy && !s.ended).length;
-  const tools = all.reduce((a, s) => a + s.toolCalls, 0), turns = all.reduce((a, s) => a + (s.turns || 0), 0);
   const el = $('sessions'); const top = el.scrollTop;
   el.innerHTML = `
     <div class="card ${state.scope === 'all' ? 'sel' : ''}" data-id="all">
-      <div class="row1"><span class="name">All activity</span><span class="state"><span class="dot ${working ? 'busy' : ''}"></span>${working} working</span></div>
-      <div class="meta">${tools} tool calls · ${turns} turns · ${esc(rangeLabel())}</div>
+      <div class="row1"><span class="name">All activity</span></div>
+      <div class="meta">every session combined</div>
     </div>
-    <div class="sect">Sessions <span>${list.length} · ${esc(rangeLabel())}</span></div>
+    <div class="sect">Sessions <span>${list.length}</span></div>
     <div class="sess-list">${list.map(s => {
       const [st, dot] = sessState(s);
       const out = s.usage ? s.usage.output : 0;
+      const lt = !s.ended && s.lastTool ? `<div class="meta">last: <b>${esc(toolLabel(s.lastTool.name))}</b> <span class="mono">${esc(short(s.lastTool.arg, 60))}</span></div>` : '';
       return `<div class="card ${s.id === state.scope ? 'sel' : ''}" data-id="${esc(s.id)}">
-        <div class="row1"><span class="name">${esc(s.title || base(s.cwd) || s.id.slice(0, 8))}</span><span class="state"><span class="${dot}"></span>${st}</span></div>
-        <div class="meta">${s.last ? fmtAgo(s.last) : ''} · ${s.turns || 0} turns · ${s.toolCalls} tools${out ? ` · ${fmtN(out)} out` : ''}</div>
-        <div class="chips"><span class="chip" title="${esc(s.cwd || '')}">${icon('files')}${esc(base(s.cwd) || '?')}</span>${s.model ? `<span class="chip">${esc(s.model)}</span>` : ''}${s.subagents ? `<span class="chip">${icon('agents')}${s.subagents}</span>` : ''}${s.failures ? `<span class="chip"><span class="x">✕ ${s.failures}</span></span>` : ''}${s.context ? `<span class="chip" title="context window">ctx ${Math.round(s.context.pct * 100)}%</span>` : ''}</div>
+        <div class="row1"><span class="name">${esc(clean(s.title) || base(s.cwd) || s.id.slice(0, 8))}</span><span class="state"><span class="${dot}"></span>${st}</span></div>
+        <div class="meta">${s.last ? fmtAgo(s.last) : ''} · ${s.turns || 0} turns · ${s.toolCalls} tools${out ? ` · ${fmtN(out)} out` : ''}</div>${lt}
+        <div class="chips">${s.title ? `<span class="chip" title="${esc(s.cwd || '')}">${icon('files')}${esc(base(s.cwd) || '?')}</span>` : ''}${s.model ? `<span class="chip">${esc(s.model)}</span>` : ''}${s.subagents ? `<span class="chip">${icon('agents')}${s.subagents}</span>` : ''}${s.failures ? `<span class="chip"><span class="x">✕ ${s.failures}</span></span>` : ''}${s.context ? `<span class="chip" title="context window">ctx ${Math.round(s.context.pct * 100)}%</span>` : ''}</div>
       </div>`;
     }).join('') || '<div class="empty">No sessions in this range.</div>'}</div>`;
   el.scrollTop = top;
@@ -1180,7 +1039,7 @@ function turnRow(t, showProj) {
   const proj = showProj ? `<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>` : '';
   return `<div class="turn ${state.turnSel === t.key ? 'sel' : ''}" data-key="${esc(t.key)}">
     <div class="mk">${mk}</div>
-    <div><div class="p">${t.prompt !== null ? esc(short(t.prompt, 300)) : '<span class="muted">Session start</span>'}</div>
+    <div><div class="p">${t.prompt !== null ? esc(short(clean(t.prompt), 300)) : '<span class="muted">Session start</span>'}</div>
       <div class="m">${proj}<span>${t.steps} steps</span><span>${t.tools} tools</span>${t.errors ? `<span class="err">${t.errors} problems</span>` : ''}${st}</div></div>
     <div class="tm">${fmtTime(t.start)}<br>${running ? 'running' : fmtDur(dur)}</div></div>`;
 }
@@ -1192,25 +1051,17 @@ function renderMid() {
   if (state.scope === 'all') {
     const cut = cutoffIso();
     const all = [...state.sessions.values()].filter(s => !cut || (s.last || '') >= cut);
-    const active = all.filter(s => !s.ended && (s.busy || Date.now() - Date.parse(s.last) < 30 * 60000)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
     const sum = k => all.reduce((a, s) => a + (s[k] || 0), 0);
     const out = all.reduce((a, s) => a + (s.usage?.output || 0), 0);
     el.innerHTML = `<h2>All activity</h2><p class="lead">Every session in ${esc(rangeLabel())}. Pick a session on the left to see only its work.</p>
-      <div class="tiles">${tile('Working', all.filter(s => s.busy && !s.ended).length, 'sessions mid-turn')}${tile('Sessions', all.length)}${tile('Turns', sum('turns'))}${tile('Tool calls', sum('toolCalls'))}${tile('Model steps', sum('modelSteps'))}${tile('Problems', sum('failures'), 'failed or denied', sum('failures') > 0)}${tile('Output tok', fmtN(out))}</div>
-      <div class="box"><div class="bh">${icon('agents')} Open sessions <span>${active.length}</span><span class="grow"></span><button id="toggleRunning">${state.showRunning ? 'Hide' : 'Show'}</button></div>
-      ${state.showRunning ? (active.length ? `<table><tr><th>Project</th><th>Model</th><th>Running</th><th>State</th><th>Last tool</th></tr>${active.map(s => {
-        const [st, dot] = sessState(s);
-        return `<tr class="click" data-id="${esc(s.id)}"><td><b>${esc(base(s.cwd) || '?')}</b><div class="sub">${esc(s.cwd || s.id)}</div></td><td>${esc(s.model || '–')}${s.permission_mode ? `<div class="sub">${esc(s.permission_mode)}</div>` : ''}</td>
-          <td>${fmtDur(Date.now() - Date.parse(s.started))}</td><td><span class="state"><span class="${dot}"></span>${st}</span></td>
-          <td>${s.lastTool ? `<b>${esc(toolLabel(s.lastTool.name))}</b> <span class="muted">${fmtAgo(s.lastTool.ts)}</span><div class="sub">${esc(short(s.lastTool.arg, 90))}</div>` : '–'}</td></tr>`;
-      }).join('')}</table>` : '<div class="empty">No open sessions.</div>') : ''}</div>
+      <div class="tiles">${tile('Sessions', all.length)}${tile('Turns', sum('turns'))}${tile('Tool calls', sum('toolCalls'))}${tile('Model steps', sum('modelSteps'))}${tile('Problems', sum('failures'), 'failed or denied', sum('failures') > 0)}${tile('Output tokens', fmtN(out))}</div>
       <div class="box"><div class="bh">${icon('turn')} Recent turns <span>${turns.length}${fnote}</span></div>${shown.map(t => turnRow(t, true)).join('') || '<div class="empty">No turns match.</div>'}</div>`;
   } else {
     const s = state.sessions.get(state.scope);
     if (!s) { el.innerHTML = '<div class="empty">Session not found.</div>'; return; }
     const [st, dot] = sessState(s);
     const u = s.usage || {};
-    el.innerHTML = `<h2>${esc(short(s.title || base(s.cwd) || s.id, 140))}</h2>
+    el.innerHTML = `<h2>${esc(short(clean(s.title) || base(s.cwd) || s.id, 140))}</h2>
       <p class="lead"><span class="state"><span class="${dot}"></span>${st}</span> · <span class="mono">${esc(s.cwd || '')}</span> · ${esc(s.model || '')}${s.permission_mode ? ' · ' + esc(s.permission_mode) : ''} · <span class="mono">${esc(s.id.slice(0, 8))}</span>${s.ended && s.endReason ? ' · ended ' + esc(s.endReason) : ''}</p>
       <div class="tiles">${tile('Turns', s.turns || 0)}${tile('Tool calls', s.toolCalls, fmtDur(s.toolMs) + ' in tools')}${tile('Model steps', s.modelSteps || 0)}${tile('Subagents', s.subagents || 0)}${tile('Problems', s.failures, '', s.failures > 0)}
         ${tile('Duration', fmtDur(Date.parse(s.last) - Date.parse(s.started)))}${tile('Context', s.context ? Math.round(s.context.pct * 100) + '%' : '–', s.context ? `${fmtN(s.context.tokens)} / ${fmtN(s.context.window)}` : '')}${tile('Tokens', fmtN((u.input || 0) + (u.cache_read || 0) + (u.cache_write || 0)), `in · ${fmtN(u.output || 0)} out`)}</div>
@@ -1222,28 +1073,26 @@ function renderMid() {
 // ---------------------------------------------------------------- detail panel
 function colourKey() {
   return `<details class="key"><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
-    <div><span class="mk run" style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model step</div>
-    <div><span style="color:var(--accent)">- -</span> route (last stations)</div><div><span style="color:var(--ok)">◯</span> context ring / turn done</div></div>
-    <p class="muted" style="margin:10px 0 2px">Spokes thicken with use. A running call draws clock hands around its station (inner: 1 min, outer: 10 min). Click a station to filter by it.</p></details>`;
+    <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
 }
 function renderDetail() {
   const el = $('detail'); const top = el.scrollTop;
   const t = state.turnSel && TURNS.find(x => x.key === state.turnSel);
   if (!t) {
-    el.innerHTML = `<div class="dh"><h2>Details</h2><span class="muted">[ ] · Esc</span></div>${colourKey()}<p class="muted">Pick a session on the left, then a turn in the middle — or click any row in the live feed.</p>`;
+    el.innerHTML = `<div class="dh"><h2>Details</h2></div><p class="muted">Pick a turn in the middle list, or click a stop on the Route. Keys: <b>[</b> / <b>]</b> previous / next turn, <b>Esc</b> close.</p>${colourKey()}`;
     return;
   }
   const done = new Set(t.events.filter(e => e.event === 'PostToolUse' || e.event === 'PostToolUseFailure').map(e => e.data?.tool_use_id).filter(Boolean));
   const running = turnRunning(t);
   const fa = filtersActive();
-  const rows = t.events.filter(e => !(e.event === 'PreToolUse' && done.has(e.data?.tool_use_id)) && e.event !== 'PostToolBatch').map(e => {
+  const rows = t.events.filter(e => !(e.event === 'PreToolUse' && done.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !isToolStep(e) && !(e.event === 'Stop' && t.answer)).map(e => {
     const isRun = running && e.event === 'PreToolUse' && !done.has(e.data?.tool_use_id);
     const open = state.evOpen.has(e.seq);
     return `<div class="erow ${open ? 'open' : ''} ${fa && evMatches(e) ? 'hit' : ''}" id="ev-${e.seq}">${feedRow(e, isRun, { dur: true })}${open ? `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${esc(JSON.stringify(e.data, null, 2))}</pre>` : ''}</div>`;
   }).join('');
   const s = state.sessions.get(t.sid);
   const dur = Date.parse(t.end) - Date.parse(t.start);
-  el.innerHTML = `<div class="dh"><h2>Turn · ${fmtTime(t.start)}</h2><span><button id="prevTurn" title="Previous turn ([)">[</button> <button id="nextTurn" title="Next turn (])">]</button> <button id="closeTurn" title="Close (Esc)">Esc</button></span></div>
+  el.innerHTML = `<div class="dh"><h2>Turn · ${fmtTime(t.start)}</h2><span><button id="prevTurn" title="Previous turn ([)">‹ Prev</button> <button id="nextTurn" title="Next turn (])">Next ›</button> <button id="closeTurn" title="Close (Esc)">Close</button></span></div>
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
     <div class="lbl2">Prompt</div><div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>
     ${t.answer ? `<div class="lbl2">Reply</div><div class="q ans">${esc(t.answer)}</div>` : ''}
@@ -1273,10 +1122,8 @@ function renderHeader() {
   $('connTxt').textContent = state.connected ? 'live' : 'disconnected';
   const working = [...state.sessions.values()].filter(s => s.busy && !s.ended).length;
   $('hdrBusy').innerHTML = `<span class="dot ${working ? 'busy' : ''}"></span>${working} working`;
-  const cs = state.scope !== 'all' ? state.sessions.get(state.scope) : [...state.sessions.values()].filter(s => s.context).sort((a, b) => (b.last || '').localeCompare(a.last || ''))[0];
-  $('hdrCtx').innerHTML = cs?.context ? `<span class="dot" style="background:${cs.context.pct >= .9 ? 'var(--err)' : cs.context.pct >= .7 ? 'var(--warn)' : 'var(--ok)'}"></span>ctx ${Math.round(cs.context.pct * 100)}%` : '';
-  $('updated').textContent = state.updated ? `updated ${fmtTime(state.updated)}` : '';
-  $('pause').textContent = state.paused ? `Resume${state.buffer.length ? ` (${state.buffer.length})` : ''}` : 'Pause';
+  $('conn').parentElement.title = 'Live connection to the local server' + (state.updated ? ` · last update ${fmtTime(state.updated)}` : '');
+  $('pause').textContent = state.paused ? `Unfreeze${state.buffer.length ? ` (${state.buffer.length} new)` : ''}` : 'Freeze';
   $('pause').classList.toggle('on', state.paused);
 }
 
@@ -1289,12 +1136,11 @@ function flush() {
   if (dirty.has('turns')) TURNS = computeTurns(state.events);
   if (dirty.has('header')) renderHeader();
   if (dirty.has('sessions')) renderSessions();
-  if (dirty.has('feed')) renderFeed();
   if (dirty.has('cats')) renderCats();
   if (dirty.has('mid')) renderMid();
   if (dirty.has('detail')) renderDetail();
   if (dirty.has('replay')) renderReplay();
-  if (dirty.has('map')) drawStatic();
+  if (dirty.has('map')) markStage();
   dirty.clear();
   altDirty = true;
 }
@@ -1304,8 +1150,8 @@ function loop(now) {
   requestAnimationFrame(loop);
   if (document.hidden) return;
   if (state.playing) advanceReplay(now);
-  if (mapDirty) { mapDirty = false; drawStatic(); altDirty = true; }
-  if (state.layout === 'hub') drawDynamic(now); else drawAlt(now);
+  if (mapDirty) { mapDirty = false; markStage(); altDirty = true; }
+  drawAlt(now);
 }
 
 // ---------------------------------------------------------------- data
@@ -1345,8 +1191,7 @@ function insertEvent(ev) {
 function takeEvent(ev) {
   const atEnd = insertEvent(ev);
   if (state.cursor == null) {
-    if (atEnd) applyEvent(ev, true); else rebuildMap(); // late model step: rebuild silently
-    if (!atEnd && ev.event === 'ModelStep') pulse('model', 'both');
+    if (atEnd) applyEvent(ev); else rebuildMap(); // late model step: rebuild
   }
   schedule('turns', 'feed', 'cats', 'mid', 'replay', 'map');
   if (state.turnSel && ev.session_id === state.turnSel.split(':')[0]) schedule('detail');
@@ -1378,8 +1223,7 @@ function applyTheme() {
   $('theme').textContent = 'Theme: ' + state.theme;
 }
 function initControls() {
-  $('station').innerHTML = '<option value="">all stations</option>' + STATIONS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
-  $('category').innerHTML = '<option value="">any category</option>' + Object.entries(CATS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('');
+  $('station').innerHTML = '<option value="">all groups</option>' + STATIONS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
   $('range').value = String(state.range); if (!$('range').value) { $('range').value = '86400000'; state.range = 86400000; }
   $('speed').value = String(state.speed); if (!$('speed').value) { $('speed').value = '5'; state.speed = 5; }
   applyTheme();
@@ -1387,11 +1231,10 @@ function initControls() {
   const refilter = () => schedule('feed', 'mid', 'detail', 'sessions', 'cats', 'map');
   let qt; $('q').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value.trim().toLowerCase(); refilter(); }, 150); };
   $('station').onchange = e => { state.station = e.target.value; refilter(); };
-  $('category').onchange = e => { state.category = e.target.value; refilter(); };
   $('problems').onchange = e => { state.problems = e.target.checked; refilter(); };
   $('clearFilters').onclick = () => {
     state.q = state.station = state.category = ''; state.problems = false;
-    $('q').value = ''; $('station').value = ''; $('category').value = ''; $('problems').checked = false; refilter();
+    $('q').value = ''; $('station').value = ''; $('problems').checked = false; refilter();
   };
   $('range').onchange = e => { state.range = Number(e.target.value); ls.set('so.range', state.range); loadScope(); };
   $('speed').onchange = e => { state.speed = Number(e.target.value); ls.set('so.speed', state.speed); };
@@ -1406,35 +1249,27 @@ function initControls() {
   tr.addEventListener('pointermove', e => { if (drag) trackSeek(e.clientX); });
   tr.addEventListener('pointerup', () => { drag = false; });
 
-  $('map').addEventListener('click', e => {
-    const g = e.target.closest('.st'); if (!g) return;
-    state.station = state.station === g.dataset.st ? '' : g.dataset.st; $('station').value = state.station; refilter();
-  });
   $('layouts').onclick = e => { const b = e.target.closest('[data-layout]'); if (b) setLayout(b.dataset.layout); };
+  $('alt').addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-ln]'), k = el ? el.dataset.ln.split(' ')[0] : null;
+    if (k !== hoverLn) { hoverLn = k; applyHover(); }
+  });
+  $('alt').addEventListener('mouseleave', () => { if (hoverLn) { hoverLn = null; applyHover(); } });
   $('alt').addEventListener('click', e => {
-    const w = e.target.closest('[data-win]');
-    if (w) { state.lanesWin = Number(w.dataset.win); ls.set('so.lanesWin', state.lanesWin); altDirty = true; return; }
     if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
     const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
     const q = e.target.closest('[data-seq]');
     if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
     const st = e.target.closest('[data-st]');
-    // Board / Lanes selections stay local to that view; they don't touch the global Station filter
-    if (st && state.sel[state.layout] !== undefined) { state.sel[state.layout] = state.sel[state.layout] === st.dataset.st ? '' : st.dataset.st; altDirty = true; lanes.key = ''; }
+    // Board selections stay local to that view; they don't touch the global Station filter
+    if (st && state.sel[state.layout] !== undefined) { state.sel[state.layout] = state.sel[state.layout] === st.dataset.st ? '' : st.dataset.st; altDirty = true; }
   });
   $('cats').onclick = e => {
     const c = e.target.closest('[data-cat]'); if (!c) return;
-    state.category = state.category === c.dataset.cat ? '' : c.dataset.cat; $('category').value = state.category; refilter();
-  };
-  $('feed').onclick = e => {
-    const r = e.target.closest('.frow'); if (!r) return;
-    const seq = Number(r.dataset.seq); const t = TURN_BY_SEQ.get(seq);
-    if (t) selectTurn(t.key, seq);
+    state.category = state.category === c.dataset.cat ? '' : c.dataset.cat; refilter();
   };
   $('sessions').onclick = e => { const c = e.target.closest('.card'); if (c) selectScope(c.dataset.id); };
   $('mid').onclick = e => {
-    if (e.target.closest('#toggleRunning')) { state.showRunning = !state.showRunning; return renderMid(); }
-    const row = e.target.closest('tr[data-id]'); if (row) return selectScope(row.dataset.id);
     const t = e.target.closest('.turn'); if (t) selectTurn(t.dataset.key);
   };
   $('detail').onclick = e => {
@@ -1455,8 +1290,10 @@ function initControls() {
 }
 
 async function boot() {
-  buildMap(); initControls();
-  setLayout(new URLSearchParams(location.search).get('layout') || ls.get('so.layout', 'hub'));
+  initControls();
+  // the route / board are sized from their container, which now follows the window height
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { markStage(); schedule('map'); }, 120); });
+  setLayout(new URLSearchParams(location.search).get('layout') || ls.get('so.layout', 'route'));
   try { const list = await (await fetch('/api/sessions')).json(); state.sessions = new Map(list.map(s => [s.id, s])); } catch { /* server down */ }
   const m = location.hash.match(/session=([^&]+)/);
   if (m && state.sessions.has(decodeURIComponent(m[1]))) state.scope = decodeURIComponent(m[1]);
