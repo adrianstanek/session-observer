@@ -157,6 +157,9 @@
   .lhead .grow { flex: 1; }
   svg.metro { display: block; }
   .metro .ml { fill: none; stroke-width: 6; stroke-linecap: round; opacity: .75; }
+  .metro .ml.br { stroke: var(--s-agents); stroke-width: 4; opacity: .7; }
+  .metro .bl { fill: var(--s-agents); font-size: 13px; }
+  .mscroll { overflow: auto; }
   .metro .ml.flow { stroke-dasharray: 2 9; animation: dash .7s linear infinite; opacity: 1; }
   @keyframes dash { to { stroke-dashoffset: -11; } }
   .metro .stop, .metro .md { cursor: pointer; }
@@ -752,7 +755,12 @@ function drawAlt(now) {
   if (raw === lastAltRaw) return;
   lastAltRaw = raw;
   // keep CSS animations in phase across re-renders
+  // keep the route scrolled to its newest stop unless the user scrolled back
+  const sc = $('alt').querySelector('.mscroll');
+  const stick = !sc || sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 8, left = sc ? sc.scrollLeft : 0;
   $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
+  const sc2 = $('alt').querySelector('.mscroll');
+  if (sc2) sc2.scrollLeft = stick ? sc2.scrollWidth : left;
 }
 
 // ---- lanes: swimlane timeline
@@ -880,7 +888,57 @@ function boardHtml() {
   return h + '</div>';
 }
 
-// ---- route: the current turn as a metro line
+// ---- route: the current turn as a metro line; each subagent forks a branch below and merges back
+function routeModel(t, lim) {
+  const evs = t.events.filter(e => tms(e) <= lim);
+  const stops = [], open = new Map(), branches = new Map(), pendingAgent = [], laneBusy = [], last = [];
+  let steps = 0, tools = 0, errs = 0, ended = null, maxLane = 0;
+  const add = s => { s.i = stops.length; s.prev = last[s.lane]; last[s.lane] = s.i; stops.push(s); return s; };
+  const branchOf = d => { const b = d.agent_id != null && branches.get(String(d.agent_id)); return b && !b.closed ? b : null; };
+  for (const ev of evs) {
+    const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d), lane = br ? br.lane : 0;
+    switch (ev.event) {
+      case 'UserPromptSubmit': add({ lane: 0, st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
+      case 'ModelStep':
+        if (d.subagent && !br) break; // internal helper agents with no branch: not part of the route
+        steps++; add({ lane, st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PreToolUse': {
+        tools++;
+        const s = add({ lane, st, label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
+        if (s.id) open.set(s.id, s);
+        if (!br && (d.tool_name === 'Agent' || d.tool_name === 'Task')) { s.desc = d.tool_input?.description; pendingAgent.push(s); }
+        break;
+      }
+      case 'PostToolUse': case 'PostToolUseFailure': {
+        const s = open.get(d.tool_use_id);
+        if (s) { open.delete(d.tool_use_id); s.dur = ev.duration_ms ?? tms(ev) - s.a; s.seq = ev.seq; s.tip = evTip(ev); if (ev.event === 'PostToolUseFailure') { s.fail = true; errs++; } }
+        break;
+      }
+      case 'SubagentStart': {
+        let k = 1; while (laneBusy[k]) k++; laneBusy[k] = true; maxLane = Math.max(maxLane, k);
+        const from = pendingAgent.shift() ?? stops[last[0]];
+        const b = { id: String(d.agent_id ?? ev.seq), lane: k, type: d.agent_type || 'subagent', a: tms(ev) };
+        branches.set(b.id, b);
+        add({ lane: k, st: 'agents', label: b.type, sub: from?.desc || 'subagent', seq: ev.seq, tip: evTip(ev), fork: from ? from.i : null, branch: b });
+        break;
+      }
+      case 'SubagentStop': {
+        if (!br) break; // helper agent that never started a branch
+        br.closed = true; laneBusy[br.lane] = false;
+        add({ lane: 0, st: 'agents', label: '⤶ ' + br.type, sub: 'merged ' + fmtDur(tms(ev) - br.a), seq: ev.seq, tip: evTip(ev), merge: last[br.lane] });
+        last[br.lane] = undefined;
+        break;
+      }
+      case 'PermissionRequest': add({ lane, st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionDenied': errs++; add({ lane, st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PreCompact': case 'InstructionsLoaded': add({ lane: 0, st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
+    }
+  }
+  for (const [key, s] of open) s.run = M.running.has(key);
+  for (const b of branches.values()) if (!b.closed) b.run = [...M.agents.keys()].some(k => String(k) === b.id);
+  return { stops, branches, steps, tools, errs, ended, maxLane };
+}
 function routeHtml() {
   const box = $('alt'), W = box.clientWidth, H = box.clientHeight, sn = simNow();
   if (W < 120 || H < 160) return '';
@@ -888,82 +946,61 @@ function routeHtml() {
   const pinned = state.turnSel ? TURNS.find(x => x.key === state.turnSel) : null;
   let t = pinned; if (!t) for (const x of TURNS) if (Date.parse(x.start) <= lim) t = x;
   if (!t) return '<div class="empty">No turns yet — the next prompt draws its route here.</div>';
-  const evs = t.events.filter(e => tms(e) <= lim);
-  const stops = [], open = new Map(); let steps = 0, tools = 0, errs = 0, ended = null;
-  for (const ev of evs) {
-    const d = ev.data || {}, st = stationOf(ev) || 'other';
-    switch (ev.event) {
-      case 'UserPromptSubmit': stops.push({ st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
-      case 'ModelStep': steps++; stops.push({ st: d.subagent ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PreToolUse': case 'SubagentStart': {
-        const sub = ev.event === 'SubagentStart'; if (!sub) tools++;
-        const s = { st, label: sub ? (d.agent_type || 'subagent') : toolLabel(d.tool_name), sub: sub ? 'subagent' : toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: sub ? (d.agent_id ?? ev.seq) : d.tool_use_id };
-        stops.push(s); if (s.id != null) open.set((sub ? 'ag:' : '') + s.id, s); break;
-      }
-      case 'PostToolUse': case 'PostToolUseFailure': case 'SubagentStop': {
-        const key = ev.event === 'SubagentStop' ? 'ag:' + d.agent_id : d.tool_use_id, s = open.get(key);
-        if (s) { open.delete(key); s.dur = ev.duration_ms ?? tms(ev) - s.a; s.seq = ev.seq; s.tip = evTip(ev); if (ev.event === 'PostToolUseFailure') { s.fail = true; errs++; } }
-        break;
-      }
-      case 'PermissionRequest': stops.push({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PermissionDenied': errs++; stops.push({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PreCompact': case 'InstructionsLoaded': stops.push({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
-      case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
-    }
-  }
-  for (const [key, s] of open) s.run = key.startsWith('ag:') ? M.agents.has(s.id) : M.running.has(key);
+  const R = routeModel(t, lim), { stops, ended } = R;
   const live = !ended && (state.cursor != null || turnRunning(t));
-  if (ended) stops.push({ end: true, fail: ended.event === 'StopFailure', seq: ended.seq });
-  else if (live && !stops.some(s => s.run)) stops.push({ end: true, pending: true });
+  if (ended) stops.push({ lane: 0, end: true, fail: ended.event === 'StopFailure', seq: ended.seq, prev: stops.reduce((p, s) => s.lane === 0 ? s.i : p, undefined) });
+  else if (live && !stops.some(s => s.run && s.lane === 0)) stops.push({ lane: 0, end: true, pending: true, prev: stops.reduce((p, s) => s.lane === 0 ? s.i : p, undefined) });
 
-  const SH = H - 50 - 48, PADX = 46, ROWH = 76, TOPY = 20;
-  const maxRows = Math.max(1, Math.floor((SH - TOPY - 44) / ROWH) + 1);
-  const gap = s => s.small ? 24 : s.end ? 58 : 72;
-  const place = list => {
-    let x = PADX, dir = 1, row = 0; const pts = [];
-    list.forEach((s, i) => {
-      let turn = 0;
-      if (i) { const nx = x + dir * gap(s); if (nx > W - PADX || nx < PADX) { turn = dir; row++; dir = -dir; } else x = nx; }
-      pts.push({ x, y: TOPY + row * ROWH, turn });
-    });
-    return { pts, rows: row + 1 };
-  };
-  let from = 0, L = place(stops);
-  while (L.rows > maxRows && from < stops.length - 1) { from += Math.max(1, Math.ceil(stops.length * 0.08)); L = place(stops.slice(from)); }
-  const shown = stops.slice(from), P = L.pts;
-  let svg = `<svg class="metro" width="${W}" height="${SH}" viewBox="0 0 ${W} ${SH}">`;
-  for (let i = 1; i < shown.length; i++) {
-    const a = P[i - 1], b = P[i], s = shown[i];
-    const col = s.end ? (s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)') : `var(--s-${s.st})`;
-    const d = b.turn ? `M${a.x.toFixed(1)} ${a.y}A${ROWH / 2} ${ROWH / 2} 0 0 ${b.turn > 0 ? 1 : 0} ${b.x.toFixed(1)} ${b.y}` : `M${a.x.toFixed(1)} ${a.y}L${b.x.toFixed(1)} ${b.y}`;
-    svg += `<path class="ml ${s.run || s.pending ? 'flow' : ''}" d="${d}" style="stroke:${col}"/>`;
+  const PADX = 36, LANEH = 74, TOPY = 20;
+  let x = PADX;
+  stops.forEach((s, i) => { if (i) x += s.small ? 24 : s.end ? 58 : 80; s.x = x; s.y = TOPY + s.lane * LANEH; });
+  const SW = Math.max(W, x + PADX + 20), SH = TOPY + R.maxLane * LANEH + 50;
+  const P = (s, k) => `${s.x.toFixed(1)} ${s.y}`;
+  const curve = (a, b) => { const m = ((a.x + b.x) / 2).toFixed(1); return `M${P(a)}C${m} ${a.y} ${m} ${b.y} ${P(b)}`; };
+  let svg = `<svg class="metro" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}">`;
+  // branch lane guides
+  for (const b of R.branches.values()) svg += `<text class="bl" x="4" y="${TOPY + b.lane * LANEH + 4}">↳</text>`;
+  for (const s of stops) {
+    const col = s.end ? (s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)') : s.lane ? 'var(--s-agents)' : `var(--s-${s.st})`;
+    if (s.fork != null) svg += `<path class="ml br" d="${curve(stops[s.fork], s)}"/>`;
+    else if (s.prev != null) svg += `<path class="ml ${s.lane ? 'br' : ''} ${s.run || s.pending ? 'flow' : ''}" d="M${P(stops[s.prev])}L${P(s)}" style="stroke:${col}"/>`;
+    if (s.merge != null) svg += `<path class="ml br" d="${curve(stops[s.merge], s)}"/>`;
   }
-  shown.forEach((s, i) => {
-    const { x, y } = P[i];
-    if (s.small) { svg += `<path class="md" d="M${x.toFixed(1)} ${y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; return; }
+  // a branch that is still running: dashed tail from its last stop toward "now"
+  const lastOnLane = {};
+  for (const s of stops) if (s.lane) lastOnLane[s.lane] = s;
+  for (const b of R.branches.values()) {
+    if (b.closed) continue;
+    const s = lastOnLane[b.lane];
+    if (s && b.run) svg += `<path class="ml br flow" d="M${P(s)}L${(x + 30).toFixed(1)} ${s.y}"/>`;
+  }
+  for (const s of stops) {
+    if (s.small) { svg += `<path class="md" d="M${s.x.toFixed(1)} ${s.y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; continue; }
     if (s.end) {
       const col = s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)';
-      svg += `<g class="stop" transform="translate(${x.toFixed(1)},${y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
+      svg += `<g class="stop" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
         <text class="sl" y="31">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="43">${esc(fmtDur((ended ? tms(ended) : sn) - Date.parse(t.start)))}</text></g>`;
-      return;
+      continue;
     }
-    const arg = String(s.sub ?? ''), subTxt = s.run ? `running ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
-    svg += `<g class="stop ${s.fail ? 'fail' : ''}" transform="translate(${x.toFixed(1)},${y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
-      <circle class="sn" r="12"/>${svgIcon(s.st, -7.4, -7.4, 0.62)}${s.run ? '<circle class="ring" r="17"/>' : ''}
-      <text class="sl" y="28">${esc(trunc(s.label, 11))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="40">${esc(trunc(subTxt, 12))}</text>
+    const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
+    const r = s.lane && !s.branch ? 10 : 12;
+    svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
+      <circle class="sn" r="${r}"/>${svgIcon(s.st, -r * 0.62, -r * 0.62, (r * 0.052).toFixed(3))}${s.run ? `<circle class="ring" r="${r + 5}"/>` : ''}
+      <text class="sl" y="${r + 16}">${esc(trunc(s.label, 12))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="${r + 28}">${esc(trunc(subTxt, 12))}</text>
       <title>${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
-  });
+  }
   svg += '</svg>';
+  const nb = R.branches.size;
   const state2 = live ? '<span class="dot busy"></span>running' : ended ? (ended.event === 'StopFailure' ? '<span class="err">✕</span> failed' : '<span style="color:var(--ok)">✓</span> done') : '<span class="dot"></span>unfinished';
   const head = `<div class="lhead"><div class="lp">${t.prompt !== null ? esc(short(t.prompt, 240)) : '<span class="muted">Session start</span>'}</div>
-    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${steps} steps · ${tools} tools</span>${errs ? `·<span class="err">${errs} problems</span>` : ''}${from ? `·<span>last ${shown.length} of ${stops.length} stops</span>` : ''}
+    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
     <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Follow latest</button>' : '<span>following latest turn</span>'}</div></div>`;
   const idx = TURNS.indexOf(t), prev = TURNS.slice(Math.max(0, idx - 5), idx).filter(p => Date.parse(p.start) <= lim);
   const hist = `<div class="lhist"><span class="muted">earlier</span>${prev.map(p => {
-    const dots = p.events.filter(e => e.event === 'PreToolUse').slice(0, 14).map(e => `<i style="background:var(--s-${stationOf(e)})"></i>`).join('');
+    const dots = p.events.filter(e => e.event === 'PreToolUse' && e.data?.agent_id == null).slice(0, 14).map(e => `<i style="background:var(--s-${stationOf(e)})"></i>`).join('');
     return `<button class="ht ${p.errors ? 'bad' : ''}" data-key="${esc(p.key)}" title="${esc(short(p.prompt, 120))}">${fmtTime(p.start)}<span class="dots">${dots}</span></button>`;
   }).join('') || '<span class="muted">—</span>'}</div>`;
-  return head + svg + hist;
+  return head + `<div class="mscroll" style="height:${H - 50 - 48}px">${svg}</div>` + hist;
 }
 
 // ---------------------------------------------------------------- feed
