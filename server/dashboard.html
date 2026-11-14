@@ -109,6 +109,12 @@
   .cspark { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 0; font-size: 11px; color: var(--muted); }
 
   .lhead { height: 50px; display: flex; flex-direction: column; gap: 4px; }
+  .lhead.live { height: 70px; }
+  /* what the running turn is doing right now, and the model's latest words */
+  .lhead .la { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .lhead .la b { color: var(--s-model); font-weight: 600; }
+  .lhead .la .act { color: var(--text); }
+  .metro .md.said { stroke: var(--text); stroke-width: 1.5; }
   .lhead .lp { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .lhead .lm { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; }
   .lhead .grow { flex: 1; }
@@ -124,6 +130,10 @@
   .metro .ml.on { opacity: 1; stroke-width: 8; }
   .metro .ml.br.on { stroke-width: 7; }
   .metro .stop.on .sn { stroke-width: 4; }
+  /* the stop for the event row hovered in the details panel */
+  .metro .pin { filter: drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 9px var(--accent)); }
+  .metro .stop.pin .sn { stroke-width: 5; }
+  .metro .md.pin { stroke: var(--text); stroke-width: 2; }
   .metro .tdiv { cursor: pointer; }
   .metro .tdiv line { stroke: var(--line); stroke-width: 1; }
   .metro .tdiv text { fill: var(--muted); font-size: 14px; }
@@ -238,6 +248,26 @@
   .erow .dur { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
   .erow.hit .frow { background: var(--accent-bg); }
   .erow.open .frow { background: var(--panel-2); }
+  /* opened model-step row: why it stopped, which tools it called, what it wrote, what filled its context */
+  .evx { margin: 4px 0 10px 22px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; }
+  .evx .k { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .evx .hd { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+  .evx .hd b { font-weight: 600; }
+  .evx .tu { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line-2); font-size: 12px; }
+  .evx .tu:first-of-type { border-top: 0; }
+  .evx .tu .n { display: inline-flex; gap: 5px; align-items: center; font-weight: 600; }
+  .evx .tu .a { font-family: var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .evx .tu .r { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .evx .said { white-space: pre-wrap; max-height: 180px; overflow: auto; border-left: 2px solid var(--s-model); padding: 2px 0 2px 9px; }
+  .evx .said .th { color: var(--muted); font-style: italic; }
+  .tokbar { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--line-2); }
+  .tokbar i { display: block; height: 100%; }
+  .toklg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+  .toklg span { display: inline-flex; align-items: center; gap: 5px; }
+  .toklg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .toklg b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .evx details summary { cursor: pointer; color: var(--muted); font-size: 11.5px; }
+  .evx details pre.raw { margin: 6px 0 0; }
   pre.raw { margin: 4px 0 10px 22px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
   .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
 
@@ -377,7 +407,7 @@ function stationOf(ev) {
   const d = ev.data || {};
   let s = null;
   switch (ev.event) {
-    case 'ModelStep': s = 'model'; break;
+    case 'ModelStep': case 'ModelText': s = 'model'; break;
     case 'UserPromptSubmit': case 'UserPromptExpansion': case 'Elicitation': case 'ElicitationResult':
     case 'PermissionRequest': case 'PermissionDenied': s = 'you'; break;
     case 'PreToolUse': case 'PostToolUse': case 'PostToolUseFailure': s = toolStation(d.tool_name, d.tool_input); break;
@@ -410,6 +440,7 @@ function describe(ev) {
   const d = ev.data || {}, tool = d.tool_name;
   switch (ev.event) {
     case 'ModelStep': return [d.subagent ? 'Subagent' : 'Model', d.tools && d.tools.length ? 'calls ' + d.tools.map(toolLabel).join(', ') : `${d.stop_reason === 'end_turn' ? 'replied' : 'thought'}${d.tokens?.output ? ' · ' + fmtN(d.tokens.output) + ' output tokens' : ''}`];
+    case 'ModelText': return [d.subagent ? 'Subagent' : 'Model', (d.kind === 'thinking' ? 'thinking: ' : '') + d.text];
     case 'UserPromptSubmit': return ['You', d.prompt];
     case 'UserPromptExpansion': return ['Expanded', d.prompt || d.expanded_prompt];
     case 'PreToolUse': case 'PostToolUse': {
@@ -645,11 +676,12 @@ function boardHtml() {
 function routeModel(t, lim) {
   const evs = t.events.filter(e => tms(e) <= lim);
   const stops = [], open = new Map(), branches = new Map(), pendingAgent = [];
-  let steps = 0, tools = 0, errs = 0, ended = null, maxLane = 0, mainLast;
+  let steps = 0, tools = 0, errs = 0, ended = null, maxLane = 0, mainLast, say = null, lastTs = 0;
+  const lastStep = new Map(); // lane (branch id or 'main') → its latest model-step stop, which gets the text it wrote
   // every lane keeps its own left→right position (px along the unwrapped route), so a busy subagent
   // never pushes the main line or the other subagents apart
   const add = s => {
-    s.i = stops.length; s.br = br0;
+    s.i = stops.length; s.br = br0; s.seqs = s.seq != null ? [s.seq] : [];
     const p = br0 ? br0.last : mainLast, ps = p != null ? stops[p] : null;
     s.prev = p; s.pos = ps ? ps.pos + routeGap(ps, s) : 0;
     if (br0) br0.last = s.i; else mainLast = s.i;
@@ -659,12 +691,20 @@ function routeModel(t, lim) {
   const branchOf = d => { const b = d.agent_id != null && branches.get(String(d.agent_id)); return b && !b.closed ? b : null; };
   for (const ev of evs) {
     const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d);
+    lastTs = Math.max(lastTs, tms(ev));
     br0 = br;
     switch (ev.event) {
       case 'UserPromptSubmit': br0 = null; add({ st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
       case 'ModelStep':
         if (d.subagent && !br) break; // internal helper agents with no branch: not part of the route
-        steps++; add({ st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) }); break;
+        steps++; lastStep.set(br ? br.id : 'main', add({ st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) })); break;
+      case 'ModelText': {
+        if (d.subagent && !br) break;
+        const tx = { text: String(d.text || ''), kind: d.kind, ts: tms(ev) }, ls = lastStep.get(br ? br.id : 'main');
+        if (ls) { ls.said = (ls.said ? ls.said + ' ' : '') + (tx.kind === 'thinking' ? '(thinking) ' : '') + tx.text; ls.seqs.push(ev.seq); }
+        if (br) br.say = tx; else say = tx;
+        break;
+      }
       case 'PreToolUse': {
         tools++;
         const s = add({ st, label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
@@ -674,7 +714,7 @@ function routeModel(t, lim) {
       }
       case 'PostToolUse': case 'PostToolUseFailure': {
         const s = open.get(d.tool_use_id);
-        if (s) { open.delete(d.tool_use_id); s.dur = ev.duration_ms ?? tms(ev) - s.a; s.seq = ev.seq; s.tip = evTip(ev); if (ev.event === 'PostToolUseFailure') { s.fail = true; errs++; } }
+        if (s) { open.delete(d.tool_use_id); s.dur = ev.duration_ms ?? tms(ev) - s.a; s.seq = ev.seq; s.seqs.push(ev.seq); s.tip = evTip(ev); if (ev.event === 'PostToolUseFailure') { s.fail = true; errs++; } }
         break;
       }
       case 'SubagentStart': {
@@ -712,7 +752,7 @@ function routeModel(t, lim) {
     taken[k].push([a, z]); b.lane = k; maxLane = Math.max(maxLane, k);
   }
   for (const s of stops) s.lane = s.br ? s.br.lane : 0;
-  return { stops, branches, steps, tools, errs, ended, maxLane, mainLast };
+  return { stops, branches, steps, tools, errs, ended, maxLane, mainLast, say, lastTs };
 }
 // spacing between two consecutive stops on one lane
 const routeW = s => s.small ? 24 : s.end ? 58 : 80;
@@ -826,16 +866,16 @@ function routeHtml() {
   // subagent still running: short dashed tail from its last stop
   for (const i of tails) { const s = stops[i]; if (s) svg += `<path class="ml br flow${dim(s)}" data-ln="${lnKey(s)}" d="M${P(s)}l${Math.min(30, RE - s.x)} 0"/>`; }
   for (const s of stops) {
-    if (s.small) { svg += `<path class="md${dim(s)}" data-ln="${sl(s)}" d="M${s.x.toFixed(1)} ${s.y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}</title></path>`; continue; }
+    if (s.small) { svg += `<path class="md${s.said ? ' said' : ''}${dim(s)}" data-ln="${sl(s)}" data-seqs="${(s.seqs || []).join(' ')}" d="M${s.x.toFixed(1)} ${s.y - 5}l5 5l-5 5l-5 -5z" style="fill:var(--s-${s.st})" data-seq="${s.seq}"><title>${s.tip}${s.said ? '\n\n' + esc(short(s.said, 600)) : ''}</title></path>`; continue; }
     if (s.end) {
       const col = s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)';
-      svg += `<g class="stop${dim(s)}" data-ln="${sl(s)}" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
-        <text class="sl" y="-33">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="-21">${esc(fmtDur(s.dur))}</text></g>`;
+      svg += `<g class="stop${dim(s)}" data-ln="${sl(s)}" data-seqs="${s.seq ?? ''}" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
+        ${s.pending ? `<title>${esc(routeActivity(models.get(s.turn), sn))}</title>` : ''}<text class="sl" y="-33">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="-21">${esc(fmtDur(s.dur))}</text></g>`;
       continue;
     }
     const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
     const r = s.lane && !s.branch ? 10 : 12;
-    svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}${dim(s)}" data-ln="${sl(s)}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
+    svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}${dim(s)}" data-ln="${sl(s)}" data-seqs="${(s.seqs || []).join(' ')}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
       <circle class="sn" r="${r}"/>${svgIcon(s.st, -r * 0.62, -r * 0.62, (r * 0.052).toFixed(3))}${s.run ? `<circle class="ring" r="${r + 5}"/>` : ''}
       <text class="sl" y="${s.lane ? r + 16 : -r - 20}">${esc(trunc(s.label, 12))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="${s.lane ? r + 28 : -r - 8}">${esc(trunc(subTxt, 12))}</text>
       <title>${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
@@ -854,12 +894,23 @@ function stopLn(stops) {
   for (const s of stops) { if (s.fork != null) add(s.fork, lnKey(s)); if (s.merge != null) add(s.i, lnKey(stops[s.merge])); }
   return s => lnKey(s) + (extra.get(s.i) || '');
 }
-let hoverLn = null;
+// hoverSeq: an event row hovered in the details panel; its stop on the route is lit up, everything else fades
+let hoverLn = null, hoverSeq = null;
+const seqStop = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
 function applyHover() {
   const svg = $('alt').querySelector('svg.metro'); if (!svg) return;
-  svg.classList.toggle('hl', !!hoverLn);
-  for (const e of svg.querySelectorAll('.on')) e.classList.remove('on');
+  const pin = hoverSeq != null ? seqStop(svg, hoverSeq) : null;
+  svg.classList.toggle('hl', !!hoverLn || !!pin);
+  for (const e of svg.querySelectorAll('.on, .pin')) e.classList.remove('on', 'pin');
   if (hoverLn) for (const e of svg.querySelectorAll(`[data-ln~="${CSS.escape(hoverLn)}"]`)) e.classList.add('on');
+  if (pin) pin.classList.add('on', 'pin');
+}
+// bring the lit stop into view inside the route's scroll box, if it is outside it
+function revealPin() {
+  const sc = $('alt').querySelector('.mscroll'), svg = sc?.querySelector('svg.metro'), el = svg && hoverSeq != null ? seqStop(svg, hoverSeq) : null;
+  if (!el) return;
+  const a = sc.getBoundingClientRect(), b = el.getBoundingClientRect();
+  if (b.top < a.top + 20 || b.bottom > a.bottom - 20) sc.scrollTop += b.top - a.top - a.height / 2;
 }
 
 // polyline with rounded corners
@@ -877,22 +928,36 @@ function routePoly(pts) {
   return d + `L${P(pts[pts.length - 1])}`;
 }
 
+// what a running turn is doing right now: running tools on the main line, subagents still working,
+// a permission prompt waiting on you, or — with nothing else in flight — the model generating its next step
+function routeActivity(R, sn) {
+  if (!R) return '';
+  const parts = [], runBr = [...R.branches.values()].filter(b => !b.closed && b.run);
+  for (const s of R.stops) if (s.run && !s.br) parts.push(`running ${s.label}${s.sub ? ' ' + trunc(base(String(s.sub)), 40) : ''} · ${fmtDur(sn - s.a)}`);
+  if (runBr.length) parts.push(`${runBr.length} subagent${runBr.length > 1 ? 's' : ''} working`);
+  const lastMain = R.mainLast != null ? R.stops[R.mainLast] : null;
+  if (!parts.length) parts.push(lastMain?.label === 'Permission' ? 'waiting for your permission' : `model generating · ${fmtDur(Math.max(0, sn - R.lastTs))} since last step`);
+  return parts.join(' · ');
+}
+
 // header + scroll box + turn navigator around a drawn route
 function routeFrame(t, pinned, sess, models, lim, H, svg, fy) {
   const R = models.get(t.key) || routeModel(t, lim), ended = R.ended;
   const live = !ended && (state.cursor != null || turnRunning(t));
   const nb = R.branches.size;
   const state2 = live ? '<span class="dot busy"></span>running' : ended ? (ended.event === 'StopFailure' ? '<span class="err">✕</span> failed' : '<span style="color:var(--ok)">✓</span> done') : '<span class="dot"></span>unfinished';
-  const head = `<div class="lhead"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
+  // live: what it is doing now, and the latest thing the model wrote in this turn
+  const sn = simNow(), now = live ? `<div class="la"><b>Now:</b> <span class="act">${esc(routeActivity(R, sn))}</span>${R.say ? ` · “${esc(short(R.say.text, 220))}” <span class="muted">${agoMs(sn - R.say.ts)} ago</span>` : ''}</div>` : '';
+  const head = `<div class="lhead${live ? ' live' : ''}"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
     <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
-</div></div>`;
+</div>${now}</div>`;
   // turn navigator: previous / next turn, position, and a way back to the live (latest) turn
   const list = sess, idx = list.indexOf(t);
   const prevT = list[idx - 1], nextT = list[idx + 1];
   const nav = (p, txt) => p ? `<button class="seg" data-key="${esc(p.key)}" title="${esc(fmtTime(p.start) + ' · ' + short(p.prompt ?? 'Session start', 120))}">${txt}</button>` : `<button class="seg" disabled>${txt}</button>`;
   const hist = `<div class="lhist">${nav(prevT, '‹ Previous turn')}<span class="muted">Turn <b style="color:var(--text)">${idx + 1}</b> of ${list.length}</span>${nav(nextT, 'Next turn ›')}
     <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Back to latest ⟳</button>' : '<span class="muted"><span class="dot busy"></span> showing the latest turn · updates live</span>'}</div>`;
-  return head + `<div class="mscroll" data-focus="${esc(t.key)}" data-fy="${isFinite(fy) ? fy : 0}" style="height:${H - 50 - 48}px">${svg}</div>` + hist;
+  return head + `<div class="mscroll" data-focus="${esc(t.key)}" data-fy="${isFinite(fy) ? fy : 0}" style="height:${H - (live ? 70 : 50) - 48}px">${svg}</div>` + hist;
 }
 
 // ---------------------------------------------------------------- feed
@@ -1075,6 +1140,41 @@ function colourKey() {
   return `<details class="key"><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
     <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
 }
+// ---- an opened event row: a readable card for model steps, the raw hook payload for everything else
+const rawPre = e => `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${esc(JSON.stringify(e.data, null, 2))}</pre>`;
+function evOpenHtml(e, t) { return e.event === 'ModelStep' ? stepCard(e, t) : rawPre(e); }
+const STOP_WHY = { tool_use: 'stopped to call tools', end_turn: 'finished its reply', max_tokens: 'hit the output token limit', stop_sequence: 'hit a stop sequence', pause_turn: 'paused a long-running turn', refusal: 'refused' };
+// the events that belong to one model step: by message id (tool_use ids for tools), or — for steps logged
+// before those ids were recorded — the events of the same agent that follow it, up to its next step
+function stepParts(e, t) {
+  const d = e.data || {}, evs = t.events, sameAgent = x => (x.data?.agent_id ?? null) === (d.agent_id ?? null);
+  const i = evs.indexOf(e), after = [];
+  for (let j = i + 1; j < evs.length; j++) { const x = evs[j]; if (x.event === 'ModelStep' && sameAgent(x)) break; if (sameAgent(x)) after.push(x); }
+  const byId = new Map(); for (const x of evs) if ((x.event === 'PreToolUse' || x.event.startsWith('PostToolUse')) && x.data?.tool_use_id) { const o = byId.get(x.data.tool_use_id) || {}; o[x.event === 'PreToolUse' ? 'pre' : 'post'] = x; byId.set(x.data.tool_use_id, o); }
+  let calls;
+  if (d.tool_ids?.length) calls = d.tool_ids.map((id, k) => ({ name: d.tools[k], ...(byId.get(id) || {}) }));
+  else calls = after.filter(x => x.event === 'PreToolUse').map(x => ({ name: x.data.tool_name, guess: true, ...(byId.get(x.data.tool_use_id) || { pre: x }) }));
+  const texts = d.msg_id ? evs.filter(x => x.event === 'ModelText' && x.data?.msg_id === d.msg_id) : after.filter(x => x.event === 'ModelText');
+  return { calls, texts };
+}
+function stepCard(e, t) {
+  const d = e.data || {}, k = d.tokens || {}, ctx = k.context || 0;
+  const win = ctx > 200000 || /\[1m\]|-1m/i.test(d.model || '') ? 1000000 : (state.sessions.get(e.session_id)?.context?.window || 200000);
+  const { calls, texts } = stepParts(e, t);
+  const why = STOP_WHY[d.stop_reason] || (d.stop_reason ? d.stop_reason : 'no stop reason (still writing, or an intermediate line)');
+  const head = `<div class="hd"><b>${esc(d.subagent ? 'Subagent' : 'Main agent')}</b><span class="muted">${esc(d.model || '?')}</span><span>${esc(why)}</span></div>`;
+  const tools = calls.length ? `<div><div class="k">Tools it asked for${calls.some(c => c.guess) ? ' <span style="text-transform:none;letter-spacing:0">(matched by order; older log)</span>' : ''}</div>${calls.map(c => {
+      const st = toolStation(c.name, c.pre?.data?.tool_input), x = c.post || c.pre, fail = c.post?.event === 'PostToolUseFailure';
+      const res = fail ? '<span class="err">✕ failed</span>' : c.post ? `✓ ${esc(fmtDur(c.post.duration_ms ?? tms(c.post) - tms(c.pre || c.post)))}` : c.pre ? '<span class="busy">running…</span>' : '<span class="muted">no hook event</span>';
+      return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.name))}</span><span class="a" title="${esc(short(toolArg(x?.data || {}), 400))}">${esc(toolArg(x?.data || {}) || '')}</span><span class="r">${res}</span></div>`;
+    }).join('')}</div>` : d.stop_reason === 'tool_use' ? '<div class="muted">Asked for a tool, but the call isn\'t in the log yet.</div>' : '';
+  const said = texts.length ? `<div><div class="k">What it wrote</div><div class="said">${texts.map(x => x.data.kind === 'thinking' ? `<span class="th">thinking: ${esc(x.data.text)}</span>` : esc(x.data.text)).join('\n\n')}</div></div>` : '';
+  const seg = [['cache_read', 'read from cache', 'var(--s-context)'], ['cache_write', 'written to cache', 'var(--s-model)'], ['input', 'uncached input', 'var(--accent)']];
+  const bar = `<div><div class="k">Context · ${fmtN(ctx)} of ${fmtN(win)} (${Math.round(100 * ctx / win)}%)</div><div class="tokbar">${seg.map(([f, , c]) => k[f] ? `<i style="width:${(100 * k[f] / win).toFixed(2)}%;background:${c}"></i>` : '').join('')}</div>
+    <div class="toklg">${seg.map(([f, l, c]) => `<span><i style="background:${c}"></i>${l} <b>${fmtN(k[f] || 0)}</b></span>`).join('')}<span>output <b>${fmtN(k.output || 0)}</b></span></div></div>`;
+  return `<div class="evx">${head}${tools}${said}${bar}<details><summary>Raw payload</summary>${rawPre(e)}</details></div>`;
+}
+
 function renderDetail() {
   const el = $('detail'); const top = el.scrollTop;
   const t = state.turnSel && TURNS.find(x => x.key === state.turnSel);
@@ -1085,10 +1185,10 @@ function renderDetail() {
   const done = new Set(t.events.filter(e => e.event === 'PostToolUse' || e.event === 'PostToolUseFailure').map(e => e.data?.tool_use_id).filter(Boolean));
   const running = turnRunning(t);
   const fa = filtersActive();
-  const rows = t.events.filter(e => !(e.event === 'PreToolUse' && done.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !isToolStep(e) && !(e.event === 'Stop' && t.answer)).map(e => {
+  const rows = t.events.filter(e => !(e.event === 'PreToolUse' && done.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !(e.event === 'Stop' && t.answer)).map(e => {
     const isRun = running && e.event === 'PreToolUse' && !done.has(e.data?.tool_use_id);
     const open = state.evOpen.has(e.seq);
-    return `<div class="erow ${open ? 'open' : ''} ${fa && evMatches(e) ? 'hit' : ''}" id="ev-${e.seq}">${feedRow(e, isRun, { dur: true })}${open ? `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${esc(JSON.stringify(e.data, null, 2))}</pre>` : ''}</div>`;
+    return `<div class="erow ${open ? 'open' : ''} ${fa && evMatches(e) ? 'hit' : ''}" id="ev-${e.seq}">${feedRow(e, isRun, { dur: true })}${open ? evOpenHtml(e, t) : ''}</div>`;
   }).join('');
   const s = state.sessions.get(t.sid);
   const dur = Date.parse(t.end) - Date.parse(t.start);
@@ -1189,6 +1289,10 @@ function insertEvent(ev) {
   return i === a.length - 1;
 }
 function takeEvent(ev) {
+  // the server re-sends a model step when later transcript lines add its tool calls: update it in place
+  if (ev.seq != null) for (let a = state.events, i = a.length - 1, n = 0; i >= 0 && n < 4000; i--, n++) if (a[i].seq === ev.seq) {
+    a[i].data = ev.data; schedule('turns', 'mid', 'map', 'detail'); markStage(); return;
+  }
   const atEnd = insertEvent(ev);
   if (state.cursor == null) {
     if (atEnd) applyEvent(ev); else rebuildMap(); // late model step: rebuild
@@ -1255,6 +1359,11 @@ function initControls() {
     if (k !== hoverLn) { hoverLn = k; applyHover(); }
   });
   $('alt').addEventListener('mouseleave', () => { if (hoverLn) { hoverLn = null; applyHover(); } });
+  $('detail').addEventListener('mouseover', e => {
+    const row = e.target.closest('.frow[data-seq]'), k = row ? Number(row.dataset.seq) : null;
+    if (k !== hoverSeq) { hoverSeq = k; applyHover(); revealPin(); }
+  });
+  $('detail').addEventListener('mouseleave', () => { if (hoverSeq != null) { hoverSeq = null; applyHover(); } });
   $('alt').addEventListener('click', e => {
     if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
     const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
@@ -1276,7 +1385,7 @@ function initControls() {
     if (e.target.closest('#closeTurn')) { state.turnSel = null; renderDetail(); renderMid(); return; }
     if (e.target.closest('#prevTurn')) return stepTurn(-1);
     if (e.target.closest('#nextTurn')) return stepTurn(1);
-    if (e.target.closest('pre.raw')) return;
+    if (e.target.closest('pre.raw, .evx')) return;
     const r = e.target.closest('.erow'); if (!r) return;
     const seq = Number(r.id.slice(3)); state.evOpen.has(seq) ? state.evOpen.delete(seq) : state.evOpen.add(seq); renderDetail();
   };
