@@ -496,7 +496,7 @@ const state = {
   range: Number(ls.get('so.range', 86400000)), q: '', station: '', category: '', problems: false,
   cursor: null, playing: false, speed: Number(ls.get('so.speed', 5)), replayIdx: 0, lastTick: 0,
   paused: false, buffer: [], theme: ls.get('so.theme', 'auto'), connected: false, updated: null,
-  showRunning: true, layout: 'hub', lanesWin: Number(ls.get('so.lanesWin', 300000)),
+  showRunning: true, layout: 'hub', sel: { board: '', lanes: '' }, lanesWin: Number(ls.get('so.lanesWin', 300000)),
 };
 let TURNS = [], TURN_BY_SEQ = new Map();
 
@@ -768,7 +768,7 @@ function drawLanes() {
   const box = $('alt'), W = box.clientWidth, H = box.clientHeight - 28;
   if (W < 80 || H < 80) return;
   const sn = simNow(), win = state.lanesWin;
-  const key = [evEnd(), state.events.length, M.running.size, M.agents.size, win, W, H, state.station, state.category, state.problems, state.q, state.scope].join('|');
+  const key = [evEnd(), state.events.length, M.running.size, M.agents.size, win, W, H, state.sel.lanes, state.station, state.category, state.problems, state.q, state.scope].join('|');
   if (key !== lanes.key || altDirty || sn - lanes.anchor > win / 3 || sn < lanes.anchor) { altDirty = false; buildLanes(W, H, sn); lanes.key = key; }
   const g = $('lcontent'); if (g) g.setAttribute('transform', `translate(${(-(sn - lanes.anchor) * lanes.k).toFixed(1)},0)`);
 }
@@ -820,8 +820,8 @@ function buildLanes(W, H, sn) {
   h += `<svg class="lanes" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><clipPath id="lclip"><rect x="${GUT}" y="0" width="${plotW}" height="${H}"/></clipPath></defs>`;
   STATIONS.forEach((s, r) => {
     const y = yOf(s.id), n = M.counts[s.id] || 0, cy = y + rowH / 2;
-    h += `<g class="lane ${r % 2 ? '' : 'zebra'} ${n ? 'used' : ''} ${state.station === s.id ? 'sel' : ''}" data-st="${s.id}" style="color:var(--s-${s.id})"><rect class="lbg" x="0" y="${y.toFixed(1)}" width="${W}" height="${rowH.toFixed(1)}"/>
-      ${svgIcon(s.id, 6, cy - 7, 0.6)}<text class="ll" x="26" y="${(cy + 4).toFixed(1)}">${s.label}</text><text class="lc" x="${GUT - 8}" y="${(cy + 4).toFixed(1)}">${n || ''}</text><title>${s.label} — click to filter</title></g>`;
+    h += `<g class="lane ${r % 2 ? '' : 'zebra'} ${n ? 'used' : ''} ${state.sel.lanes === s.id ? 'sel' : ''}" data-st="${s.id}" style="color:var(--s-${s.id})"><rect class="lbg" x="0" y="${y.toFixed(1)}" width="${W}" height="${rowH.toFixed(1)}"/>
+      ${svgIcon(s.id, 6, cy - 7, 0.6)}<text class="ll" x="26" y="${(cy + 4).toFixed(1)}">${s.label}</text><text class="lc" x="${GUT - 8}" y="${(cy + 4).toFixed(1)}">${n || ''}</text><title>${s.label} — click to highlight</title></g>`;
   });
   const step = { 60000: 15000, 300000: 60000, 900000: 300000 }[win] || win / 4;
   for (let ago = 0; ago <= win + 1; ago += step) {
@@ -880,8 +880,8 @@ function boardHtml() {
     const n = M.counts[s.id] || 0, run = runBy[s.id], e = errs[s.id] || 0, L = last[s.id];
     const what = L ? esc(short(describe(L)[1] || describe(L)[0], 80)) : '';
     const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${agoMs(sn - tms(L))} · ${what}` : 'no activity';
-    const cls = [n && 'used', run && 'hot', state.station === s.id && 'sel', state.station && state.station !== s.id && 'dim'].filter(Boolean).join(' ');
-    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" title="${s.label} — click to filter">
+    const cls = [n && 'used', run && 'hot', state.sel.board === s.id && 'sel', state.sel.board && state.sel.board !== s.id && 'dim'].filter(Boolean).join(' ');
+    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" title="${s.label} — click to highlight">
       <div class="bh2">${icon(s.id)}<span class="nm">${s.label}</span>${e ? `<span class="x">✕${e}</span>` : ''}<span class="n">${n || '–'}</span></div>
       ${spark(bins[s.id] || new Array(BINS).fill(0), max)}<div class="ft ${run ? 'run' : ''}">${foot}</div></div>`;
   }
@@ -1419,7 +1419,8 @@ function initControls() {
     const q = e.target.closest('[data-seq]');
     if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
     const st = e.target.closest('[data-st]');
-    if (st) { state.station = state.station === st.dataset.st ? '' : st.dataset.st; $('station').value = state.station; refilter(); }
+    // Board / Lanes selections stay local to that view; they don't touch the global Station filter
+    if (st && state.sel[state.layout] !== undefined) { state.sel[state.layout] = state.sel[state.layout] === st.dataset.st ? '' : st.dataset.st; altDirty = true; lanes.key = ''; }
   });
   $('cats').onclick = e => {
     const c = e.target.closest('[data-cat]'); if (!c) return;
