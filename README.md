@@ -31,6 +31,70 @@ working, on **http://localhost:4800**. It doesn't touch `~/.claude`.
 | **A model step, opened in Details** | **A tool call with formatted output** |
 | ![Model-step card](docs/model-step.png) | ![Bash tool card](docs/tool-card.png) |
 
+### A real session, screen by screen
+
+These four screens come from one real 25-minute session recorded with the plugin. In nine
+turns it indexed this repo with the codebase-memory MCP server, ran two Explore subagents in
+parallel and then a Plan subagent, drove Chrome through Claude in Chrome, and loaded a skill.
+
+**Overview: the whole session at a glance**
+
+![Overview of a real session: stat tiles, turns chart, context chart and activity groups](docs/session-overview.jpg)
+
+* **Tiles** (top row): 9 turns, 66 tool calls (1m 19s spent inside tools), 63 model steps,
+  3 subagents, 0 problems, 25m 52s duration, context 67% full (133.9k of 200k), 5.07M tokens
+  in and 36.3k out.
+* **Turns**: one bar per turn. The tallest bar (over 4 minutes) is the turn that drove Chrome
+  and recorded a GIF. The green bar on the right is the turn still running.
+* **Context**: how the context window filled up during the session. It rises at each turn and
+  stays well under the dotted 80% line, so nothing was compacted.
+* **Activity by group**: every tool group in use, with its count and last-15-minutes
+  sparkline. **Browser** (17) is highlighted because a Claude in Chrome call is running right
+  now (the dot and the timer on the card). **MCP** (8) counts the codebase-memory calls,
+  **Agents** (6) the subagent calls, and **Skills** (1) the loaded `claude-in-chrome` skill.
+
+**Route: two subagents working in parallel**
+
+![Route of a turn where two Explore subagents run in parallel and hand back](docs/session-subagents.jpg)
+
+* The main line starts at **You** (the prompt) and runs along the top. The model makes two
+  **Agent** calls back to back, and each one forks down onto its own lane.
+* Each lane is one Explore subagent. Its stops are the tools it used, in order: `Bash`,
+  `Read` of `hook.js` and `server.js`, `Grep` over `dashboard.html`. The lanes wrap onto the
+  next row when the turn gets long.
+* At the end of each lane, **SubagentHandback** ("I found 24…", "I found 20…") is the
+  subagent's final report. The lanes rise back into the main line at **Explore back**, and the
+  turn ends at **done**.
+* **Details** (right) lists the same turn as rows in the order they started: the prompt, the
+  two Agent calls, both `started Explore` events, then each subagent's tool calls with their
+  run times.
+
+**Route and Details: an MCP call opened as a card**
+
+![Route of an MCP-heavy turn with a codebase-memory trace_path call opened in Details](docs/session-mcp.jpg)
+
+* Turn 1 is one straight main line, because the model did all the work itself: `Bash`, then
+  `ToolSearch` to load the MCP tools, then the orange MCP stops (`index_repository`,
+  `get_architecture`, `search_graph` ×2, `trace_path` ×2) and a final `Grep`.
+* The selected `trace_path` stop opens as a card in Details: the **input** the model sent
+  (project, `function_name: readNew`, `direction: outbound`, `depth: 4`) and the **output**
+  the MCP server returned, formatted as JSON. The header shows it took 22 ms and when the
+  model asked for it.
+* The faded turn below is the next one. Only the selected turn is drawn at full strength.
+
+**Chat: the same session as a conversation**
+
+![Chat view: a prompt, tool-call chips for the skill, ToolSearch and browser calls, and Claude's replies](docs/session-chat.jpg)
+
+* Your prompt ("1", choosing an option Claude offered) is on the right; Claude's replies are
+  on the left, with light markdown.
+* The chips between them are the tool calls in order: the `claude-in-chrome` **Skill**,
+  `ToolSearch` loading the browser tools, `tabs_context_mcp`, the `browser_batch` calls that
+  drive Chrome, `gif_creator export` and `tabs_close_mcp`. The colour of a chip shows its
+  tool group.
+* The divider line ("07:15:02 PM · 11 tools") starts each turn, and the **subagent done** chip
+  above it marks a subagent that finished in the previous turn.
+
 ## How it works
 
 ```
