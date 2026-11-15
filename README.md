@@ -8,7 +8,7 @@ prompts, every tool call (with timing), **skills loaded**, **questions Claude as
 failures, notifications, context compactions, model switches, file/cwd changes,
 token usage per session, and what the model wrote and which tools it asked for at each step.
 
-![Route view: a turn drawn as a metro line, two Explore subagents branching below and merging back](docs/session-subagents.jpg)
+![Route view: a turn drawn as a metro line, two Explore subagents branching below and merging back](docs/route.jpg)
 
 ## Quick start
 
@@ -25,51 +25,68 @@ Open **http://localhost:4777** (the server starts on the first session start), o
 **Just want to look?** `node scripts/demo.js` serves made-up sessions, one of them still
 working, on **http://localhost:4800**. It doesn't touch `~/.claude`.
 
-| Overview: charts and details for the session | Chat: the conversation as a messenger |
-|---|---|
-| ![Overview tab](docs/overview.png) | ![Chat tab](docs/chat.png) |
-| **A model step, opened in Details** | **A tool call with formatted output** |
-| ![Model-step card](docs/model-step.png) | ![Bash tool card](docs/tool-card.png) |
-
 ### A real session, screen by screen
 
-These four screens come from one real 25-minute session recorded with the plugin. In nine
-turns it indexed this repo with the codebase-memory MCP server, ran two Explore subagents in
-parallel and then a Plan subagent, drove Chrome through Claude in Chrome, and loaded a skill.
+Every screenshot in this README comes from one real session recorded with the plugin. In its
+first eleven turns it indexed this repo with the codebase-memory MCP server, ran two Explore
+subagents in parallel and then a Plan subagent, drove Chrome through Claude in Chrome, loaded
+a skill, and pushed this README.
 
 **Overview: the whole session at a glance**
 
-![Overview of a real session: stat tiles, turns chart, context chart and activity groups](docs/session-overview.jpg)
+![Overview of a real session: stat tiles, turns chart, context chart and activity groups](docs/overview.jpg)
 
-* **Tiles** (top row): 9 turns, 66 tool calls (1m 19s spent inside tools), 63 model steps,
-  3 subagents, 0 problems, 25m 52s duration, context 67% full (133.9k of 200k), 5.07M tokens
-  in and 36.3k out.
-* **Turns**: one bar per turn. The tallest bar (over 4 minutes) is the turn that drove Chrome
-  and recorded a GIF. The green bar on the right is the turn still running.
-* **Context**: how the context window filled up during the session. It rises at each turn and
-  stays well under the dotted 80% line, so nothing was compacted.
-* **Activity by group**: every tool group in use, with its count and last-15-minutes
-  sparkline. **Browser** (17) is highlighted because a Claude in Chrome call is running right
-  now (the dot and the timer on the card). **MCP** (8) counts the codebase-memory calls,
-  **Agents** (6) the subagent calls, and **Skills** (1) the loaded `claude-in-chrome` skill.
+* **Tiles** (top row): 11 turns, 81 tool calls (1m 52s spent inside tools), 75 model steps,
+  3 subagents, 0 problems, 32m 24s duration, context 78% full (155.1k of 200k), 6.86M tokens
+  in and 44.3k out.
+* **Turns**: one bar per turn, height = how long it ran. The tallest bar (over 4 minutes) is
+  the turn that drove Chrome and recorded a GIF. The small green bar on the right is the turn
+  still running.
+* **Context**: how the context window filled up. It climbs turn by turn and is now just under
+  the dotted 80% line; no compaction has happened yet.
+* **Activity by group**: one card per tool group, with its count, a last-15-minutes sparkline
+  and the latest call. **Browser** (22) is highlighted because a Claude in Chrome call is
+  running right now. **MCP** (8) counts the codebase-memory calls and **Agents** (6) the
+  subagent calls.
 
 **Route: two subagents working in parallel** (the screenshot at the top of this README)
 
 * The main line starts at **You** (the prompt) and runs along the top. The model makes two
   **Agent** calls back to back, and each one forks down onto its own lane.
 * Each lane is one Explore subagent. Its stops are the tools it used, in order: `Bash`,
-  `Read` of `hook.js` and `server.js`, `Grep` over `dashboard.html`. The lanes wrap onto the
-  next row when the turn gets long.
+  `Read` of `hook.js` and `server.js`, `Grep` and `Read` over `dashboard.html`. The lanes
+  wrap onto the next row when the turn gets long.
 * At the end of each lane, **SubagentHandback** ("I found 24…", "I found 20…") is the
-  subagent's final report. The lanes rise back into the main line at **Explore back**, and the
-  turn ends at **done**.
-* **Details** (right) lists the same turn as rows in the order they started: the prompt, the
-  two Agent calls, both `started Explore` events, then each subagent's tool calls with their
-  run times.
+  subagent's final report. The lanes rise back into the main line at **Explore back**, and
+  the turn ends at **done**.
+* **Details** (right) shows the turn's prompt and reply, then every event in the order it
+  started: the two Agent calls, both `started Explore` events, then each subagent's model
+  steps and tool calls with their run times.
 
-**Route and Details: an MCP call opened as a card**
+**A model step, opened in Details**
 
-![Route of an MCP-heavy turn with a codebase-memory trace_path call opened in Details](docs/session-mcp.jpg)
+![Model-step card: what the main agent wrote and how much of the context window it used](docs/model-step.jpg)
+
+* Clicking a **Model** row opens one API response of the main agent: who answered
+  (`claude-opus-5-5`, finished its reply) and **what it wrote**.
+* The **context** bar shows how full the window was at that step (77.7k of 200k, 39%), split
+  into input read from cache, written to cache, uncached input and output tokens.
+* The footer says when it happened, which agent it belongs to and its event number. The raw
+  transcript line stays folded under **Raw payload**.
+
+**A subagent's tool call, opened in Details**
+
+![Bash tool card: a command run by an Explore subagent with its formatted output](docs/tool-card.jpg)
+
+* This `Bash` call was made by one of the Explore subagents (see the footer: *subagent
+  Explore · effort medium · mode auto*). The header gives its run time (92 ms) and when the
+  model asked for it.
+* **Input** shows the command with shell highlighting and the description the model gave it
+  ("Count lines of key files"). **Output** shows what the command printed.
+
+**An MCP call, opened in Details**
+
+![Route of an MCP-heavy turn with a codebase-memory trace_path call opened in Details](docs/mcp-card.jpg)
 
 * Turn 1 is one straight main line, because the model did all the work itself: `Bash`, then
   `ToolSearch` to load the MCP tools, then the orange MCP stops (`index_repository`,
@@ -82,7 +99,7 @@ parallel and then a Plan subagent, drove Chrome through Claude in Chrome, and lo
 
 **Chat: the same session as a conversation**
 
-![Chat view: a prompt, tool-call chips for the skill, ToolSearch and browser calls, and Claude's replies](docs/session-chat.jpg)
+![Chat view: a prompt, tool-call chips for the skill, ToolSearch and browser calls, and Claude's replies](docs/chat.jpg)
 
 * Your prompt ("1", choosing an option Claude offered) is on the right; Claude's replies are
   on the left, with light markdown.
