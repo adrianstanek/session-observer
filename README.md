@@ -5,13 +5,10 @@
 See everything that happens in your Claude Code sessions on a live local dashboard:
 prompts, every tool call (with timing), **skills loaded**, **questions Claude asks you**
 (AskUserQuestion + MCP elicitations), subagents, tasks, MCP calls, permission prompts,
-failures, notifications, context compactions, model switches, file/cwd changes, and
-token usage per session.
+failures, notifications, context compactions, model switches, file/cwd changes,
+token usage per session, and what the model wrote and which tools it asked for at each step.
 
-![Live hub map and feed](docs/live-map.jpg)
-
-> The live hub map (Claude in the centre, stations around it, pulses along the spokes) is
-> based on [**lot-map** by alexeyw](https://github.com/alexeyw/lot-map). See [Credits](#credits).
+![Route view: a turn drawn as a metro line, subagents branching below](docs/route.png)
 
 ## Quick start
 
@@ -28,9 +25,9 @@ Open **http://localhost:4777** (the server starts on the first session start), o
 **Just want to look?** `node scripts/demo.js` serves made-up sessions, one of them still
 working, on **http://localhost:4800**. It doesn't touch `~/.claude`.
 
-| Session and turn details | Replaying an old turn |
+| A model step, opened in the turn's details | A tool call with formatted output |
 |---|---|
-| ![Session turns and turn detail](docs/session-turn.jpg) | ![Replay](docs/replay.jpg) |
+| ![Model-step card](docs/model-step.png) | ![Bash tool card](docs/tool-card.png) |
 
 ## How it works
 
@@ -74,23 +71,31 @@ The server starts automatically on the first `SessionStart`. Open
 Run it manually: `node server/server.js`.
 
 Dashboard:
-* filter bar — time range, full-text search, station, category, "only problems"
-* top — **live hub map** (based on [lot-map](https://github.com/alexeyw/lot-map)): Claude in
-  the centre with a context-window ring (amber ≥70 %, red ≥90 %), twelve stations around it
-  (You, Model, Files, Shell, Git, MCP, Network, Browser, Agents, Skills, Context, Other).
-  Every call pulses out along its spoke and back when it finishes (red on failure); spokes
-  thicken with use; running calls get clock hands (1 min / 10 min); subagents orbit Agents;
-  a dashed route joins the last stations visited; a ring leaves the core when a turn ends.
-  Beside it, the live feed (● running · done ✕ failed ◆ model step), then category chips and
-  a **replay** bar with one tick per turn — drag to scrub, ▶ Replay at ×1–×25, Live to return
-* bottom left — "All activity" plus every session in range (working / live / ended)
-* bottom middle — session stats and its turns (or, for All activity, open sessions and
-  recent turns across projects)
-* bottom right — the selected turn: prompt, reply, every event with its raw hook payload
-  (`[` / `]` step through turns, `Esc` closes)
+* filter bar — time range, full-text search, tool group, "only problems"
+* top panels — "All activity" plus every session in range (working / live / ended); session
+  stats and its turns; and the selected turn's details (`[` / `]` step through turns, `Esc`
+  closes)
+* stage — two views of the session, switched at its top left:
+  * **Route** — each turn drawn as a metro line. The main line runs along the top, starting
+    with your prompt; every model step (◆) and tool call is a stop. Each subagent forks
+    down from its Agent call onto its own lane and rises back into the main line when it
+    hands back. Long turns wrap onto the next row. Hover a line to highlight that branch.
+    While a turn runs, a **Now:** line says what it is doing (a running tool, subagents
+    working, waiting for your permission, or the model generating) and shows the model's
+    latest words
+  * **Board** — a card per tool group with counts, a 15-minute sparkline and what is
+    running now, around a core with the context-window gauge
+* turn details — prompt, reply and every event. Click a row to open it as a card: tool
+  calls show their input and output shaped per tool (coloured shell / Python / JavaScript
+  commands, Edit diffs, formatted JSON output); model steps show why the model stopped, the
+  tool calls it asked for, what it wrote and a context-window bar; subagents show the task
+  they were given. The raw hook payload stays folded under every card. Hovering a row
+  lights up its stop on the Route
+* bottom — event-type chips and a **replay** bar with one tick per turn: drag to scrub,
+  ▶ Replay at ×1–×25, Live to return
 
-Model steps come from the session transcript (each assistant API response), since hooks
-don't see them.
+Model steps, what the model wrote and the tool calls it asked for come from the session
+transcript (each assistant API response), since hooks don't see them.
 
 ## What's captured
 
@@ -105,8 +110,9 @@ PostModelSwitch, Elicitation, ElicitationResult, SessionEnd`.
 Token usage comes from the session transcript (`transcript_path`), including subagent
 transcripts, refreshed when a turn ends.
 
-Not visible to hooks: Claude's thinking and streaming text mid-turn (the final message of
-each turn is captured via `Stop`).
+The model's text (and thinking, when the transcript keeps it) is read from the transcript
+once each block is finished, so it shows up a moment after Claude writes it, not word by
+word. Thinking is often stored empty, in which case there is nothing to show.
 
 ## Config (env vars)
 
@@ -141,13 +147,12 @@ matches the version, and publishes a GitHub release with a zip and its SHA-256.
 
 ## Credits
 
-The hub map section of the dashboard is based on
+Earlier versions of the dashboard had a live hub map based on
 [**lot-map**](https://github.com/alexeyw/lot-map) by alexeyw (MIT), a Claude Code plugin that
-draws a live map of the session beside the chat. Session Observer rebuilds its design in the
-browser: the centre with a context-window ring, the stations around it, spokes that thicken with
-use, a pulse out and back for each call, clock hands on running calls, subagents orbiting the
-Agents station, the dashed route through recently visited stations, and the feed markers
-(● running · done ✕ failed ◆ model step). No code was copied, but the design is theirs.
+draws a live map of the session beside the chat. The hub map has since been replaced by the
+Route and Board views, but the idea of grouping tools into stations (You, Model, Files,
+Shell, Git, MCP, Network, Browser, Agents, Skills, Context, Other) and the event markers
+(● running · ✕ failed · ◆ model step) come from its design. No code was copied.
 
 ## License
 
