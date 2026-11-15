@@ -58,26 +58,25 @@
   .filters label > * { text-transform: none; letter-spacing: 0; font-size: 13px; }
   .filters .check { flex-direction: row; align-items: center; gap: 6px; padding-bottom: 6px; text-transform: none; font-size: 13px; color: var(--text); letter-spacing: 0; }
 
-  /* stage: route / board view + replay */
-  /* the stage fills the whole viewport, so scrolling to it gives one screen to navigate in */
-  .stage { box-sizing: border-box; height: calc(100vh - 20px); min-height: 520px; display: flex; flex-direction: column; gap: 12px;
-    padding: 18px 22px 16px; margin: 10px 0 14px; scroll-margin-top: 10px; }
-  .stage-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; flex: 1; min-height: 0; }
-  .stage #detail { overflow-y: auto; min-height: 0; padding: 4px 6px 4px 22px; border-left: 1px solid var(--line-2); }
-  .map-wrap { position: relative; min-height: 0; }
+  /* one screen, three columns: sessions | the selected view (overview / route / board / chat) + replay | details */
+  .stage { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 10px; min-height: 0; }
+  .map-wrap { position: relative; flex: 1; min-height: 0; }
+  #mid { position: absolute; inset: 0; overflow-y: auto; padding: 4px 4px 4px 2px; }
+  .stage[data-layout="overview"] #alt, .stage:not([data-layout="overview"]) #mid { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* layout switcher + alternative stage designs (board / route) */
-  .layouts { position: absolute; top: 0; left: 0; z-index: 2; display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
-  .layouts button { border: 0; border-radius: 0; background: transparent; padding: 3px 11px; font-size: 12px; color: var(--muted); }
+  .layouts { align-self: flex-start; display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
+  .layouts button { border: 0; border-radius: 0; background: transparent; padding: 4px 14px; font-size: 12.5px; color: var(--muted); }
   .layouts button + button { border-left: 1px solid var(--line); }
   .layouts button.cur { background: var(--accent-bg); color: var(--text); }
-  #alt { position: absolute; inset: 32px 0 0 0; }
+  #alt { position: absolute; inset: 0; }
   .seg { padding: 1px 8px; font-size: 11.5px; border-radius: 5px; }
   .seg.cur { border-color: var(--accent); background: var(--accent-bg); }
 
-  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; height: 100%; }
-  .bcard, .bcore { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+  .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .sgrid .bcard { height: 78px; }
+  .bcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; min-height: 0; overflow: hidden; position: relative; }
   .bcard { padding: 7px 10px 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
   .bcard:hover { border-color: var(--muted); }
   .bcard:not(.used) { opacity: .65; }
@@ -95,18 +94,44 @@
   .spark line { stroke: var(--line); vector-effect: non-scaling-stroke; }
   .bcard .ft { font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bcard .ft.run { color: var(--c); }
-  .bcore { grid-column: span 2; grid-row: span 2; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-  .bcore .ct { display: flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: .06em; }
-  .bcore .ct .state { margin-left: auto; letter-spacing: 0; }
-  .bcore .cm { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gauge { height: 8px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line-2); overflow: hidden; }
-  .gauge i { display: block; height: 100%; border-radius: 4px; }
-  .bcore .gl { display: flex; gap: 8px; font-size: 12px; align-items: baseline; }
-  .cstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .cstats div { display: flex; flex-direction: column; }
-  .cstats b { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .cstats span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .cspark { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 0; font-size: 11.5px; color: var(--muted); }
+  /* chat: the conversation as a messenger — your prompts on the right, the agent's replies on the left */
+  .chat { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 12px 16px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 10px; font-size: 14px; line-height: 1.5; }
+  .chat .cempty { margin: auto; color: var(--muted); }
+  .chat .csess { align-self: center; font-size: 12px; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 2px 12px; margin: 14px 0 4px; }
+  .chat .cturn { display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 10px; border-radius: 10px; border: 1px solid transparent; transition: background .12s; }
+  .chat .cturn:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+  .chat .cturn.sel { background: color-mix(in srgb, var(--accent) 7%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .chat .cturn.dim { opacity: .4; }
+  .chat .cth { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--muted); cursor: pointer; }
+  .chat .cth::before, .chat .cth::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+  .chat .cth:hover { color: var(--accent); }
+  .bub { max-width: 78%; padding: 9px 13px; border-radius: 16px; white-space: pre-wrap; word-break: break-word; cursor: pointer; position: relative; color: var(--text);
+    transition: opacity .12s, box-shadow .12s, transform .12s; }
+  .bub .bt { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .bub.me { align-self: flex-end; background: color-mix(in srgb, var(--s-you) 22%, var(--panel)); border: 1px solid color-mix(in srgb, var(--s-you) 55%, var(--line)); border-bottom-right-radius: 5px; }
+  .bub.me .bt { text-align: right; }
+  .bub.ai { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--s-model); border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgb(0 0 0 / .06); }
+  .bub.ai::before { content: 'Claude'; display: block; font-size: 11.5px; font-weight: 700; color: var(--s-model); margin-bottom: 2px; }
+  .bub.think { align-self: flex-start; background: transparent; border: 1px dashed var(--line); color: var(--muted); font-style: italic; font-size: 12.5px; max-height: 5.2em; overflow: hidden; }
+  .bub.think::before { content: 'thinking'; display: block; font-style: normal; font-size: 11px; font-weight: 600; color: var(--faint); }
+  .bub.fail { border-color: var(--err); background: var(--err-bg); }
+  .bub:hover { box-shadow: 0 0 0 2px var(--muted); }
+  .bub code { font: 12.5px var(--mono); background: color-mix(in srgb, var(--text) 9%, transparent); padding: 1px 4px; border-radius: 4px; }
+  .bub pre { font: 12.5px/1.45 var(--mono); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 7px 9px; margin: 5px 0; overflow-x: auto; white-space: pre; }
+  .ctools { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 5px; padding-left: 4px; max-width: 92%; }
+  .ctool { display: inline-flex; align-items: center; gap: 5px; font: 12px/1.6 var(--mono); color: var(--text); background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--c, var(--line)); border-radius: 6px; padding: 1px 9px 1px 6px; cursor: pointer; max-width: 320px; transition: opacity .12s, box-shadow .12s; }
+  .ctool .ic { width: 13px; height: 13px; color: var(--c); flex-shrink: 0; }
+  .ctool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ctool b { font-weight: 600; font-family: inherit; }
+  .ctool.fail { color: var(--err); border-color: var(--err); background: var(--err-bg); }
+  .ctool.run { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--panel)); }
+  .ctool:hover { box-shadow: 0 0 0 2px var(--muted); }
+  .ctyping { align-self: flex-start; color: var(--muted); font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; padding-left: 6px; }
+  /* linked hover: the item for the event row hovered in the details panel (or the chat item under the mouse) */
+  .chat.hl .bub:not(.pin), .chat.hl .ctool:not(.pin) { opacity: .3; }
+  .chat .pin { box-shadow: 0 0 0 2px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent) !important; opacity: 1 !important; }
+  .chat .bub.pin { transform: scale(1.01); }
+  #detail .erow.pin > .frow { background: var(--accent-bg); box-shadow: inset 3px 0 0 var(--accent); }
 
   .lhead { height: 50px; display: flex; flex-direction: column; gap: 4px; }
   .lhead.live { height: 70px; }
@@ -173,7 +198,7 @@
   .frow.fail .what { color: var(--err); }
   .ic { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
 
-  .cats { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 0 8px; border-top: 1px solid var(--line-2); margin-top: 8px; }
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0 0; border-top: 1px solid var(--line-2); }
   .cats .ttl { font-weight: 600; margin-right: 4px; display: inline-flex; gap: 5px; align-items: center; }
   .cats .chip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
@@ -189,8 +214,11 @@
   #rlabel b { color: var(--text); font-weight: 600; }
 
   /* top three panels: sessions · turns · details */
-  .panels { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 10px; height: max(480px, 62vh); margin-bottom: 10px; }
-  .panels > .panel { overflow-y: auto; min-height: 0; }
+  .panels { display: grid; grid-template-columns: 290px minmax(0, 1.7fr) minmax(340px, 1fr); gap: 10px; height: calc(100vh - var(--ptop, 130px) - 10px); min-height: 560px; }
+  .panels > .panel { min-height: 0; }
+  #sessions, #detail { overflow-y: auto; }
+  #sessions { overflow-x: hidden; }
+  #sessions .card { overflow-wrap: anywhere; }
   #sessions { padding: 10px; }
   .card { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; cursor: pointer; margin-bottom: 4px; }
   .card:hover { background: var(--panel-2); }
@@ -205,11 +233,11 @@
   .sess-list .card { border-color: transparent; border-bottom: 1px solid var(--line-2); border-radius: 6px; }
   .sess-list .card.sel { border-color: var(--accent); }
 
-  #mid, #detail { padding: 16px 18px; }
+  #detail { padding: 16px 18px; }
   #mid h2, #detail h2 { margin: 0 0 4px; font-size: 18px; }
   #detail h2 { font-size: 15px; }
   .lead { color: var(--muted); margin: 0 0 14px; word-break: break-word; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-bottom: 14px; }
   .tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
   .tile .l { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
   .tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -288,15 +316,49 @@
   .evx details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
   .evx details pre.raw { margin: 6px 0 0; }
   pre.raw { margin: 4px 0 10px 22px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
+  /* overview: charts + detail lists that replace the turn list */
+  .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; }
+  .vcard { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 12px; min-width: 0; }
+  .vcard.wide { grid-column: 1 / -1; }
+  .vcard > .vh { display: flex; align-items: baseline; gap: 8px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .vcard > .vh span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
+  .vcard > .vh .grow { flex: 1; }
+  .vcard .none { color: var(--muted); font-size: 12.5px; padding: 8px 0; }
+  svg.vchart { display: block; width: 100%; overflow: visible; }
+  .vchart .grid { stroke: var(--line-2); stroke-width: 1; }
+  .vchart .base { stroke: var(--line); stroke-width: 1; }
+  .vchart .ax { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .vchart .bar { fill: var(--accent); opacity: .55; }
+  .vchart .bar.run { fill: var(--ok); opacity: .8; }
+  .vchart .bar.sel { opacity: 1; }
+  .vchart .col:hover .bar, .vchart .col.cur .bar { opacity: 1; }
+  .vchart .col .hit { fill: transparent; cursor: pointer; }
+  .vchart .col.sel .hit { fill: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .vchart .x { fill: var(--err); font-size: 10px; font-weight: 700; text-anchor: middle; }
+  .vchart .ln { fill: none; stroke: var(--s-context); stroke-width: 2; stroke-linejoin: round; }
+  .vchart .win { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 3; }
+  .vchart .warn { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 2 3; opacity: .7; }
+  .vchart .xh { stroke: var(--muted); stroke-width: 1; }
+  .vchart .dot { fill: var(--s-context); stroke: var(--panel); stroke-width: 2; }
+  .vchart .ov { fill: transparent; cursor: crosshair; }
+  .vlist { display: flex; flex-direction: column; font-size: 12.5px; }
+  .vrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 4px 4px; border-bottom: 1px solid var(--line-2); align-items: baseline; border-radius: 4px; }
+  .vrow[data-seq], .vrow[data-key] { cursor: pointer; }
+  .vrow:hover { background: var(--panel-2); }
+  .vrow:last-child { border-bottom: 0; }
+  .vrow .a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vrow .a .d { color: var(--muted); }
+  .vrow .b { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12px; }
+  .vrow .b b { color: var(--text); font-weight: 600; }
+  .vrow.fail .a { color: var(--err); }
+  #vtip { position: fixed; z-index: 50; pointer-events: none; max-width: 360px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 7px;
+    padding: 6px 9px; font-size: 12px; line-height: 1.45; white-space: pre-line; box-shadow: 0 4px 14px rgb(0 0 0 / .18); display: none; }
+  #vtip b { font-weight: 600; }
   .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
 
   @media (max-width: 1200px) {
-    .stage { height: auto; }
-    .stage-grid { grid-template-columns: 1fr; flex: none; }
-    .stage #detail { max-height: 80vh; border-left: 0; padding: 12px 0 0; border-top: 1px solid var(--line-2); }
-    .map-wrap { height: 440px; }
-    .panels { grid-template-columns: 280px minmax(0, 1fr); height: auto; }
-    .panels > .panel { max-height: 80vh; }
+    .panels { grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: max(560px, 78vh) auto; height: auto; }
+    #detail { grid-column: 1 / -1; max-height: 80vh; }
   }
   @media (max-width: 760px) {
     body { padding: 0 8px 8px; }
@@ -304,8 +366,8 @@
     .filters .search { grid-column: 1 / -1; }
     .replay { grid-template-columns: auto minmax(0, 1fr) auto; }
     #rlabel, #speed { display: none; }
-    .panels { grid-template-columns: 1fr; }
-    .map-wrap { height: 400px; }
+    .panels { grid-template-columns: 1fr; grid-template-rows: auto 80vh auto; }
+    #sessions { max-height: 50vh; }
     .frow { grid-template-columns: 14px 70px minmax(0, 1fr); } .frow .who span { display: none; }
   }
 </style>
@@ -337,29 +399,23 @@
   <button id="clearFilters" style="margin-bottom:1px">Reset filters</button>
 </section>
 
-<section class="panels">
+<section class="panels" id="panels">
   <aside class="panel" id="sessions"></aside>
-  <main class="panel" id="mid"></main>
-</section>
-
-<section class="panel stage">
-  <div class="stage-grid">
-    <div class="map-wrap">
-      <div class="layouts" id="layouts" role="tablist" aria-label="Stage layout"></div>
-      <div id="alt"></div>
+  <main class="panel stage" id="center">
+    <div class="layouts" id="layouts" role="tablist" aria-label="View"></div>
+    <div class="map-wrap"><div id="mid"></div><div id="alt"></div></div>
+    <div class="cats" id="cats"></div>
+    <div class="replay">
+      <button id="play">▶ Replay</button>
+      <div id="track"><div class="rail"></div><div id="ticks"></div><div class="fill" id="fill"></div><div class="thumb" id="thumb"></div></div>
+      <div id="rlabel"></div>
+      <select id="speed" title="Replay speed">
+        <option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option>
+      </select>
+      <button id="live" class="on">Live</button>
     </div>
-    <aside id="detail"></aside>
-  </div>
-  <div class="cats" id="cats"></div>
-  <div class="replay">
-    <button id="play">▶ Replay</button>
-    <div id="track"><div class="rail"></div><div id="ticks"></div><div class="fill" id="fill"></div><div class="thumb" id="thumb"></div></div>
-    <div id="rlabel"></div>
-    <select id="speed" title="Replay speed">
-      <option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option>
-    </select>
-    <button id="live" class="on">Live</button>
-  </div>
+  </main>
+  <aside class="panel" id="detail"></aside>
 </section>
 
 <script>
@@ -498,7 +554,7 @@ const state = {
   range: Number(ls.get('so.range', 86400000)), q: '', station: '', category: '', problems: false,
   cursor: null, playing: false, speed: Number(ls.get('so.speed', 5)), replayIdx: 0, lastTick: 0,
   paused: false, buffer: [], theme: ls.get('so.theme', 'auto'), connected: false, updated: null,
-  layout: 'route', sel: { board: '' },
+  layout: 'overview',
 };
 let TURNS = [], TURN_BY_SEQ = new Map();
 
@@ -604,19 +660,14 @@ function rebuildMap() {
 }
 
 let mapDirty = true;
-function ctxInfo() {
-  if (M.ctx == null) return null;
-  const sess = state.scope !== 'all' ? state.sessions.get(state.scope) : null;
-  const win = sess?.context?.window || (M.ctx > 200000 ? 1000000 : 200000);
-  return { tokens: M.ctx, window: win, pct: Math.min(1, M.ctx / win) };
-}
 function markStage() { altDirty = true; }
 
 // ---------------------------------------------------------------- stage views
 // Two views of the same state (M, state.events, cursor):
 //   board — a grid of station cards with counts, 15-min sparklines and live "running" state
 //   route — the current turn as a metro line: every model step and tool call is a stop
-const LAYOUTS = [['route', 'Route'], ['board', 'Board']];
+//   chat  — the conversation as a messenger: prompts, the agent's replies, tool calls as chips
+const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat']];
 const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
 let altDirty = true, lastAltT = 0, lastAltRaw = '';
 const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
@@ -626,16 +677,18 @@ const evTip = ev => esc(describe(ev).map(x => short(x, 160)).join(' · '));
 const svgIcon = (id, x, y, sc) => `<g class="ico" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc})">${ICONS[id] || ICONS.other}</g>`;
 
 function setLayout(id) {
-  if (!LAYOUTS.some(l => l[0] === id)) id = 'route';
+  if (!LAYOUTS.some(l => l[0] === id)) id = 'overview';
   state.layout = id; ls.set('so.layout', id);
   document.querySelector('.stage').dataset.layout = id;
   $('layouts').innerHTML = LAYOUTS.map(([k, l]) => `<button role="tab" aria-selected="${k === id}" data-layout="${k}" class="${k === id ? 'cur' : ''}">${l}</button>`).join('');
   $('alt').innerHTML = ''; lastAltRaw = ''; altDirty = true; mapDirty = true;
+  if (id === 'overview') schedule('mid');
 }
 function drawAlt(now) {
   if (!altDirty && now - lastAltT < 250) return;
   altDirty = false; lastAltT = now;
-  const raw = state.layout === 'board' ? boardHtml() : routeHtml();
+  if (state.layout === 'overview') return; // the overview is #mid, drawn by renderMid
+  const raw = state.layout === 'chat' ? chatHtml() : routeHtml();
   if (raw === lastAltRaw) return;
   lastAltRaw = raw;
   // keep CSS animations in phase across re-renders
@@ -645,6 +698,16 @@ function drawAlt(now) {
   $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
   const sc2 = $('alt').querySelector('.mscroll');
   applyHover();
+  const ch = $('alt').querySelector('.chat');
+  if (ch) {
+    // chat: jump to the selected turn when it changes; otherwise follow the bottom unless scrolled up
+    const pc = chatScroll; chatScroll = { key: state.turnSel };
+    const el = state.turnSel && ch.querySelector(`.cturn[data-tk="${CSS.escape(state.turnSel)}"]`);
+    if (el && pc.key !== state.turnSel) ch.scrollTop = el.offsetTop - ch.offsetTop - 8;
+    else ch.scrollTop = pc.atBottom !== false ? ch.scrollHeight : pc.top;
+    ch.onscroll = () => { chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop; };
+    chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop;
+  }
   if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? (state.turnSel ? Number(sc2.dataset.fy) : sc2.scrollHeight) : (!state.turnSel && atBottom ? sc2.scrollHeight : top);
 }
 
@@ -654,41 +717,106 @@ function spark(arr, max) {
   arr.forEach((v, j) => { if (v) { const hh = 1 + 11 * Math.sqrt(v / max); r += `<rect x="${j + 0.15}" y="${(12 - hh).toFixed(2)}" width=".7" height="${hh.toFixed(2)}"/>`; } });
   return `<svg class="spark" viewBox="0 0 ${n} 12" preserveAspectRatio="none"><line x1="0" y1="12" x2="${n}" y2="12"/>${r}</svg>`;
 }
-function boardHtml() {
+// tool-group cards (the old Board view, now on the Overview): count, problems, last-15-min sparkline,
+// what is running right now or what ran last; click a card to filter everything to that group
+function groupCards() {
   const evs = state.events, end = evEnd(), sn = simNow();
   const BINS = 30, SPAN = 15 * 60000, b0 = sn - SPAN;
-  const bins = {}, errs = {}, last = {}, total = new Array(BINS).fill(0);
+  const bins = {}, errs = {}, last = {};
   const COUNTED = new Set(['PreToolUse', 'ModelStep', 'UserPromptSubmit', 'SubagentStart', 'PermissionRequest', 'InstructionsLoaded', 'PreCompact', 'TaskCreated']);
   for (let i = 0; i < end; i++) {
     const ev = evs[i], st = stationOf(ev); if (!st) continue;
     if (isProblem(ev)) errs[st] = (errs[st] || 0) + 1;
     last[st] = ev;
     const t = tms(ev);
-    if (COUNTED.has(ev.event) && t >= b0) { const j = Math.min(BINS - 1, Math.floor((t - b0) / SPAN * BINS)); (bins[st] ||= new Array(BINS).fill(0))[j]++; total[j]++; }
+    if (COUNTED.has(ev.event) && t >= b0) { const j = Math.min(BINS - 1, Math.floor((t - b0) / SPAN * BINS)); (bins[st] ||= new Array(BINS).fill(0))[j]++; }
   }
   const max = Math.max(1, ...Object.values(bins).flat());
   const runBy = {};
   for (const r of M.running.values()) { const o = (runBy[r.st] ||= { n: 0, start: r.start }); o.n++; o.start = Math.min(o.start, r.start); }
   if (M.agents.size && !runBy.agents) runBy.agents = { n: M.agents.size, start: Math.min(...[...M.agents.values()].map(a => a.start)) };
-  const c = ctxInfo(), busy = M.busy.size > 0, pct = c ? Math.round(c.pct * 100) : 0;
-  const gcol = !c ? 'var(--faint)' : c.pct >= 0.9 ? 'var(--err)' : c.pct >= 0.7 ? 'var(--warn)' : 'var(--ok)';
-  let h = `<div class="board"><div class="bcore">
-    <div class="ct">${icon('core')}<b>CLAUDE</b><span class="state"><span class="dot ${busy ? 'busy' : ''}"></span>${busy ? 'working' : state.cursor != null ? 'replay' : 'idle'}</span></div>
-    <div class="cm mono">${M.lastModel ? esc(M.lastModel) + (M.lastModelTs ? ' · ' + agoMs(sn - M.lastModelTs) + ' ago' : '') : 'no model steps yet'}</div>
-    <div class="gauge"><i style="width:${pct}%;background:${gcol}"></i></div>
-    <div class="gl"><span class="muted">context</span><b>${c ? pct + '%' : '–'}</b><span class="muted">${c ? fmtN(c.tokens) + ' / ' + fmtN(c.window) : ''}</span></div>
-    <div class="cstats">${[['turns', M.turns], ['steps', M.steps], ['tools', M.tools], ['problems', M.errors]].map(([l, v]) => `<div><b class="${l === 'problems' && v ? 'err' : ''}">${v}</b><span>${l}</span></div>`).join('')}</div>
-    <div class="cspark"><span>all activity · last 15 min</span>${spark(total, Math.max(1, ...total))}</div></div>`;
-  for (const s of STATIONS) {
+  const used = STATIONS.filter(s => M.counts[s.id] || runBy[s.id]).sort((a, b) => (M.counts[b.id] || 0) - (M.counts[a.id] || 0));
+  if (!used.length) return vcard('Activity by group', '', '<div class="none">No activity yet.</div>');
+  let h = '<div class="sgrid">';
+  for (const s of used) {
     const n = M.counts[s.id] || 0, run = runBy[s.id], e = errs[s.id] || 0, L = last[s.id];
     const what = L ? esc(short(describe(L)[1] || describe(L)[0], 80)) : '';
-    const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${agoMs(sn - tms(L))} · ${what}` : 'no activity';
-    const cls = [n && 'used', run && 'hot', state.sel.board === s.id && 'sel', state.sel.board && state.sel.board !== s.id && 'dim'].filter(Boolean).join(' ');
-    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" title="${s.label} — click to highlight">
-      <div class="bh2">${icon(s.id)}<span class="nm">${s.label}</span>${e ? `<span class="x">✕${e}</span>` : ''}<span class="n">${n || '–'}</span></div>
+    const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${agoMs(sn - tms(L))} ago · ${what}` : '';
+    const cls = ['used', run && 'hot', state.station === s.id && 'sel', state.station && state.station !== s.id && 'dim'].filter(Boolean).join(' ');
+    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" ${tipAttr(`${s.label}: ${n}${e ? ` · ✕ ${e} problems` : ''}\n${L ? 'last: ' + short(describe(L).join(' '), 200) : ''}\nbars: last 15 min · click to filter to ${s.label}`)}>
+      <div class="bh2">${icon(s.id)}<span class="nm">${s.label}</span>${e ? `<span class="x">✕${e}</span>` : ''}<span class="n">${n}</span></div>
       ${spark(bins[s.id] || new Array(BINS).fill(0), max)}<div class="ft ${run ? 'run' : ''}">${foot}</div></div>`;
   }
-  return h + '</div>';
+  const idle = STATIONS.length - used.length;
+  return vcard('Activity by group', `${used.length} active${idle ? ` · ${idle} idle hidden` : ''} · bars = last 15 min · click to filter`, h + '</div>');
+}
+
+// ---- chat: the conversation as a messenger
+let chatScroll = { key: null, atBottom: true, top: 0 };
+// a little markdown for the agent's replies: fenced code, `inline code`, **bold**
+function mdLite(src) {
+  const parts = String(src ?? '').split(/```[\w-]*\n?([\s\S]*?)(?:```|$)/);
+  return parts.map((p, i) => i % 2 ? `<pre>${esc(p.replace(/\n$/, ''))}</pre>`
+    : esc(p).replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')).join('').trim();
+}
+function chatHtml() {
+  const lim = state.cursor ?? Infinity, multi = state.scope === 'all';
+  const turns = TURNS.filter(t => tms(t.events[0]) <= lim).slice(-150);
+  if (!turns.length) return '<div class="chat"><div class="cempty">No conversation yet</div></div>';
+  let h = '<div class="chat">', lastSid = null;
+  for (const t of turns) {
+    if (multi && t.sid !== lastSid) {
+      const s = state.sessions.get(t.sid);
+      h += `<div class="csess">${esc(trunc(clean(s?.title) || base(s?.cwd) || t.sid.slice(0, 8), 60))}</div>`;
+    }
+    lastSid = t.sid;
+    const evs = t.events.filter(e => tms(e) <= lim && (!e.data?.subagent && e.data?.agent_id == null || e.event === 'SubagentStart' || e.event === 'SubagentStop'));
+    const cls = [state.turnSel === t.key && 'sel', filtersActive() && !turnMatches(t) && 'dim'].filter(Boolean).join(' ');
+    h += `<div class="cturn ${cls}" data-tk="${esc(t.key)}"><div class="cth" data-key="${esc(t.key)}" title="Open this turn">${fmtTime(t.start)}${t.tools ? ' · ' + t.tools + ' tools' : ''}${t.errors ? ' · ✕' + t.errors : ''}</div>`;
+    let tools = [], said = false, stop = null;
+    // a text bubble belongs to the model step it came from: hovering / clicking it reaches that step's row in Details
+    const stepSeq = new Map(t.events.filter(e => e.event === 'ModelStep' && e.data?.msg_id).map(e => [e.data.msg_id, e.seq]));
+    const seqsOf = ev => [ev.seq, stepSeq.get(ev.data?.msg_id)].filter(x => x != null).join(' ');
+    const open = new Map();
+    const flush = () => { if (tools.length) h += `<div class="ctools">${tools.join('')}</div>`; tools = []; };
+    for (const ev of evs) {
+      const d = ev.data || {};
+      switch (ev.event) {
+        case 'UserPromptSubmit': flush(); h += `<div class="bub me" data-seq="${ev.seq}" data-seqs="${ev.seq}">${esc(d.prompt)}<span class="bt">${fmtTime(ev.ts)}</span></div>`; break;
+        case 'ModelText': {
+          const txt = String(d.text || '').trim(); if (!txt) break;
+          flush();
+          if (d.kind === 'thinking') h += `<div class="bub think" data-seq="${stepSeq.get(d.msg_id) ?? ev.seq}" data-seqs="${seqsOf(ev)}">${esc(txt)}</div>`;
+          else { said = true; h += `<div class="bub ai" data-seq="${stepSeq.get(d.msg_id) ?? ev.seq}" data-seqs="${seqsOf(ev)}">${mdLite(txt)}<span class="bt">${fmtTime(ev.ts)}</span></div>`; }
+          break;
+        }
+        case 'PreToolUse': {
+          // __R<id>__ becomes "run" / "fail" / nothing, __S<id>__ the result's seq, once they are known
+          const st = stationOf(ev) || 'other';
+          tools.push(`<span class="ctool __R${d.tool_use_id || ''}__" data-seq="${ev.seq}" data-seqs="${ev.seq}__S${d.tool_use_id || ''}__" style="--c:var(--s-${st})" title="${evTip(ev)}">${icon(st)}<span><b>${esc(toolLabel(d.tool_name))}</b> ${esc(trunc(st === 'files' ? base(String(toolArg(d) || '')) : short(toolArg(d), 60), 40))}</span></span>`);
+          if (d.tool_use_id) open.set(d.tool_use_id, true);
+          break;
+        }
+        case 'PostToolUse': case 'PostToolUseFailure':
+          if (d.tool_use_id) { open.delete(d.tool_use_id); const k = `__S${d.tool_use_id}__`; tools = tools.map(x => x.replace(k, ' ' + ev.seq)); h = h.replace(k, ' ' + ev.seq); }
+          if (ev.event === 'PostToolUseFailure') { const k = `__R${d.tool_use_id}__`; tools = tools.map(x => x.replace(k, 'fail')); h = h.replace(k, 'fail'); }
+          break;
+        case 'SubagentStart': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || 'subagent')}</b> started</span></span>`); break;
+        case 'SubagentStop': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || 'subagent')}</b> done</span></span>`); break;
+        case 'PermissionDenied': tools.push(`<span class="ctool fail" data-seq="${ev.seq}" data-seqs="${ev.seq}" title="${evTip(ev)}">${icon('you')}<span>denied ${esc(toolLabel(d.tool_name))}</span></span>`); break;
+        case 'Stop': case 'StopFailure': stop = ev; break;
+      }
+    }
+    flush();
+    // the hook's final message, when the transcript text never arrived
+    if (stop && !said && (stop.data?.last_assistant_message || stop.event === 'StopFailure'))
+      h += `<div class="bub ai ${stop.event === 'StopFailure' ? 'fail' : ''}" data-seq="${stop.seq}" data-seqs="${stop.seq}">${mdLite(stop.data?.last_assistant_message || stop.data?.error || 'turn failed')}<span class="bt">${fmtTime(stop.ts)}</span></div>`;
+    if (!stop && turnRunning(t) && state.cursor == null) h += `<div class="ctyping"><span class="dot busy"></span>Claude is working…</div>`;
+    h += '</div>';
+    // tool chips still open are running; the rest are plain
+    for (const id of open.keys()) h = h.replace(`__R${id}__`, 'run');
+  }
+  return h.replace(/__R\S*?__(?=[\s"])/g, '').replace(/__S\S*?__(?=")/g, '') + '</div>';
 }
 
 // ---- route: the current turn as a metro line; each subagent forks a branch below and merges back
@@ -914,22 +1042,41 @@ function stopLn(stops) {
   return s => lnKey(s) + (extra.get(s.i) || '');
 }
 // hoverSeq: an event row hovered in the details panel; its stop on the route is lit up, everything else fades
-let hoverLn = null, hoverSeq = null;
+let hoverLn = null, hoverSeq = null, viewHover = null;
 const seqStop = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
 function applyHover() {
-  const svg = $('alt').querySelector('svg.metro'); if (!svg) return;
-  const pin = hoverSeq != null ? seqStop(svg, hoverSeq) : null;
-  svg.classList.toggle('hl', !!hoverLn || !!pin);
-  for (const e of svg.querySelectorAll('.on, .pin')) e.classList.remove('on', 'pin');
-  if (hoverLn) for (const e of svg.querySelectorAll(`[data-ln~="${CSS.escape(hoverLn)}"]`)) e.classList.add('on');
-  if (pin) pin.classList.add('on', 'pin');
+  const svg = $('alt').querySelector('svg.metro');
+  if (svg) {
+    const pin = hoverSeq != null ? seqStop(svg, hoverSeq) : null;
+    svg.classList.toggle('hl', !!hoverLn || !!pin);
+    for (const e of svg.querySelectorAll('.on, .pin')) e.classList.remove('on', 'pin');
+    if (hoverLn) for (const e of svg.querySelectorAll(`[data-ln~="${CSS.escape(hoverLn)}"]`)) e.classList.add('on');
+    if (pin) pin.classList.add('on', 'pin');
+  }
+  // chat: light up the item for the hovered details row, fade the rest
+  const ch = $('alt').querySelector('.chat');
+  if (ch) {
+    for (const e of ch.querySelectorAll('.pin')) e.classList.remove('pin');
+    const hits = hoverSeq != null ? [...ch.querySelectorAll(`[data-seqs~="${hoverSeq}"]`)] : [];
+    for (const e of hits) e.classList.add('pin');
+    ch.classList.toggle('hl', hits.length > 0);
+  }
+  // details: light up the rows for the chat item / route stop under the mouse
+  for (const r of $('detail').querySelectorAll('.erow.pin')) r.classList.remove('pin');
+  if (viewHover) for (const q of viewHover) ($('ev-' + q) || $('detail').querySelector(`.erow[data-pre="${q}"]`))?.classList.add('pin');
 }
-// bring the lit stop into view inside the route's scroll box, if it is outside it
-function revealPin() {
-  const sc = $('alt').querySelector('.mscroll'), svg = sc?.querySelector('svg.metro'), el = svg && hoverSeq != null ? seqStop(svg, hoverSeq) : null;
-  if (!el) return;
+// bring the lit item into view inside its scroll box (route stop / chat item / details row), if it is outside it
+const revealIn = (sc, el) => {
+  if (!sc || !el) return;
   const a = sc.getBoundingClientRect(), b = el.getBoundingClientRect();
-  if (b.top < a.top + 20 || b.bottom > a.bottom - 20) sc.scrollTop += b.top - a.top - a.height / 2;
+  if (b.top < a.top + 20 || b.bottom > a.bottom - 20) sc.scrollTop += b.top - a.top - a.height / 2 + b.height / 2;
+};
+function revealPin() {
+  const sc = $('alt').querySelector('.mscroll'), svg = sc?.querySelector('svg.metro');
+  if (svg && hoverSeq != null) revealIn(sc, seqStop(svg, hoverSeq));
+  const ch = $('alt').querySelector('.chat');
+  if (ch && hoverSeq != null) revealIn(ch, ch.querySelector('.pin'));
+  if (viewHover) revealIn($('detail'), $('detail').querySelector('.erow.pin'));
 }
 
 // polyline with rounded corners
@@ -993,11 +1140,11 @@ function feedMarker(ev, running) {
 }
 function feedRow(ev, running, opts = {}) {
   const st = stationOf(ev) || (ev.event === 'Stop' ? 'turn' : 'other');
-  const { label, sub } = feedText(ev);
+  const ft = feedText(ev), label = ft.label, sub = opts.sub != null ? opts.sub : opts.said ? `${opts.said}  → ${ft.sub}` : ft.sub;
   const color = ev.event === 'Stop' ? 'var(--ok)' : `var(--s-${st})`;
   const proj = opts.proj ? `<span class="proj">${esc(opts.proj)}</span>` : '';
   const dur = opts.dur ? `<span class="dur">${running ? 'running…' : esc(fmtDur(ev.duration_ms))}</span>` : '';
-  return `<div class="frow ${isProblem(ev) ? 'fail' : ''}" data-seq="${ev.seq}">${feedMarker(ev, running)}<span class="t">${fmtTime(ev.ts)}</span>
+  return `<div class="frow ${isProblem(ev) ? 'fail' : ''}" data-seq="${ev.seq}">${feedMarker(ev, running)}<span class="t">${fmtTime(opts.ts || ev.ts)}</span>
     <span class="who" style="color:${color}">${icon(st)}<span>${esc(label)}</span></span><span class="what">${proj}${esc(short(sub, 300))}</span>${dur}</div>`;
 }
 function renderCats() {
@@ -1032,7 +1179,7 @@ function renderReplay() {
   } else $('ticks').innerHTML = '';
   const mode = state.cursor == null ? '<b>Live</b>' : `<b>${state.playing ? 'Replaying' : 'Paused'}</b> · ${fmtTime(state.cursor)}`;
   $('rlabel').innerHTML = `${mode}${cur && cur.prompt ? ` · turn ${fmtTime(cur.start)} · ${esc(short(cur.prompt, 60))}` : ''}`;
-  for (const el of document.querySelectorAll('#mid .turn')) el.classList.toggle('cur', !!cur && el.dataset.key === cur.key && state.cursor != null);
+  for (const el of document.querySelectorAll('#mid .col')) el.classList.toggle('cur', !!cur && el.dataset.key === cur.key && state.cursor != null);
 }
 function setCursor(ts) {
   state.cursor = ts; rebuildMap(); renderReplay(); markStage();
@@ -1127,10 +1274,127 @@ function turnRow(t, showProj) {
       <div class="m">${proj}<span>${t.steps} steps</span><span>${t.tools} tools</span>${t.errors ? `<span class="err">${t.errors} problems</span>` : ''}${st}</div></div>
     <div class="tm">${fmtTime(t.start)}<br>${running ? 'running' : fmtDur(dur)}</div></div>`;
 }
-function renderMid() {
+// ---- overview: charts and detail lists for the session (or all activity)
+let VCTX = null; // context chart geometry + points, for the crosshair
+let VW = {};      // measured chart widths (px) by chart, so the next draw matches its card
+function vizHtml(sess, fnote) {
+  const W = VW.turns || Math.max(300, ($('mid').clientWidth || 700) - 30);
+  const turns = TURNS.filter(turnMatches), evs = state.events.filter(evMatches);
+  return `<div class="viz">${turnChart(turns, W, fnote)}${sess ? ctxChart(sess, VW.ctx || Math.max(300, W / 2 - 14)) : ''}${groupCards()}${filesList(evs)}${cmdList(evs)}${agentList(evs)}${problemList(evs)}</div>`;
+}
+const vcard = (title, sub, body, wide) => `<div class="vcard ${wide ? 'wide' : ''}"><div class="vh">${title}<span>${sub || ''}</span></div>${body}</div>`;
+const tipAttr = txt => `data-tip="${esc(txt)}"`;
+
+// turns: one column per turn, height = how long it ran; click opens the turn
+function turnChart(all, W, fnote) {
+  const turns = all.slice(-150), N = turns.length, H = 120, L = 46, B = 18, T = 12;
+  if (!N) return vcard('Turns', fnote, '<div class="none">No turns match.</div>', true);
+  const now = simNow(), dur = t => (turnRunning(t) ? now : Date.parse(t.end)) - Date.parse(t.start);
+  const max = Math.max(1000, ...turns.map(dur)), pw = W - L, cw = pw / N, bw = Math.max(1, Math.min(28, cw - 2));
+  const y = v => T + (H - T) * (1 - v / max);
+  let g = '';
+  for (const f of [0.5, 1]) g += `<line class="grid" x1="${L}" x2="${W}" y1="${y(max * f).toFixed(1)}" y2="${y(max * f).toFixed(1)}"/><text class="ax" x="${L - 6}" y="${(y(max * f) + 4).toFixed(1)}" text-anchor="end">${esc(fmtDur(max * f))}</text>`;
+  g += `<line class="base" x1="${L}" x2="${W}" y1="${H}" y2="${H}"/>`;
+  turns.forEach((t, i) => {
+    const d = dur(t), x = L + i * cw + (cw - bw) / 2, top = Math.min(H - 2, y(d)), run = turnRunning(t), sel = state.turnSel === t.key;
+    const tip = `${short(clean(t.prompt) || '(session start)', 140)}\n${fmtTime(t.start)} · ${fmtDur(d)}${run ? ' · running' : ''}\n${t.steps} model steps · ${t.tools} tool calls${t.errors ? ` · ✕ ${t.errors} problems` : ''}`;
+    g += `<g class="col ${sel ? 'sel' : ''}" data-key="${esc(t.key)}" ${tipAttr(tip)}><rect class="hit" x="${(L + i * cw).toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${H}"/>
+      <rect class="bar ${run ? 'run' : ''} ${sel ? 'sel' : ''}" x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${(H - top).toFixed(1)}" rx="${Math.min(3, bw / 2)}"/>
+      ${t.errors ? `<text class="x" x="${(x + bw / 2).toFixed(1)}" y="${(top - 3).toFixed(1)}">✕</text>` : ''}</g>`;
+  });
+  g += `<text class="ax" x="${L}" y="${H + 14}">${esc(fmtTime(turns[0].start))}</text><text class="ax" x="${W}" y="${H + 14}" text-anchor="end">${esc(fmtTime(turns[N - 1].start))}</text>`;
+  const body = `<svg class="vchart" data-k="turns" data-w="${W}" viewBox="0 0 ${W} ${H + B}" height="${H + B}" role="img" aria-label="Duration of each turn">${g}</svg>`;
+  return vcard('Turns', `${all.length}${N < all.length ? ` (last ${N} shown)` : ''}${fnote} · bar height = how long it ran · ✕ had problems · click a bar to open it`, body, true);
+}
+
+// context window use over the session (main agent's model steps); compactions show as drops
+function ctxChart(sess, W) {
+  const pts = state.events.filter(e => e.event === 'ModelStep' && e.session_id === sess.id && !e.data?.subagent && e.data?.tokens?.context && tms(e) <= (state.cursor ?? Infinity))
+    .map(e => ({ t: tms(e), v: e.data.tokens.context, seq: e.seq }));
+  if (pts.length < 2) { VCTX = null; return vcard('Context', '', '<div class="none">Not enough model steps yet.</div>'); }
+  const win = sess.context?.window || (Math.max(...pts.map(p => p.v)) > 200000 ? 1000000 : 200000);
+  const H = 120, L = 40, B = 18, T = 8, t0 = pts[0].t, t1 = Math.max(t0 + 1, pts[pts.length - 1].t), top = Math.max(win, ...pts.map(p => p.v));
+  const x = t => L + (W - L) * (t - t0) / (t1 - t0), y = v => T + (H - T) * (1 - v / top);
+  for (const p of pts) { p.x = x(p.t); p.y = y(p.v); }
+  VCTX = { pts, win, W, H };
+  let g = `<line class="grid" x1="${L}" x2="${W}" y1="${y(win / 2)}" y2="${y(win / 2)}"/><text class="ax" x="${L - 6}" y="${y(win / 2) + 4}" text-anchor="end">${fmtN(win / 2)}</text>
+    <line class="warn" x1="${L}" x2="${W}" y1="${y(win * 0.8)}" y2="${y(win * 0.8)}"/>
+    <line class="win" x1="${L}" x2="${W}" y1="${y(win)}" y2="${y(win)}"/><text class="ax" x="${L - 6}" y="${y(win) + 4}" text-anchor="end">${fmtN(win)}</text>
+    <line class="base" x1="${L}" x2="${W}" y1="${H}" y2="${H}"/>`;
+  g += `<path class="ln" d="M${pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L')}"/>`;
+  const last = pts[pts.length - 1];
+  g += `<circle class="dot" cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="4"/>`;
+  g += `<g class="xhair" style="display:none"><line class="xh" y1="${T}" y2="${H}"/><circle class="dot" r="4.5"/></g>`;
+  g += `<text class="ax" x="${L}" y="${H + 14}">${esc(fmtTime(t0))}</text><text class="ax" x="${W}" y="${H + 14}" text-anchor="end">${esc(fmtTime(t1))}</text>`;
+  g += `<rect class="ov" x="${L}" y="0" width="${W - L}" height="${H}"/>`;
+  const pct = Math.round(100 * last.v / win);
+  return vcard('Context', `now ${fmtN(last.v)} of ${fmtN(win)} (${pct}%) · dashed = window, dotted = 80%`, `<svg class="vchart vctx" data-k="ctx" data-w="${W}" viewBox="0 0 ${W} ${H + B}" height="${H + B}" role="img" aria-label="Context tokens over time">${g}</svg>`);
+}
+
+// the files the agent worked on most
+function filesList(evs) {
+  const f = new Map();
+  for (const e of evs) {
+    if (e.event !== 'PreToolUse' || !FILE_TOOLS.has(e.data?.tool_name)) continue;
+    const ti = e.data.tool_input || {}, p = ti.file_path || ti.notebook_path; if (!p) continue;
+    const o = f.get(p) || { r: 0, w: 0, seq: e.seq }; o.seq = e.seq;
+    /^(Read|NotebookRead)$/.test(e.data.tool_name) ? o.r++ : o.w++;
+    f.set(p, o);
+  }
+  const top = [...f.entries()].sort((a, b) => (b[1].r + b[1].w) - (a[1].r + a[1].w)).slice(0, 8);
+  if (!top.length) return vcard('Files', '', '<div class="none">No files read or edited.</div>');
+  // paths relative to the session's folder when inside it; a long folder keeps its last part
+  const cwd = (state.sessions.get(state.scope)?.cwd || '').replace(/[\\/]+$/, '');
+  const rel = p => cwd && p.startsWith(cwd + '/') ? p.slice(cwd.length + 1) : p;
+  const dir = p => { const r = rel(p), d = r.slice(0, Math.max(0, r.length - base(r).length)); return d.length > 36 ? '…' + d.slice(-35) : d; };
+  return vcard('Files', `${f.size} touched · top ${top.length}`, `<div class="vlist">${top.map(([p, o]) => `<div class="vrow" data-seq="${o.seq}" ${tipAttr(p + '\nclick to open the latest call')}>
+    <span class="a mono"><span class="d">${esc(trunc(dir(p), 40))}</span>${esc(base(p))}</span><span class="b">${o.w ? `<b>${o.w}</b> edit${o.w > 1 ? 's' : ''}` : ''}${o.w && o.r ? ' · ' : ''}${o.r ? `<b>${o.r}</b> read${o.r > 1 ? 's' : ''}` : ''}</span></div>`).join('')}</div>`);
+}
+
+// shell commands by program (the part after any leading `cd … &&`)
+function cmdList(evs) {
+  const failed = new Set(evs.filter(e => e.event === 'PostToolUseFailure').map(e => e.data?.tool_use_id)), c = new Map();
+  for (const e of evs) {
+    if (e.event !== 'PreToolUse' || !SHELL_TOOLS.has(e.data?.tool_name)) continue;
+    const cmd = String(e.data.tool_input?.command || '').trim(); if (!cmd) continue;
+    const seg = cmd.split(/&&|\|\||;|\n/).map(x => x.trim()).find(x => x && !/^cd\s/.test(x) && !/^(export\s+)?\w+=\S*$/.test(x)) || cmd;
+    const prog = base((seg.match(/^(?:\w+=\S+\s+)*(\S+)/) || [, seg])[1]);
+    const o = c.get(prog) || { n: 0, x: 0, seq: e.seq, ex: seg }; o.n++; o.seq = e.seq; o.ex = seg;
+    if (failed.has(e.data.tool_use_id)) o.x++;
+    c.set(prog, o);
+  }
+  const top = [...c.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+  if (!top.length) return vcard('Commands', '', '<div class="none">No shell commands.</div>');
+  return vcard('Commands', `${c.size} programs · top ${top.length}`, `<div class="vlist">${top.map(([p, o]) => `<div class="vrow ${o.x === o.n ? 'fail' : ''}" data-seq="${o.seq}" ${tipAttr('latest: ' + short(o.ex, 300))}>
+    <span class="a mono">${esc(p)}</span><span class="b"><b>${o.n}</b> run${o.n > 1 ? 's' : ''}${o.x ? ` · <span class="err">✕ ${o.x}</span>` : ''}</span></div>`).join('')}</div>`);
+}
+
+// subagents: what type, what they were asked, how long they ran
+function agentList(evs) {
+  const a = new Map(), desc = [];
+  for (const e of evs) {
+    const d = e.data || {};
+    if (e.event === 'PreToolUse' && (d.tool_name === 'Agent' || d.tool_name === 'Task')) desc.push(d.tool_input?.description || '');
+    if (e.event === 'SubagentStart') a.set(d.agent_id ?? e.seq, { type: d.agent_type || 'subagent', start: tms(e), end: null, seq: e.seq, desc: desc.shift() || '' });
+    if (e.event === 'SubagentStop' && a.has(d.agent_id)) a.get(d.agent_id).end = tms(e);
+  }
+  if (!a.size) return '';
+  const rows = [...a.values()].slice(-8).reverse(), now = simNow();
+  return vcard('Subagents', `${a.size}`, `<div class="vlist">${rows.map(r => `<div class="vrow" data-seq="${r.seq}" ${tipAttr(`${r.type}${r.desc ? ' — ' + r.desc : ''}\nstarted ${fmtTime(r.start)}`)}>
+    <span class="a"><b>${esc(r.type)}</b> <span class="d">${esc(r.desc)}</span></span><span class="b">${r.end ? esc(fmtDur(r.end - r.start)) : `<span style="color:var(--ok)">● ${esc(fmtDur(now - r.start))}</span>`}</span></div>`).join('')}</div>`);
+}
+
+// the latest failures and denials
+function problemList(evs) {
+  const p = evs.filter(isProblem);
+  if (!p.length) return '';
+  return vcard('Problems', `${p.length} · latest first`, `<div class="vlist">${p.slice(-6).reverse().map(e => { const [l, d] = describe(e); return `<div class="vrow fail" data-seq="${e.seq}" ${tipAttr(l + ': ' + short(d, 400))}>
+    <span class="a"><b>${esc(l)}</b> ${esc(short(d, 120))}</span><span class="b">${esc(fmtTime(e.ts))}</span></div>`; }).join('')}</div>`);
+}
+
+function renderMid(again) {
+  if (state.layout !== 'overview') return;
   const el = $('mid'); const top = el.scrollTop;
-  const turns = TURNS.filter(turnMatches).reverse();
-  const shown = turns.slice(0, 200);
   const fnote = filtersActive() ? ` <span class="muted">· filtered</span>` : '';
   if (state.scope === 'all') {
     const cut = cutoffIso();
@@ -1139,7 +1403,7 @@ function renderMid() {
     const out = all.reduce((a, s) => a + (s.usage?.output || 0), 0);
     el.innerHTML = `<h2>All activity</h2><p class="lead">Every session in ${esc(rangeLabel())}. Pick a session on the left to see only its work.</p>
       <div class="tiles">${tile('Sessions', all.length)}${tile('Turns', sum('turns'))}${tile('Tool calls', sum('toolCalls'))}${tile('Model steps', sum('modelSteps'))}${tile('Problems', sum('failures'), 'failed or denied', sum('failures') > 0)}${tile('Output tokens', fmtN(out))}</div>
-      <div class="box"><div class="bh">${icon('turn')} Recent turns <span>${turns.length}${fnote}</span></div>${shown.map(t => turnRow(t, true)).join('') || '<div class="empty">No turns match.</div>'}</div>`;
+      ${vizHtml(null, fnote)}`.replaceAll('__D__', `-${Math.round(performance.now() % 1400)}ms`);
   } else {
     const s = state.sessions.get(state.scope);
     if (!s) { el.innerHTML = '<div class="empty">Session not found.</div>'; return; }
@@ -1149,9 +1413,13 @@ function renderMid() {
       <p class="lead"><span class="state"><span class="${dot}"></span>${st}</span> · <span class="mono">${esc(s.cwd || '')}</span> · ${esc(s.model || '')}${s.permission_mode ? ' · ' + esc(s.permission_mode) : ''} · <span class="mono">${esc(s.id.slice(0, 8))}</span>${s.ended && s.endReason ? ' · ended ' + esc(s.endReason) : ''}</p>
       <div class="tiles">${tile('Turns', s.turns || 0)}${tile('Tool calls', s.toolCalls, fmtDur(s.toolMs) + ' in tools')}${tile('Model steps', s.modelSteps || 0)}${tile('Subagents', s.subagents || 0)}${tile('Problems', s.failures, '', s.failures > 0)}
         ${tile('Duration', fmtDur(Date.parse(s.last) - Date.parse(s.started)))}${tile('Context', s.context ? Math.round(s.context.pct * 100) + '%' : '–', s.context ? `${fmtN(s.context.tokens)} / ${fmtN(s.context.window)}` : '')}${tile('Tokens', fmtN((u.input || 0) + (u.cache_read || 0) + (u.cache_write || 0)), `in · ${fmtN(u.output || 0)} out`)}</div>
-      <div class="box"><div class="bh">${icon('turn')} Turns <span>${turns.length}${fnote} · newest first</span></div>${shown.map(t => turnRow(t, false)).join('') || '<div class="empty">No turns match.</div>'}</div>`;
+      ${vizHtml(s, fnote)}`.replaceAll('__D__', `-${Math.round(performance.now() % 1400)}ms`);
   }
   el.scrollTop = top;
+  // charts are drawn in px: if a card turned out a different width than estimated, draw again at the real width
+  let off = false;
+  for (const sv of el.querySelectorAll('svg.vchart[data-w]')) { const w = Math.round(sv.getBoundingClientRect().width); if (w && Math.abs(w - Number(sv.dataset.w)) > 4) { VW[sv.dataset.k] = w; off = true; } }
+  if (off && !again) renderMid(true);
 }
 
 // ---------------------------------------------------------------- detail panel
@@ -1407,16 +1675,31 @@ function renderDetail() {
   const el = $('detail'); const top = el.scrollTop;
   const t = state.turnSel && TURNS.find(x => x.key === state.turnSel);
   if (!t) {
-    el.innerHTML = `<div class="dh"><h2>Details</h2></div><p class="muted">Pick a turn in the middle list, or click a stop on the Route. Keys: <b>[</b> / <b>]</b> previous / next turn, <b>Esc</b> close.</p>${colourKey()}`;
+    el.innerHTML = `<div class="dh"><h2>Details</h2></div><p class="muted">Pick a turn: a bar on the Overview's Turns chart, a stop on the Route, or a message in the Chat. Keys: <b>[</b> / <b>]</b> previous / next turn, <b>Esc</b> close.</p>${colourKey()}`;
     return;
   }
-  const done = new Set(t.events.filter(e => e.event === 'PostToolUse' || e.event === 'PostToolUseFailure').map(e => e.data?.tool_use_id).filter(Boolean));
+  // a finished tool call is one row, built from its result (PostToolUse) but placed where the call started,
+  // so the list keeps the order things began in (as the Route and the Chat do), not the order they finished
+  const posts = new Map(t.events.filter(e => (e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') && e.data?.tool_use_id).map(e => [e.data.tool_use_id, e]));
+  const done = new Set(posts.keys());
+  const started = new Set(t.events.filter(e => e.event === 'PreToolUse' && e.data?.tool_use_id).map(e => e.data.tool_use_id));
   const running = turnRunning(t);
   const fa = filtersActive();
-  const rows = t.events.filter(e => !(e.event === 'PreToolUse' && done.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !(e.event === 'Stop' && t.answer)).map(e => {
-    const isRun = running && e.event === 'PreToolUse' && !done.has(e.data?.tool_use_id);
-    const open = state.evOpen.has(e.seq);
-    return `<div class="erow ${open ? 'open' : ''} ${fa && evMatches(e) ? 'hit' : ''}" id="ev-${e.seq}">${feedRow(e, isRun, { dur: true })}${open ? evOpenHtml(e, t) : ''}</div>`;
+  // one API response is a ModelStep plus a ModelText per text block: show them as one row (the step's card lists the text)
+  const steps = new Map(t.events.filter(e => e.event === 'ModelStep' && e.data?.msg_id).map(e => [e.data.msg_id, e])), said = new Map();
+  for (const e of t.events) if (e.event === 'ModelText' && steps.has(e.data?.msg_id)) {
+    const k = e.data.msg_id, txt = (e.data.kind === 'thinking' ? 'thinking: ' : '') + e.data.text, o = said.get(k);
+    // written text wins over thinking
+    said.set(k, !o ? { txt, th: e.data.kind === 'thinking' } : o.th && e.data.kind !== 'thinking' ? { txt, th: false } : o.th === (e.data.kind === 'thinking') ? { txt: o.txt + ' ' + txt, th: o.th } : o);
+  }
+  const rows = t.events.filter(e => !((e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') && started.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !(e.event === 'Stop' && t.answer)
+    && !(e.event === 'ModelText' && steps.has(e.data?.msg_id))).map(e => {
+    const post = e.event === 'PreToolUse' ? posts.get(e.data?.tool_use_id) : null, r = post || e;
+    const isRun = running && e.event === 'PreToolUse' && !post;
+    const open = state.evOpen.has(r.seq) || state.evOpen.has(e.seq);
+    // a tool row says what was called; its result is in the row's card
+    const sub = e.event === 'PreToolUse' ? describe(e)[1] : null;
+    return `<div class="erow ${open ? 'open' : ''} ${fa && (evMatches(e) || evMatches(r)) ? 'hit' : ''}" id="ev-${r.seq}" data-pre="${e.seq}">${feedRow(r, isRun, { dur: true, ts: e.ts, sub, said: e.event === 'ModelStep' ? said.get(e.data?.msg_id)?.txt : null })}${open ? evOpenHtml(r, t) : ''}</div>`;
   }).join('');
   const s = state.sessions.get(t.sid);
   const dur = Date.parse(t.end) - Date.parse(t.start);
@@ -1427,12 +1710,13 @@ function renderDetail() {
     <div class="lbl2">Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span></div>
     <div>${rows}</div>${colourKey()}`;
   el.scrollTop = top;
+  applyHover(); // keep the row lit for the chat item / route stop under the mouse
 }
 function selectTurn(key, seq) {
   state.turnSel = key; state.evOpen = new Set(seq ? [seq] : []);
   renderDetail(); renderMid();
   const d = $('detail');
-  const r = seq && $('ev-' + seq);
+  const r = seq && ($('ev-' + seq) || $('detail').querySelector(`.erow[data-pre="${seq}"]`));
   // scroll only the panel (scrollIntoView would also scroll the page)
   d.scrollTop = r ? d.scrollTop + r.getBoundingClientRect().top - d.getBoundingClientRect().top - d.clientHeight / 3 : 0;
 }
@@ -1584,9 +1868,13 @@ function initControls() {
   $('layouts').onclick = e => { const b = e.target.closest('[data-layout]'); if (b) setLayout(b.dataset.layout); };
   $('alt').addEventListener('mouseover', e => {
     const el = e.target.closest('[data-ln]'), k = el ? el.dataset.ln.split(' ')[0] : null;
-    if (k !== hoverLn) { hoverLn = k; applyHover(); }
+    // a chat item, route stop or model-step diamond under the mouse lights up its rows in Details
+    const c = e.target.closest('[data-seqs]'), cs = c && c.dataset.seqs.trim() ? c.dataset.seqs.trim().split(/\s+/) : null;
+    const changed = String(cs) !== String(viewHover), lnChanged = k !== hoverLn;
+    viewHover = cs; hoverLn = k;
+    if (changed || lnChanged) { applyHover(); if (changed && cs) revealPin(); }
   });
-  $('alt').addEventListener('mouseleave', () => { if (hoverLn) { hoverLn = null; applyHover(); } });
+  $('alt').addEventListener('mouseleave', () => { if (hoverLn || viewHover) { hoverLn = null; viewHover = null; applyHover(); } });
   $('detail').addEventListener('mouseover', e => {
     const row = e.target.closest('.frow[data-seq]'), k = row ? Number(row.dataset.seq) : null;
     if (k !== hoverSeq) { hoverSeq = k; applyHover(); revealPin(); }
@@ -1597,9 +1885,6 @@ function initControls() {
     const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
     const q = e.target.closest('[data-seq]');
     if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
-    const st = e.target.closest('[data-st]');
-    // Board selections stay local to that view; they don't touch the global Station filter
-    if (st && state.sel[state.layout] !== undefined) { state.sel[state.layout] = state.sel[state.layout] === st.dataset.st ? '' : st.dataset.st; altDirty = true; }
   });
   $('cats').onclick = e => {
     const c = e.target.closest('[data-cat]'); if (!c) return;
@@ -1607,15 +1892,44 @@ function initControls() {
   };
   $('sessions').onclick = e => { const c = e.target.closest('.card'); if (c) selectScope(c.dataset.id); };
   $('mid').onclick = e => {
-    const t = e.target.closest('.turn'); if (t) selectTurn(t.dataset.key);
+    const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; renderMid(); return; }
+    const q = e.target.closest('[data-seq]');
+    if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; renderMid(); } return; }
+    const st = e.target.closest('[data-st]');
+    if (st) { state.station = state.station === st.dataset.st ? '' : st.dataset.st; $('station').value = state.station; refilter(); }
   };
+  // chart tooltips (one floating box for every [data-tip]) and the context chart's crosshair
+  const vtip = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'vtip' }));
+  const showTip = (txt, x, y) => {
+    vtip.textContent = txt; vtip.style.display = 'block';
+    const r = vtip.getBoundingClientRect();
+    vtip.style.left = Math.min(innerWidth - r.width - 8, x + 14) + 'px';
+    vtip.style.top = (y + 16 + r.height > innerHeight ? y - r.height - 10 : y + 16) + 'px';
+  };
+  $('mid').addEventListener('mousemove', e => {
+    const svg = e.target.closest('svg.vctx'), xh = svg?.querySelector('.xhair');
+    if (svg && VCTX && e.target.classList.contains('ov')) {
+      const b = svg.getBoundingClientRect(), mx = (e.clientX - b.left) * VCTX.W / b.width;
+      const p = VCTX.pts.reduce((a, q) => Math.abs(q.x - mx) < Math.abs(a.x - mx) ? q : a);
+      xh.style.display = ''; xh.querySelector('line').setAttribute('x1', p.x); xh.querySelector('line').setAttribute('x2', p.x);
+      xh.querySelector('circle').setAttribute('cx', p.x); xh.querySelector('circle').setAttribute('cy', p.y);
+      return showTip(`${fmtTime(p.t)}
+context ${fmtN(p.v)} of ${fmtN(VCTX.win)} (${Math.round(100 * p.v / VCTX.win)}%)`, e.clientX, e.clientY);
+    }
+    for (const x of $('mid').querySelectorAll('.xhair')) x.style.display = 'none';
+    const t = e.target.closest('[data-tip]');
+    if (t) showTip(t.dataset.tip, e.clientX, e.clientY); else vtip.style.display = 'none';
+  });
+  $('mid').addEventListener('mouseleave', () => { vtip.style.display = 'none'; for (const x of $('mid').querySelectorAll('.xhair')) x.style.display = 'none'; });
   $('detail').onclick = e => {
     if (e.target.closest('#closeTurn')) { state.turnSel = null; renderDetail(); renderMid(); return; }
     if (e.target.closest('#prevTurn')) return stepTurn(-1);
     if (e.target.closest('#nextTurn')) return stepTurn(1);
     if (e.target.closest('pre.raw, .evx')) return;
     const r = e.target.closest('.erow'); if (!r) return;
-    const seq = Number(r.id.slice(3)); state.evOpen.has(seq) ? state.evOpen.delete(seq) : state.evOpen.add(seq); renderDetail();
+    const seq = Number(r.id.slice(3)), pre = Number(r.dataset.pre);
+    if (state.evOpen.has(seq) || state.evOpen.has(pre)) { state.evOpen.delete(seq); state.evOpen.delete(pre); } else state.evOpen.add(seq);
+    renderDetail();
   };
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, select, textarea')) return;
@@ -1629,8 +1943,10 @@ function initControls() {
 async function boot() {
   initControls();
   // the route / board are sized from their container, which now follows the window height
-  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { markStage(); schedule('map'); }, 120); });
-  setLayout(new URLSearchParams(location.search).get('layout') || ls.get('so.layout', 'route'));
+  const fitPanels = () => document.documentElement.style.setProperty('--ptop', Math.round($('panels').getBoundingClientRect().top + scrollY) + 'px');
+  fitPanels();
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { fitPanels(); VW = {}; markStage(); schedule('map', 'mid'); }, 120); });
+  setLayout(new URLSearchParams(location.search).get('layout') || ls.get('so.layout', 'overview'));
   try { const list = await (await fetch('/api/sessions')).json(); state.sessions = new Map(list.map(s => [s.id, s])); } catch { /* server down */ }
   const m = location.hash.match(/session=([^&]+)/);
   if (m && state.sessions.has(decodeURIComponent(m[1]))) state.scope = decodeURIComponent(m[1]);
