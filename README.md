@@ -110,39 +110,7 @@ The server starts automatically on the first `SessionStart`. Open
 
 Run it manually: `node server/server.js`.
 
-The dashboard fits on one screen, in three columns:
-
-* filter bar (above them) — time range, full-text search, tool group, "only problems"
-* **Sessions** (left) — "All activity" plus every session in range (working / live / ended)
-* **the selected view** (middle) — three tabs:
-  * **Overview** — the session's stat tiles, then:
-    * **Turns** — one bar per turn, height = how long it ran, ✕ on turns with problems;
-      click a bar to open that turn
-    * **Context** — how full the context window got over the session (compactions show as drops)
-    * **Activity by group** — a card per tool group in use: count, problems, a 15-minute
-      sparkline and what is running now or ran last; click a card to filter everything to it
-    * **Files**, **Commands**, **Subagents**, **Problems** — the files touched most, shell
-      programs run, subagents with their task and run time, and the latest failures; click
-      one to open it
-  * **Route** — each turn drawn as a metro line. The main line runs along the top, starting
-    with your prompt; every model step (◆) and tool call is a stop. Each subagent forks
-    down from its Agent call onto its own lane and rises back into the main line when it
-    hands back. Long turns wrap onto the next row. Hover a line to highlight that branch.
-    While a turn runs, a **Now:** line says what it is doing (a running tool, subagents
-    working, waiting for your permission, or the model generating) and shows the model's
-    latest words
-  * **Chat** — the conversation as a messenger: your prompts on the right, Claude's replies
-    on the left (light markdown), thinking in dashed bubbles, and tool calls as chips
-    between them (red when they failed, tinted while running)
-  * under the views — event-type chips and a **replay** bar with one tick per turn: drag
-    to scrub, ▶ Replay at ×1–×25, Live to return
-* **Details** (right) — the selected turn: prompt, reply and every event in the order it
-  started (`[` / `]` step through turns, `Esc` closes). Each model response is one row: what
-  it wrote, then the tools it called. Click a row to open it as a card: tool calls show
-  their input and output shaped per tool (coloured shell / Python / JavaScript commands,
-  Edit diffs, formatted JSON output); model steps show why the model stopped, the tool calls
-  it asked for, what it wrote and a context-window bar; subagents show the task they were
-  given. The raw hook payload stays folded under every card
+![Dashboard layout: 1 filters, 2 sessions, 3 views, 4 route, 5 event types and replay, 6 details](docs/layout.jpg)
 
 Hovering links the views both ways: an event row in Details lights up its stop on the Route
 and its bubble or chip in the Chat, and hovering a Route stop or a Chat item lights up its
