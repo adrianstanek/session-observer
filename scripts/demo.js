@@ -38,6 +38,15 @@ function session(id, project) {
       fs.appendFileSync(LOG, JSON.stringify({ ts: new Date(ts).toISOString(), event, session_id: id,
         data: { session_id: id, transcript_path: transcript, cwd, hook_event_name: event, ...data } }) + '\n');
     },
+    // subagent model step: its own transcript under <session>/subagents/, as Claude Code writes it
+    subStep(ts, agentId, tools, stop = 'tool_use') {
+      const file = path.join(path.dirname(transcript), id, 'subagents', `agent-${agentId}.jsonl`);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.appendFileSync(file, JSON.stringify({ type: 'assistant', isSidechain: true, agentId, timestamp: new Date(ts).toISOString(), uuid: 'u' + (++uid),
+        message: { id: 'msg_' + uid, role: 'assistant', model: MODEL, stop_reason: stop,
+          usage: { input_tokens: 3, output_tokens: 80 + Math.floor(Math.random() * 400), cache_read_input_tokens: 9000, cache_creation_input_tokens: 800 },
+          content: tools.map(name => ({ type: 'tool_use', name })) } }) + '\n');
+    },
     step(ts, tools, stop = 'tool_use') {
       ctx += 1500 + Math.floor(Math.random() * 4000);
       fs.appendFileSync(transcript, JSON.stringify({ type: 'assistant', timestamp: new Date(ts).toISOString(), uuid: 'u' + (++uid),
@@ -48,24 +57,56 @@ function session(id, project) {
   };
 }
 
-// one turn as a list of [delayMs, fn(ts)] so it can be written instantly (history) or in real time (live)
-function turnPlan(s, prompt, n) {
-  const plan = [[0, ts => s.hook(ts, 'UserPromptSubmit', { prompt })]];
+// one turn as a list of [delayMs, fn(ts)] so it can be written instantly (history) or in real time (live).
+// Built on absolute offsets first so parallel subagents can interleave, then turned into delays.
+const SUB_TOOLS = [
+  ['Grep', { pattern: 'router\\.(get|post)' }], ['Glob', { pattern: 'src/routes/**/*.ts' }], ['Read', { file_path: 'src/routes/users.ts' }],
+  ['Read', { file_path: 'src/app.ts' }], ['Bash', { command: 'git log --oneline -5 -- src/routes' }],
+];
+const SUB_TASKS = ['find all route handlers', 'check how auth middleware is wired', 'list existing tests for routes'];
+function turnPlan(s, prompt, n, explore = 0) {
+  const ev = []; let t = 0;
+  const at = (dt, f) => { t += dt; ev.push([t, f]); };
+  at(0, ts => s.hook(ts, 'UserPromptSubmit', { prompt }));
+  if (explore) subagents(explore);
   for (let i = 0; i < n; i++) {
-    const [tool, input] = pick(TOOLS); const id = 'toolu_' + (++uid);
-    const fail = Math.random() < 0.08;
-    plan.push([900 + Math.random() * 1500, ts => s.step(ts, [tool])]);
-    plan.push([250, ts => s.hook(ts, 'PreToolUse', { tool_name: tool, tool_input: input, tool_use_id: id })]);
-    if (tool === 'Agent') plan.push([200, ts => s.hook(ts, 'SubagentStart', { agent_id: 'ag' + uid, agent_type: 'Explore' })]);
-    const run = tool === 'Bash' ? 2500 + Math.random() * 5000 : tool === 'Agent' ? 6000 : 300 + Math.random() * 1500;
-    if (tool === 'Agent') plan.push([run, ts => s.hook(ts, 'SubagentStop', { agent_id: 'ag' + uid, agent_type: 'Explore', last_assistant_message: 'Found 14 route handlers in src/routes.' })]);
-    plan.push([tool === 'Agent' ? 200 : run, ts => fail
+    const [tool, input] = pick(TOOLS);
+    if (tool === 'Agent') { subagents(Math.random() < 0.4 ? 2 : 1); continue; }
+    const id = 'toolu_' + (++uid), fail = Math.random() < 0.08;
+    at(900 + Math.random() * 1500, ts => s.step(ts, [tool]));
+    at(250, ts => s.hook(ts, 'PreToolUse', { tool_name: tool, tool_input: input, tool_use_id: id }));
+    at(tool === 'Bash' ? 2500 + Math.random() * 5000 : 300 + Math.random() * 1500, ts => fail
       ? s.hook(ts, 'PostToolUseFailure', { tool_name: tool, tool_input: input, tool_use_id: id, error: 'Exit code 1: 2 tests failed' })
-      : s.hook(ts, 'PostToolUse', { tool_name: tool, tool_input: input, tool_use_id: id, tool_response: 'ok' })]);
+      : s.hook(ts, 'PostToolUse', { tool_name: tool, tool_input: input, tool_use_id: id, tool_response: 'ok' }));
   }
-  plan.push([1200, ts => s.step(ts, [], 'end_turn')]);
-  plan.push([300, ts => s.hook(ts, 'Stop', { last_assistant_message: `Done — ${prompt.toLowerCase()}. Tests pass; changes are in the working tree, not committed.` })]);
-  return plan;
+  // k subagents launched together; each runs its own model steps and tool calls, then hands back
+  function subagents(k) {
+    at(900 + Math.random() * 1500, ts => s.step(ts, new Array(k).fill('Agent')));
+    let end = t;
+    for (let j = 0; j < k; j++) {
+      const id = 'toolu_' + (++uid), aid = 'a' + Math.random().toString(16).slice(2, 12), task = SUB_TASKS[(uid + j) % SUB_TASKS.length];
+      const input = { subagent_type: 'Explore', description: task }, who = { agent_id: aid, agent_type: 'Explore' };
+      let tt = t + 150 + j * 120;
+      ev.push([tt, ts => s.hook(ts, 'PreToolUse', { tool_name: 'Agent', tool_input: input, tool_use_id: id })]);
+      ev.push([tt += 200, ts => s.hook(ts, 'SubagentStart', who)]);
+      for (let q = 2 + Math.floor(Math.random() * 3); q > 0; q--) {
+        const [st, si] = pick(SUB_TOOLS), tid = 'toolu_' + (++uid);
+        ev.push([tt += 700 + Math.random() * 900, ts => s.subStep(ts, aid, [st])]);
+        ev.push([tt += 200, ts => s.hook(ts, 'PreToolUse', { tool_name: st, tool_input: si, tool_use_id: tid, ...who })]);
+        ev.push([tt += 300 + Math.random() * 900, ts => s.hook(ts, 'PostToolUse', { tool_name: st, tool_input: si, tool_use_id: tid, tool_response: 'ok', ...who })]);
+      }
+      ev.push([tt += 600, ts => s.subStep(ts, aid, [], 'end_turn')]);
+      ev.push([tt += 150, ts => s.hook(ts, 'SubagentStop', { ...who, last_assistant_message: `Done: ${task}.` })]);
+      ev.push([tt += 150, ts => s.hook(ts, 'PostToolUse', { tool_name: 'Agent', tool_input: input, tool_use_id: id, tool_response: 'ok' })]);
+      end = Math.max(end, tt);
+    }
+    t = end;
+  }
+  at(1200, ts => s.step(ts, [], 'end_turn'));
+  at(300, ts => s.hook(ts, 'Stop', { last_assistant_message: `Done — ${prompt.toLowerCase()}. Tests pass; changes are in the working tree, not committed.` }));
+  ev.sort((x, y) => x[0] - y[0]);
+  let prev = 0;
+  return ev.map(([x, f]) => { const d = x - prev; prev = x; return [d, f]; });
 }
 function writeNow(plan, start) { let t = start; for (const [d, f] of plan) { t += d; f(t); } return t; }
 
@@ -99,7 +140,7 @@ const prompts = ['Add rate limiting to the public API', 'Store the limiter count
   await new Promise(r => setTimeout(r, 1500));
   console.log(`Demo running → http://localhost:${PORT}  (Ctrl+C to stop)`);
   for (let k = 0; ; k++) {
-    for (const [d, f] of turnPlan(live, prompts[k % prompts.length], 5 + Math.floor(Math.random() * 6))) {
+    for (const [d, f] of turnPlan(live, prompts[k % prompts.length], 5 + Math.floor(Math.random() * 6), k % 2 ? 0 : 2)) {
       await new Promise(r => setTimeout(r, d)); f(Date.now());
     }
     await new Promise(r => setTimeout(r, 6000));

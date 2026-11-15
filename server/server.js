@@ -27,7 +27,8 @@ function classify(ev) {
   const d = ev.data || {};
   const tool = d.tool_name || '';
   switch (ev.event) {
-    case 'ModelStep': return 'model';
+    case 'ModelStep':
+    case 'ModelText': return 'model';
     case 'UserPromptSubmit':
     case 'UserPromptExpansion': return 'prompt';
     case 'PermissionRequest':
@@ -192,6 +193,26 @@ function readTail(file) {
   return lines;
 }
 
+// the tool calls in one transcript line of a response: name + the tool_use id the hooks report as tool_use_id
+const toolUses = m => (Array.isArray(m.content) ? m.content : []).filter(c => c && c.type === 'tool_use').map(c => ({ name: c.name, id: c.id || null }));
+const stepByMsg = new Map(); // message id → its ModelStep event (recent ones), so later lines can add their tool calls
+
+// what the model wrote: one ModelText per finished text / thinking block (thinking is often stored empty)
+const TEXT_MAX = 2000;
+function modelTexts(s, row, m, isSub) {
+  const out = [];
+  for (const c of Array.isArray(m.content) ? m.content : []) {
+    const raw = c && (c.type === 'text' ? c.text : c.type === 'thinking' ? c.thinking : null);
+    const text = raw ? String(raw).trim() : '';
+    if (!text) continue;
+    out.push({
+      ts: row.timestamp || new Date().toISOString(), event: 'ModelText', session_id: s.id, synthetic: true,
+      data: { kind: c.type, text: text.length > TEXT_MAX ? text.slice(0, TEXT_MAX) + '…' : text, msg_id: m.id || null, subagent: isSub || !!row.isSidechain, agent_id: row.agentId || null },
+    });
+  }
+  return out;
+}
+
 function readTranscripts(s) {
   const main = s.transcript_path;
   if (!main) return;
@@ -209,7 +230,20 @@ function readTranscripts(s) {
       const m = row.message;
       if (!m || m.role !== 'assistant' || !m.usage) continue;
       const key = m.id || row.uuid;
-      if (key && seen.has(key)) continue; // one API response spans several lines
+      // one API response spans several lines (one per content block): its first line becomes the ModelStep,
+      // and every non-empty text / thinking block, on whichever line it comes, also becomes a ModelText
+      const said = modelTexts(s, row, m, isSub), uses = toolUses(m);
+      if (key && seen.has(key)) {
+        // a later line of a response we already have: tool calls usually arrive here, so add them to its
+        // ModelStep and send that step again (same seq: the dashboard updates it in place)
+        const step = stepByMsg.get(key);
+        if (step) {
+          const ids = step.data.tool_ids, add = uses.filter(u => !ids.includes(u.id));
+          if (add.length) { for (const u of add) { step.data.tools.push(u.name); ids.push(u.id); } fresh.push(step); }
+        }
+        for (const t of said) { ingest(t); fresh.push(t); }
+        continue;
+      }
       if (key) seen.add(key);
       const u = m.usage;
       s.usage.input += u.input_tokens || 0;
@@ -223,7 +257,6 @@ function readTranscripts(s) {
         const window = /\[1m\]|-1m/i.test(m.model || s.model || '') || ctx > CONTEXT_WINDOW ? 1000000 : CONTEXT_WINDOW;
         s.context = { tokens: ctx, window, pct: Math.min(1, ctx / window), ts: row.timestamp };
       }
-      const tools = Array.isArray(m.content) ? m.content.filter(c => c && c.type === 'tool_use').map(c => c.name) : [];
       const ev = {
         ts: row.timestamp || new Date().toISOString(),
         event: 'ModelStep',
@@ -231,15 +264,17 @@ function readTranscripts(s) {
         synthetic: true,
         data: {
           model: m.model, stop_reason: m.stop_reason, subagent: isSub || !!row.isSidechain,
-          agent_id: row.agentId || null, tools,
+          agent_id: row.agentId || null, msg_id: m.id || null, tools: uses.map(u => u.name), tool_ids: uses.map(u => u.id),
           tokens: { input: u.input_tokens || 0, output: u.output_tokens || 0, cache_read: u.cache_read_input_tokens || 0, cache_write: u.cache_creation_input_tokens || 0, context: ctx },
         },
       };
       // keep model on the event without overwriting the session's model with a subagent's
       const keepModel = s.model;
       ingest(ev);
+      if (key) { stepByMsg.set(key, ev); if (stepByMsg.size > 2000) stepByMsg.delete(stepByMsg.keys().next().value); }
       if (isSub) s.model = keepModel;
       fresh.push(ev);
+      for (const t of said) { ingest(t); fresh.push(t); }
     }
   }
   if (initialLoadDone && fresh.length) {
@@ -330,7 +365,7 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/api/clear' && req.method === 'POST') {
     try { fs.writeFileSync(LOG_FILE, ''); } catch { /* ignore */ }
-    sessions.clear(); seenMsgs.clear(); tails.clear(); offset = 0; partial = '';
+    sessions.clear(); seenMsgs.clear(); stepByMsg.clear(); tails.clear(); offset = 0; partial = '';
     broadcast('reset', {});
     return json(res, 200, { ok: true });
   }
