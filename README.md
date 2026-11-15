@@ -8,7 +8,7 @@ prompts, every tool call (with timing), **skills loaded**, **questions Claude as
 failures, notifications, context compactions, model switches, file/cwd changes,
 token usage per session, and what the model wrote and which tools it asked for at each step.
 
-![Route view: a turn drawn as a metro line, four subagents branching below and merging back](docs/route.png)
+![Route view: a turn drawn as a metro line, two Explore subagents branching below and merging back](docs/session-subagents.jpg)
 
 ## Quick start
 
@@ -53,9 +53,7 @@ parallel and then a Plan subagent, drove Chrome through Claude in Chrome, and lo
   now (the dot and the timer on the card). **MCP** (8) counts the codebase-memory calls,
   **Agents** (6) the subagent calls, and **Skills** (1) the loaded `claude-in-chrome` skill.
 
-**Route: two subagents working in parallel**
-
-![Route of a turn where two Explore subagents run in parallel and hand back](docs/session-subagents.jpg)
+**Route: two subagents working in parallel** (the screenshot at the top of this README)
 
 * The main line starts at **You** (the prompt) and runs along the top. The model makes two
   **Agent** calls back to back, and each one forks down onto its own lane.
