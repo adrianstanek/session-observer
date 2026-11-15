@@ -103,6 +103,34 @@ Or straight from GitHub:
 
 Restart Claude Code after installing — hooks load at session start.
 
+### Update
+
+Pull the latest marketplace, then update the plugin:
+```
+/plugin marketplace update session-observer-marketplace
+/plugin update session-observer@session-observer-marketplace
+```
+Restart Claude Code afterwards.
+
+An update is only picked up when `version` in `.claude-plugin/plugin.json` changes. If the
+version is the same, reinstall to get the latest commit:
+```
+/plugin uninstall session-observer@session-observer-marketplace
+/plugin install session-observer@session-observer-marketplace
+```
+
+Using `--plugin-dir`? Run `git pull` in the clone and restart Claude Code.
+
+### Uninstall
+
+```
+/plugin uninstall session-observer@session-observer-marketplace
+/plugin marketplace remove session-observer-marketplace   # optional: also drop the marketplace
+```
+Restart Claude Code so the hooks stop running. You can also do it from `/plugin` →
+**Manage plugins**, or keep it installed but off with
+`/plugin disable session-observer@session-observer-marketplace`.
+
 ## Use
 
 The server starts automatically on the first `SessionStart`. Open
