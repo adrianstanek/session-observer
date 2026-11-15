@@ -7,29 +7,29 @@
 <style>
   :root {
     --bg: #f4f5f7; --panel: #ffffff; --panel-2: #f0f1f4; --line: #dcdfe5; --line-2: #e8eaee;
-    --text: #1b1d22; --muted: #646b78; --faint: #9aa0ab; --accent: #2563eb; --accent-bg: #dbe7ff;
-    --ok: #16a34a; --warn: #d97706; --err: #dc2626; --err-bg: #fde4e4; --spoke: #b9bec8;
-    --s-you: #0d9488; --s-model: #7c3aed; --s-files: #2563eb; --s-shell: #475569; --s-git: #db2777; --s-mcp: #ea580c;
-    --s-network: #4f46e5; --s-browser: #059669; --s-agents: #b45309; --s-skills: #65a30d; --s-context: #0891b2; --s-other: #6b7280;
+    --text: #1b1d22; --muted: #4b5260; --faint: #80868f; --accent: #1d4ed8; --accent-bg: #ebf1ff;
+    --ok: #137138; --warn: #a24b06; --err: #c81e1e; --err-bg: #fde4e4; --spoke: #b9bec8;
+    --s-you: #0f766e; --s-model: #6d28d9; --s-files: #1d4ed8; --s-shell: #475569; --s-git: #be185d; --s-mcp: #b23b0b;
+    --s-network: #4338ca; --s-browser: #047857; --s-agents: #a14a08; --s-skills: #42690c; --s-context: #0e7490; --s-other: #565d6a;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0e0f11; --panel: #17181b; --panel-2: #1f2125; --line: #2d3036; --line-2: #24262b;
-      --text: #e6e7ea; --muted: #9a9fa9; --faint: #6b707a; --accent: #3b82f6; --accent-bg: #1c2d4d;
-      --ok: #22c55e; --warn: #f59e0b; --err: #ef4444; --err-bg: #3a1618; --spoke: #3a3e46;
+      --text: #e6e7ea; --muted: #b9bec7; --faint: #858a94; --accent: #6b9cf8; --accent-bg: #1c2d4d;
+      --ok: #22c55e; --warn: #f59e0b; --err: #f87171; --err-bg: #3a1618; --spoke: #3a3e46;
       --s-you: #2dd4bf; --s-model: #a78bfa; --s-files: #60a5fa; --s-shell: #cbd5e1; --s-git: #f472b6; --s-mcp: #fb923c;
-      --s-network: #818cf8; --s-browser: #34d399; --s-agents: #fbbf24; --s-skills: #a3e635; --s-context: #22d3ee; --s-other: #9ca3af;
+      --s-network: #949cf9; --s-browser: #34d399; --s-agents: #fbbf24; --s-skills: #a3e635; --s-context: #22d3ee; --s-other: #9ca3af;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0e0f11; --panel: #17181b; --panel-2: #1f2125; --line: #2d3036; --line-2: #24262b;
-    --text: #e6e7ea; --muted: #9a9fa9; --faint: #6b707a; --accent: #3b82f6; --accent-bg: #1c2d4d;
-    --ok: #22c55e; --warn: #f59e0b; --err: #ef4444; --err-bg: #3a1618; --spoke: #3a3e46;
+    --text: #e6e7ea; --muted: #b9bec7; --faint: #858a94; --accent: #6b9cf8; --accent-bg: #1c2d4d;
+    --ok: #22c55e; --warn: #f59e0b; --err: #f87171; --err-bg: #3a1618; --spoke: #3a3e46;
     --s-you: #2dd4bf; --s-model: #a78bfa; --s-files: #60a5fa; --s-shell: #cbd5e1; --s-git: #f472b6; --s-mcp: #fb923c;
-    --s-network: #818cf8; --s-browser: #34d399; --s-agents: #fbbf24; --s-skills: #a3e635; --s-context: #22d3ee; --s-other: #9ca3af;
+    --s-network: #949cf9; --s-browser: #34d399; --s-agents: #fbbf24; --s-skills: #a3e635; --s-context: #22d3ee; --s-other: #9ca3af;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -54,7 +54,7 @@
 
   /* filter bar */
   .filters { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 10px; align-items: end; padding: 10px 14px; margin-bottom: 10px; }
-  .filters label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .filters label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .filters label > * { text-transform: none; letter-spacing: 0; font-size: 13px; }
   .filters .check { flex-direction: row; align-items: center; gap: 6px; padding-bottom: 6px; text-transform: none; font-size: 13px; color: var(--text); letter-spacing: 0; }
 
@@ -80,8 +80,8 @@
   .bcard, .bcore { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; min-height: 0; overflow: hidden; position: relative; }
   .bcard { padding: 7px 10px 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
   .bcard:hover { border-color: var(--muted); }
-  .bcard:not(.used) { opacity: .5; }
-  .bcard.dim { opacity: .3; }
+  .bcard:not(.used) { opacity: .65; }
+  .bcard.dim { opacity: .45; }
   .bcard.hot { border-color: var(--c); background: color-mix(in srgb, var(--c) 8%, var(--panel)); }
   .bcard.hot::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 35%; background: var(--c); animation: slide 1.4s linear infinite; animation-delay: var(--d, 0ms); }
   .bcard.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -93,7 +93,7 @@
   .spark { flex: 1; min-height: 8px; width: 100%; display: block; }
   .spark rect { fill: var(--c, var(--accent)); }
   .spark line { stroke: var(--line); vector-effect: non-scaling-stroke; }
-  .bcard .ft { font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bcard .ft { font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bcard .ft.run { color: var(--c); }
   .bcore { grid-column: span 2; grid-row: span 2; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
   .bcore .ct { display: flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: .06em; }
@@ -105,8 +105,8 @@
   .cstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .cstats div { display: flex; flex-direction: column; }
   .cstats b { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .cstats span { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .cspark { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 0; font-size: 11px; color: var(--muted); }
+  .cstats span { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .cspark { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 0; font-size: 11.5px; color: var(--muted); }
 
   .lhead { height: 50px; display: flex; flex-direction: column; gap: 4px; }
   .lhead.live { height: 70px; }
@@ -123,10 +123,10 @@
   .metro .ml.br { stroke: var(--s-agents); stroke-width: 4; opacity: .7; }
   .metro .halo { fill: none; stroke: var(--panel); stroke-width: 12; stroke-linecap: butt; }
   .mscroll { overflow-x: auto; overflow-y: auto; }
-  .metro .dim { opacity: .3; }
+  .metro .dim { opacity: .5; }
   /* hovering a line highlights that whole line (a subagent's branch or a turn's main line) and its stops */
   .metro .hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
-  .metro.hl .ml:not(.on), .metro.hl .stop:not(.on), .metro.hl .md:not(.on) { opacity: .2; }
+  .metro.hl .ml:not(.on), .metro.hl .stop:not(.on), .metro.hl .md:not(.on) { opacity: .3; }
   .metro .ml.on { opacity: 1; stroke-width: 8; }
   .metro .ml.br.on { stroke-width: 7; }
   .metro .stop.on .sn { stroke-width: 4; }
@@ -149,12 +149,12 @@
   .metro .ico { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   .metro .ring { fill: none; stroke: currentColor; stroke-width: 2; animation: blink 1s infinite; }
   .metro .sl { fill: var(--text); font-size: 11.5px; text-anchor: middle; }
-  .metro .ss { fill: var(--muted); font: 10.5px var(--mono); text-anchor: middle; }
+  .metro .ss { fill: var(--muted); font: 11px var(--mono); text-anchor: middle; }
   .metro .ss.err { fill: var(--err); } .metro .ss.run { fill: currentColor; }
   .lhist { height: 40px; display: flex; gap: 6px; align-items: center; overflow: hidden; font-size: 12px; border-top: 1px solid var(--line-2); margin-top: 8px; }
   .lhist .grow { flex: 1; }
   .lhist .seg { padding: 3px 10px; }
-  .lhist .seg:disabled { opacity: .4; cursor: default; }
+  .lhist .seg:disabled { opacity: .5; cursor: default; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); white-space: nowrap; }
@@ -164,12 +164,12 @@
   .chip .x { color: var(--err); font-weight: 600; }
   .frow { display: grid; grid-template-columns: 14px 86px 104px minmax(0, 1fr); gap: 8px; padding: 4px 4px; border-radius: 4px; cursor: pointer; align-items: baseline; }
   .frow:hover { background: var(--panel-2); }
-  .frow .mk { color: var(--faint); text-align: center; }
+  .frow .mk { color: var(--muted); text-align: center; font-weight: 700; }
   .frow .mk.run { color: var(--ok); } .frow .mk.fail { color: var(--err); } .frow .mk.model { color: var(--s-model); }
   .frow .t { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; white-space: nowrap; }
   .frow .who { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; }
   .frow .what { font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .frow .what .proj { color: var(--faint); font-family: inherit; margin-right: 6px; }
+  .frow .what .proj { color: var(--muted); font-family: inherit; margin-right: 6px; }
   .frow.fail .what { color: var(--err); }
   .ic { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
 
@@ -211,9 +211,9 @@
   .lead { color: var(--muted); margin: 0 0 14px; word-break: break-word; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-bottom: 14px; }
   .tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
-  .tile .l { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .tile .l { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
   .tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .tile .s { font-size: 11px; color: var(--muted); }
+  .tile .s { font-size: 12px; color: var(--muted); }
   .tile.bad .v { color: var(--err); }
   .box { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
   .box > .bh { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
@@ -242,15 +242,15 @@
   .keygrid div { display: flex; align-items: center; gap: 6px; }
   .q { background: var(--panel-2); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; max-height: 260px; overflow: auto; }
   .q.ans { border-left: 3px solid var(--s-model); }
-  .lbl2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+  .lbl2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
   .erow { border-bottom: 1px solid var(--line-2); }
   .erow .frow { grid-template-columns: 14px 86px 104px minmax(0, 1fr) auto; }
-  .erow .dur { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .erow .dur { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
   .erow.hit .frow { background: var(--accent-bg); }
   .erow.open .frow { background: var(--panel-2); }
   /* opened model-step row: why it stopped, which tools it called, what it wrote, what filled its context */
   .evx { margin: 4px 0 10px 22px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; }
-  .evx .k { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .evx .k { color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
   .evx .hd { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
   .evx .hd b { font-weight: 600; }
   .evx .tu { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line-2); font-size: 12px; }
@@ -262,11 +262,30 @@
   .evx .said .th { color: var(--muted); font-style: italic; }
   .tokbar { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--line-2); }
   .tokbar i { display: block; height: 100%; }
-  .toklg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+  .toklg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 5px; font-size: 12px; color: var(--muted); }
   .toklg span { display: inline-flex; align-items: center; gap: 5px; }
   .toklg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
   .toklg b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .evx details summary { cursor: pointer; color: var(--muted); font-size: 11.5px; }
+  .evx .hd b { display: inline-flex; gap: 5px; align-items: center; }
+  .evx .said.you { border-left-color: var(--s-you); }
+  .evx .said.th { color: var(--muted); font-style: italic; }
+  .evx .code { margin: 0 0 4px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 6px 8px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow: auto; }
+  .evx .code.err { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, var(--line-2)); }
+  .jk { color: var(--s-files); } .js { color: var(--s-browser); } .jn { color: var(--s-mcp); } .jb { color: var(--s-git); }
+  .evx .code .jl { color: var(--text); font-weight: 600; }
+  .evx .code.fj { max-height: 420px; }
+  .evx .jfold summary { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+  .evx .jfold summary:hover .jl { color: var(--accent); }
+  .evx .jfold[open] summary { margin-bottom: 2px; }
+  .evx .jfold .jbody { white-space: pre-wrap; padding: 2px 0 6px 16px; border-left: 1px solid var(--line-2); margin-left: 4px; }
+  .tk-c { color: var(--muted); font-style: italic; } .tk-s { color: var(--s-browser); } .tk-k { color: var(--s-git); }
+  .tk-n { color: var(--s-mcp); } .tk-v { color: var(--s-files); } .tk-f { color: var(--s-context); } .tk-o { color: var(--accent); font-weight: 600; }
+  .evx pre.diff .del { color: var(--err); } .evx pre.diff .ins { color: var(--ok); }
+  .evx dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0 0 4px; font-size: 12px; }
+  .evx dl.kv dt { color: var(--muted); } .evx dl.kv dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; min-width: 0; }
+  .evx .q2 { margin-bottom: 6px; } .evx .q2 .opt { padding-left: 10px; }
+  .evx .meta { color: var(--muted); font-size: 12px; }
+  .evx details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
   .evx details pre.raw { margin: 6px 0 0; }
   pre.raw { margin: 4px 0 10px 22px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
   .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
@@ -1140,9 +1159,218 @@ function colourKey() {
   return `<details class="key"><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
     <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
 }
-// ---- an opened event row: a readable card for model steps, the raw hook payload for everything else
-const rawPre = e => `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${esc(JSON.stringify(e.data, null, 2))}</pre>`;
-function evOpenHtml(e, t) { return e.event === 'ModelStep' ? stepCard(e, t) : rawPre(e); }
+// ---- an opened event row: a readable card for every event, with the raw hook payload folded underneath
+const rawPre = e => `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${jsonHtml(e.data)}</pre>`;
+// JSON pretty-printed with keys / strings / numbers / literals coloured (escaped token by token)
+const JSON_TOK = /("(?:\\u[0-9a-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+// compact layout: an object / array stays on one line while that fits in ~72 columns, otherwise one child per line
+function jsonStr(v, ind = '', w = 72) {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null';
+  const arr = Array.isArray(v), ents = arr ? v.map(x => [null, x]) : Object.entries(v);
+  if (!ents.length) return arr ? '[]' : '{}';
+  const key = k => k == null ? '' : JSON.stringify(k) + ': ';
+  const one = (arr ? '[' : '{ ') + ents.map(([k, x]) => key(k) + jsonStr(x, '', Infinity)).join(', ') + (arr ? ']' : ' }');
+  if (ind.length + one.length <= w) return one;
+  const i2 = ind + '  ';
+  return (arr ? '[' : '{') + '\n' + ents.map(([k, x]) => i2 + key(k) + jsonStr(x, i2, w)).join(',\n') + '\n' + ind + (arr ? ']' : '}');
+}
+function jsonHtml(v) {
+  const src = jsonStr(v);
+  let out = '', last = 0;
+  for (const m of src.matchAll(JSON_TOK)) {
+    const t = m[0], cls = t[0] === '"' ? (m[2] ? 'jk' : 'js') : /^[tfn]/.test(t) ? 'jb' : 'jn';
+    out += esc(src.slice(last, m.index)) + `<span class="${cls}">${esc(t)}</span>`; last = m.index + t.length;
+  }
+  return out + esc(src.slice(last));
+}
+// tool output: all-JSON output is pretty-printed; otherwise a line ending in a JSON object / array
+// ("PreToolUse 302 {…}") keeps its text and gets the JSON laid out under it; anything else stays as is
+function fmtOutput(txt) {
+  const s = String(txt).length > 20000 ? String(txt).slice(0, 20000) + '\n…' : String(txt), tr = s.trim();
+  const parse = x => { try { const v = JSON.parse(x); return v && typeof v === 'object' ? v : undefined; } catch { return undefined; } };
+  if (/^[\[{]/.test(tr)) { const v = parse(tr); if (v !== undefined) return { html: jsonHtml(v), json: true }; }
+  const lines = s.split('\n').map(line => {
+    const i = line.search(/[\[{]/), v = i < 0 ? undefined : parse(line.slice(i));
+    return v === undefined ? { line } : { label: line.slice(0, i).trimEnd(), v };
+  });
+  const n = lines.filter(x => x.v !== undefined).length;
+  if (!n) return { html: esc(s), json: false };
+  // 3+ labelled JSON lines: one folding row each (label + its first keys), expanded on click
+  const fold = n >= 3;
+  const html = lines.map(x => {
+    if (x.v === undefined) return fold ? `<div>${esc(x.line) || '&nbsp;'}</div>` : esc(x.line);
+    if (!fold) return (x.label ? `<b class="jl">${esc(x.label)}</b>\n` : '') + jsonHtml(x.v);
+    const keys = Array.isArray(x.v) ? `${x.v.length} items` : Object.keys(x.v).join(', ');
+    return `<details class="jfold"><summary><b class="jl">${esc(x.label || (Array.isArray(x.v) ? 'array' : 'object'))}</b> <span class="muted">${esc(trunc(keys, 110))}</span></summary><div class="jbody">${jsonHtml(x.v)}</div></details>`;
+  }).join(fold ? '' : '\n');
+  return { html, json: true, fold };
+}
+const evOut = (txt, cls = '') => { if (txt == null || txt === '') return ''; const f = fmtOutput(txt), tag = f.fold ? 'div' : 'pre'; return `<${tag} class="code ${cls}${f.json ? ' fj' : ''}">${f.html}</${tag}>`; };
+// fields every hook payload carries; the card footer shows the useful ones, the field tables skip them
+const EV_COMMON = new Set(['session_id', 'transcript_path', 'cwd', 'hook_event_name', 'permission_mode', 'scratchpad_dir', 'prompt_id', 'effort', 'agent_id', 'agent_type', 'tool_use_id']);
+const evHead = (st, title, ...bits) => `<div class="hd"><b style="color:var(--s-${st})">${icon(st)}${esc(title)}</b>${bits.filter(Boolean).map(b => `<span>${b}</span>`).join('')}</div>`;
+const evSec = (label, html) => html ? `<div><div class="k">${label}</div>${html}</div>` : '';
+const evText = (txt, cls = '') => txt ? `<div class="said ${cls}">${esc(String(txt).length > 6000 ? String(txt).slice(0, 6000) + '…' : txt)}</div>` : '';
+const evCode = (txt, cls = '') => txt != null && txt !== '' ? `<pre class="code ${cls}">${esc(String(txt).length > 6000 ? String(txt).slice(0, 6000) + '\n…' : txt)}</pre>` : '';
+// key → value table; short scalars inline, long text / objects as code blocks
+function evKv(o, skip = EV_COMMON) {
+  const rows = Object.entries(o || {}).filter(([k, v]) => !skip.has(k) && v != null && v !== '' && !(Array.isArray(v) && !v.length));
+  if (!rows.length) return '';
+  return `<dl class="kv">${rows.map(([k, v]) => {
+    const s = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+    return `<dt>${esc(k)}</dt><dd>${typeof v !== 'string' ? `<pre class="code fj">${jsonHtml(v)}</pre>` : s.length > 140 || s.includes('\n') ? evOut(s) : esc(s)}</dd>`;
+  }).join('')}</dl>`;
+}
+function evCard(e, inner) {
+  const d = e.data || {}, bits = [fmtTime(e.ts), d.agent_type ? `subagent ${d.agent_type}` : d.subagent ? 'subagent' : 'main agent', d.effort?.level && `effort ${d.effort.level}`, d.permission_mode && `mode ${d.permission_mode}`, `#${e.seq}`];
+  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div><details><summary>Raw payload</summary>${rawPre(e)}</details></div>`;
+}
+// ---- code display: a small syntax colouring for shell, Python and JavaScript (escaped token by token)
+const KW = {
+  sh: new Set('if then else elif fi for while until do done case esac in function return export local set unset source exit'.split(' ')),
+  py: new Set('def class return if elif else for while in not and or is import from as with try except finally raise pass break continue lambda None True False global nonlocal yield async await assert del'.split(' ')),
+  js: new Set('const let var function return if else for while do of in new class extends try catch finally throw typeof instanceof await async import export from default null undefined true false this switch case break continue delete void yield'.split(' ')),
+};
+// groups: 1 comment · 2 string · 3 variable · 4 operator · 5 flag · 6 number · 7 word ("(?!)" = a part the language lacks)
+const CODE_PARTS = {
+  sh: [String.raw`(?<![\w$])#[^\n]*`, String.raw`"(?:\\[\s\S]|[^"\\])*"|'[^']*'`, String.raw`\$\{[^}\n]*\}|\$\w+|\$[@#?*!$0-9]`, String.raw`&&|\|\||2>&1|&>|>>|[|;<>]`, String.raw`(?<![\w./-])--?[A-Za-z][\w-]*`],
+  py: [String.raw`#[^\n]*`, String.raw`\b[rRbBfFuU]{1,2}(?="|')(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'`, '(?!)', '(?!)', '(?!)'],
+  js: [String.raw`\/\/[^\n]*|\/\*[\s\S]*?\*\/`, String.raw`\x60(?:\\[\s\S]|[^\x60\\])*\x60|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'`, '(?!)', String.raw`=>`, '(?!)'],
+};
+const CODE_RX = Object.fromEntries(Object.entries(CODE_PARTS).map(([l, p]) => [l, new RegExp([...p, String.raw`\b\d+(?:\.\d+)?\b`, String.raw`[A-Za-z_$][\w$]*`].map(x => `(${x})`).join('|'), 'g')]));
+const TK = [null, 'c', 's', 'v', 'o', 'f', 'n'];
+function codeHtml(src, lang) {
+  src = String(src ?? '');
+  const rx = CODE_RX[lang]; if (!rx) return esc(src);
+  let out = '', last = 0;
+  for (const m of src.matchAll(rx)) {
+    const t = m[0]; let c = null;
+    for (let g = 1; g <= 6; g++) if (m[g] !== undefined) { c = TK[g]; break; }
+    if (!c && KW[lang].has(t)) c = 'k';
+    out += esc(src.slice(last, m.index)) + (c ? `<span class="tk-${c}">${esc(t)}</span>` : esc(t)); last = m.index + t.length;
+  }
+  return out + esc(src.slice(last));
+}
+const langOf = f => { const x = String(f || '').split('.').pop().toLowerCase(); return ['js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx'].includes(x) ? 'js' : x === 'py' ? 'py' : ['sh', 'bash', 'zsh'].includes(x) ? 'sh' : x === 'json' ? 'json' : null; };
+// a long shell line wraps at its top-level && || ; | (not inside quotes, $( ) or ( )), continuation lines indented
+function splitShell(line) {
+  if (line.length <= 100) return line;
+  let out = '', q = null, depth = 0;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i], two = line.slice(i, i + 2);
+    if (q) { out += c; if (c === '\\' && q !== "'") { out += line[++i] ?? ''; } else if (c === q) q = null; continue; }
+    if (c === '"' || c === "'" || c === '`') { q = c; out += c; continue; }
+    if (c === '(') depth++; else if (c === ')') depth = Math.max(0, depth - 1);
+    if (!depth && (two === '&&' || two === '||')) { out += two + '\n  '; i += 1 + (line[i + 2] === ' ' ? 1 : 0); continue; }
+    if (!depth && (c === ';' || (c === '|' && line[i + 1] !== '|'))) { out += c + '\n  '; if (line[i + 1] === ' ') i++; continue; }
+    out += c;
+  }
+  return out;
+}
+const codeLangOf = s => /\bpython3?\b/.test(s) ? 'py' : /\b(node|deno|bun)\b/.test(s) ? 'js' : /\b(bash|sh|zsh)\b/.test(s) ? 'sh' : null;
+// a Bash command: shell coloured; heredoc bodies and `node -e '…'` / `python -c '…'` scripts coloured as their language
+function bashHtml(cmd) {
+  cmd = String(cmd ?? '');
+  const inl = !/<<-?\s*['"]?\w+/.test(cmd) && cmd.match(/^([\s\S]*?\b(?:node|python3?|deno|bun)\s+(?:-\S+\s+)*?-[ec]\s+)'([^']*)'([\s\S]*)$/);
+  if (inl) return codeHtml(inl[1], 'sh') + `<span class="tk-s">'</span>${codeHtml(inl[2], codeLangOf(inl[1]))}<span class="tk-s">'</span>` + bashHtml(inl[3]);
+  const lines = cmd.split('\n'), out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i], m = line.match(/<<-?\s*(['"]?)(\w+)\1/);
+    out.push(codeHtml(splitShell(line), 'sh'));
+    if (!m) continue;
+    const body = []; i++;
+    while (i < lines.length && lines[i].trim() !== m[2]) body.push(lines[i++]);
+    out.push(codeHtml(body.join('\n'), codeLangOf(line.slice(0, m.index))));
+    if (i < lines.length) out.push(`<span class="tk-o">${esc(lines[i])}</span>`);
+  }
+  return out.join('\n');
+}
+
+// a tool's input, shaped per tool
+function toolInputHtml(name, i) {
+  i = i || {};
+  switch (name) {
+    case 'Bash': return (i.command ? `<pre class="code">${bashHtml(i.command)}</pre>` : '') + (i.description ? `<div class="muted">${esc(i.description)}</div>` : '');
+    case 'Edit': return evKv({ file: i.file_path, 'replace all': i.replace_all || null }, new Set()) + diffHtml(i.old_string, i.new_string);
+    case 'MultiEdit': return evKv({ file: i.file_path }, new Set()) + (i.edits || []).map(x => diffHtml(x.old_string, x.new_string)).join('');
+    case 'Write': { const l = langOf(i.file_path), j = l === 'json' && (() => { try { return JSON.parse(i.content); } catch { return undefined; } })(); return evKv({ file: i.file_path }, new Set()) + (i.content == null ? '' : `<pre class="code">${j !== undefined && j !== false ? jsonHtml(j) : codeHtml(String(i.content).slice(0, 20000), l)}</pre>`); }
+    case 'Agent': case 'Task': return evKv({ description: i.description, type: i.subagent_type, model: i.model }, new Set()) + evSec('Prompt', evText(i.prompt));
+    case 'AskUserQuestion': return (i.questions || []).map(q => `<div class="q2"><b>${esc(q.question)}</b>${(q.options || []).map(o => `<div class="opt">• ${esc(o.label)}${o.description ? ` <span class="muted">— ${esc(o.description)}</span>` : ''}</div>`).join('')}</div>`).join('');
+    default: return evKv(i, new Set());
+  }
+}
+function diffHtml(a, b) {
+  const lines = (s, c, p) => String(s ?? '').split('\n').map(l => `<span class="${c}">${p} ${esc(l)}</span>`).join('\n');
+  return `<pre class="code diff">${lines(a, 'del', '-')}\n${lines(b, 'ins', '+')}</pre>`;
+}
+// a tool's result, shaped per tool
+function toolOutputHtml(name, post) {
+  const d = post.data || {}, r = d.tool_response;
+  if (post.event === 'PostToolUseFailure') return evOut(d.error, 'err') + (d.is_interrupt ? '<div class="muted">interrupted by the user</div>' : '');
+  if (r == null) return '<div class="muted">no output</div>';
+  if (typeof r === 'string') return evOut(r);
+  switch (name) {
+    case 'Bash': return (r.stdout || r.stderr ? evOut(r.stdout) + evOut(r.stderr, 'err') : '<div class="muted">no output</div>') + (r.interrupted ? '<div class="err">interrupted</div>' : '');
+    case 'Read': { const f = r.file || {}; return evKv({ file: f.filePath, lines: f.numLines != null ? `${f.startLine ?? 1}–${(f.startLine ?? 1) + f.numLines - 1} of ${f.totalLines ?? '?'}` : null, type: r.type }, new Set()) + evCode(f.content && String(f.content).slice(0, 1500) + (String(f.content).length > 1500 ? '\n…' : '')); }
+    case 'Edit': case 'MultiEdit': case 'Write': return `<div>${r.userModified ? 'applied, then changed by the user' : 'applied'} · <span class="muted">${esc(r.filePath || '')}</span></div>`;
+    case 'Agent': case 'Task': return evKv({ status: r.status, agent: r.agentId, model: r.resolvedModel, async: r.isAsync }, new Set()) + evText(Array.isArray(r.content) ? r.content.map(c => c.text || '').join('\n') : r.result);
+    case 'AskUserQuestion': return evKv(r.answers, new Set()) || '<div class="muted">no answers</div>';
+    default: return evKv(r, new Set(['originalFile', 'structuredPatch']));
+  }
+}
+function toolCard(e, t) {
+  const id = e.data?.tool_use_id, same = x => x.data?.tool_use_id === id;
+  const pre = e.event === 'PreToolUse' ? e : t.events.find(x => x.event === 'PreToolUse' && same(x));
+  const post = e.event !== 'PreToolUse' ? e : t.events.find(x => x.event.startsWith('PostToolUse') && same(x));
+  const d = (pre || post).data, name = d.tool_name, st = toolStation(name, d.tool_input);
+  const fail = post?.event === 'PostToolUseFailure';
+  const res = fail ? '<span class="err">✕ failed</span>' : post ? `<span style="color:var(--ok)">✓</span> ${esc(fmtDur(post.data.duration_ms ?? post.duration_ms ?? (pre ? tms(post) - tms(pre) : null)))}` : 'running…';
+  const by = t.events.find(x => x.event === 'ModelStep' && x.data?.tool_ids?.includes(id));
+  return evCard(e, evHead(st, toolLabel(name), res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
+    + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''));
+}
+const NOTE_TYPE = { idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', elicitation_dialog: 'MCP server is asking for input' };
+// the Agent call that started a subagent: the latest one before it asking for that agent type
+const agentCallFor = (e, t) => t.events.filter(x => x.event === 'PreToolUse' && (x.data?.tool_name === 'Agent' || x.data?.tool_name === 'Task') && tms(x) <= tms(e) && (!e.data?.agent_type || x.data.tool_input?.subagent_type === e.data.agent_type)).pop();
+function evOpenHtml(e, t) {
+  const d = e.data || {};
+  switch (e.event) {
+    case 'ModelStep': return stepCard(e, t);
+    case 'PreToolUse': case 'PostToolUse': case 'PostToolUseFailure': return toolCard(e, t);
+    case 'ModelText': return evCard(e, evHead('model', d.subagent ? 'Subagent' : 'Main agent', d.kind === 'thinking' ? 'thinking' : 'wrote') + evText(d.text, d.kind === 'thinking' ? 'th' : ''));
+    case 'UserPromptSubmit': return evCard(e, evHead('you', 'You', 'sent a prompt') + evText(d.prompt, 'you'));
+    case 'UserPromptExpansion': return evCard(e, evHead('you', 'Prompt expanded') + evSec('Typed', evText(d.prompt, 'you')) + evSec('Expanded to', evText(d.expanded_prompt)) + evKv(d, new Set([...EV_COMMON, 'prompt', 'expanded_prompt'])));
+    case 'Stop': case 'StopFailure': {
+      const start = t.events[0], dur = start ? tms(e) - tms(start) : null;
+      return evCard(e, evHead(e.event === 'Stop' ? 'you' : 'you', e.event === 'Stop' ? 'Turn finished' : 'Turn failed', dur != null && esc(fmtDur(dur)), d.stop_hook_active && 'stop hook active')
+        + evSec('Final reply', evText(d.last_assistant_message)) + evSec('Still running in the background', evKv({ tasks: d.background_tasks, crons: d.session_crons }, new Set()))
+        + evKv(d, new Set([...EV_COMMON, 'last_assistant_message', 'background_tasks', 'session_crons', 'stop_hook_active'])));
+    }
+    case 'SubagentStart': {
+      const call = agentCallFor(e, t);
+      return evCard(e, evHead('agents', d.agent_type || 'Subagent', 'started', d.agent_id && `<span class="muted">${esc(d.agent_id)}</span>`)
+        + (call ? evSec('Task it was given', toolInputHtml(call.data.tool_name, call.data.tool_input)) : ''));
+    }
+    case 'SubagentStop': {
+      const st0 = t.events.find(x => x.event === 'SubagentStart' && x.data?.agent_id === d.agent_id);
+      return evCard(e, evHead('agents', d.agent_type || 'Subagent', 'finished', st0 && esc(fmtDur(tms(e) - tms(st0))), d.agent_id && `<span class="muted">${esc(d.agent_id)}</span>`)
+        + evSec('Its final message', evText(d.last_assistant_message)) + evSec('Still running in the background', evKv({ tasks: d.background_tasks, crons: d.session_crons }, new Set()))
+        + evKv({ transcript: d.agent_transcript_path }, new Set()));
+    }
+    case 'PermissionRequest': case 'PermissionDenied':
+      return evCard(e, evHead('you', e.event === 'PermissionRequest' ? 'Permission asked' : 'Permission denied', esc(toolLabel(d.tool_name)), d.reason && esc(d.reason))
+        + evSec('For this call', toolInputHtml(d.tool_name, d.tool_input)) + evKv(d, new Set([...EV_COMMON, 'tool_name', 'tool_input', 'reason'])));
+    case 'Notification': return evCard(e, evHead('you', 'Notification', esc(NOTE_TYPE[d.notification_type] || d.notification_type || '')) + evText(d.message) + evKv(d, new Set([...EV_COMMON, 'message', 'notification_type'])));
+    case 'SessionStart': return evCard(e, evHead('context', 'Session started', esc(d.source || ''), d.model && `<span class="muted">${esc(d.model)}</span>`) + evKv(d, new Set([...EV_COMMON, 'source', 'model'])));
+    case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
+    case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
+    case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
+    default: {
+      const [label, sub] = describe(e);
+      return evCard(e, evHead(stationOf(e) || 'other', label || e.event, sub && esc(short(sub, 160))) + evKv(d));
+    }
+  }
+}
 const STOP_WHY = { tool_use: 'stopped to call tools', end_turn: 'finished its reply', max_tokens: 'hit the output token limit', stop_sequence: 'hit a stop sequence', pause_turn: 'paused a long-running turn', refusal: 'refused' };
 // the events that belong to one model step: by message id (tool_use ids for tools), or — for steps logged
 // before those ids were recorded — the events of the same agent that follow it, up to its next step
@@ -1172,7 +1400,7 @@ function stepCard(e, t) {
   const seg = [['cache_read', 'read from cache', 'var(--s-context)'], ['cache_write', 'written to cache', 'var(--s-model)'], ['input', 'uncached input', 'var(--accent)']];
   const bar = `<div><div class="k">Context · ${fmtN(ctx)} of ${fmtN(win)} (${Math.round(100 * ctx / win)}%)</div><div class="tokbar">${seg.map(([f, , c]) => k[f] ? `<i style="width:${(100 * k[f] / win).toFixed(2)}%;background:${c}"></i>` : '').join('')}</div>
     <div class="toklg">${seg.map(([f, l, c]) => `<span><i style="background:${c}"></i>${l} <b>${fmtN(k[f] || 0)}</b></span>`).join('')}<span>output <b>${fmtN(k.output || 0)}</b></span></div></div>`;
-  return `<div class="evx">${head}${tools}${said}${bar}<details><summary>Raw payload</summary>${rawPre(e)}</details></div>`;
+  return evCard(e, head + tools + said + bar);
 }
 
 function renderDetail() {
@@ -1196,7 +1424,7 @@ function renderDetail() {
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
     <div class="lbl2">Prompt</div><div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>
     ${t.answer ? `<div class="lbl2">Reply</div><div class="q ans">${esc(t.answer)}</div>` : ''}
-    <div class="lbl2">Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for the raw hook payload</span></div>
+    <div class="lbl2">Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span></div>
     <div>${rows}</div>${colourKey()}`;
   el.scrollTop = top;
 }
