@@ -230,6 +230,9 @@ function readTranscripts(s) {
       const m = row.message;
       if (!m || m.role !== 'assistant' || !m.usage) continue;
       const key = m.id || row.uuid;
+      // only responses from the logged part of the session: after "Clear log" the log restarts at the next
+      // hook event, and the transcript's earlier history must not come back without its prompts and tools
+      if (s.started && row.timestamp && row.timestamp < s.started) { if (key) seen.add(key); continue; }
       // one API response spans several lines (one per content block): its first line becomes the ModelStep,
       // and every non-empty text / thinking block, on whichever line it comes, also becomes a ModelText
       const said = modelTexts(s, row, m, isSub), uses = toolUses(m);
