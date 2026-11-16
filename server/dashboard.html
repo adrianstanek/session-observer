@@ -280,8 +280,23 @@
   .turn .mk { padding-top: 4px; }
 
   .dh { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line-2); margin-bottom: 12px; }
+  /* every collapsible section: the same chevron toggle as the Route's turn dividers — a small rounded box
+     whose chevron points right when collapsed and down when open */
+  details > summary { list-style: none; cursor: pointer; position: relative; padding-left: 26px; min-height: 18px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: ''; position: absolute; left: 0; top: 50%; width: 18px; height: 18px; box-sizing: border-box; transform: translateY(-50%);
+    border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
+  details > summary::after { content: ''; position: absolute; left: 0; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); transition: transform .12s;
+    background: var(--muted); -webkit-mask: var(--chev) center / 18px 18px no-repeat; mask: var(--chev) center / 18px 18px no-repeat; }
+  details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
+  details > summary:hover::before { border-color: var(--accent); }
+  details > summary:hover::after { background: var(--text); }
+  :root { --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M7 5l4 4l-4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
   details.key { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
-  details.key summary { cursor: pointer; font-weight: 500; }
+  details.key summary { font-weight: 500; }
+  /* Details panel sections (Prompt / Reply / Events): the section label is the toggle */
+  details.dsec > summary.lbl2 { display: block; line-height: 18px; }
+  details.dsec:not([open]) > summary.lbl2 { margin-bottom: 0; }
   .keygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin-top: 10px; font-size: 12.5px; }
   .keygrid div { display: flex; align-items: center; gap: 6px; }
   .q { background: var(--panel-2); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; max-height: 260px; overflow: auto; }
@@ -318,7 +333,7 @@
   .jk { color: var(--s-files); } .js { color: var(--s-browser); } .jn { color: var(--s-mcp); } .jb { color: var(--s-git); }
   .evx .code .jl { color: var(--text); font-weight: 600; }
   .evx .code.fj { max-height: 420px; }
-  .evx .jfold summary { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+  .evx .jfold summary { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
   .evx .jfold summary:hover .jl { color: var(--accent); }
   .evx .jfold[open] summary { margin-bottom: 2px; }
   .evx .jfold .jbody { white-space: pre-wrap; padding: 2px 0 6px 16px; border-left: 1px solid var(--line-2); margin-left: 4px; }
@@ -329,7 +344,7 @@
   .evx dl.kv dt { color: var(--muted); } .evx dl.kv dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; min-width: 0; }
   .evx .q2 { margin-bottom: 6px; } .evx .q2 .opt { padding-left: 10px; }
   .evx .meta { color: var(--muted); font-size: 12px; }
-  .evx details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  .evx details summary { color: var(--muted); font-size: 12px; line-height: 18px; }
   .evx details pre.raw { margin: 6px 0 0; }
   .evx .hevs { display: flex; flex-direction: column; gap: 4px; }
   .evx .hev { padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; }
@@ -1091,7 +1106,7 @@ function routeHtml() {
     const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), cx ? Math.max(20, Math.floor((usable - 260) / 8) - 30) : 90)}${sum}`;
     // the chevron toggles the turn open / collapsed; the rest of the divider selects the turn
     svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/>`
-      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="4" y="${dy + 4}" width="22" height="22" rx="5"/><path d="${r.collapsed ? `M12 ${dy + 10}l6 5l-6 5` : `M10 ${dy + 12}l5 6l5 -6`}"/><title>${r.collapsed ? 'Expand' : 'Collapse'} this turn</title></g>`
+      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="6" y="${dy + 6}" width="18" height="18" rx="5"/><path d="${r.collapsed ? `M13 ${dy + 11}l4 4l-4 4` : `M11 ${dy + 13}l4 4l4 -4`}"/><title>${r.collapsed ? 'Expand' : 'Collapse'} this turn</title></g>`
       + `<text x="32" y="${dy + 20}">${esc(label)}</text>${ctxBadgeSvg(cx, usable + 2 * PAD - 6, dy + 20)}<title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
   }
   // draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one
@@ -1522,8 +1537,12 @@ function renderMid(again) {
 }
 
 // ---------------------------------------------------------------- detail panel
+// collapsible sections of the Details panel; which ones you closed is remembered across turns and reloads
+const dsecOpen = (() => { try { return JSON.parse(ls.get('so.dsec', '{}')) || {}; } catch { return {}; } })();
+const isDsecOpen = (id, dflt = true) => dsecOpen[id] ?? dflt;
+const dsec = (id, title, body) => `<details class="dsec" data-dsec="${id}"${isDsecOpen(id) ? ' open' : ''}><summary class="lbl2">${title}</summary>${body}</details>`;
 function colourKey() {
-  return `<details class="key"><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
+  return `<details class="key dsec" data-dsec="key"${isDsecOpen('key', false) ? ' open' : ''}><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
     <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
 }
 // ---- an opened event row: a readable card for every event, with the raw hook payload folded underneath
@@ -1826,10 +1845,9 @@ function renderDetail() {
   const dur = Date.parse(t.end) - Date.parse(t.start);
   el.innerHTML = `<div class="dh"><h2>Turn · ${fmtTime(t.start)}</h2><span><button id="prevTurn" title="Previous turn ([)">‹ Prev</button> <button id="nextTurn" title="Next turn (])">Next ›</button> <button id="closeTurn" title="Close (Esc)">Close</button></span></div>
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
-    <div class="lbl2">Prompt</div><div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>
-    ${t.answer ? `<div class="lbl2">Reply</div><div class="q ans">${esc(t.answer)}</div>` : ''}
-    <div class="lbl2">Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span></div>
-    <div>${rows}</div>${colourKey()}`;
+    ${dsec('prompt', 'Prompt', `<div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>`)}
+    ${t.answer ? dsec('reply', 'Reply', `<div class="q ans">${esc(t.answer)}</div>`) : ''}
+    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span>`, `<div>${rows}</div>`)}${colourKey()}`;
   el.scrollTop = top;
   applyHover(); // keep the row lit for the chat item / route stop under the mouse
 }
@@ -2001,6 +2019,11 @@ function initControls() {
     if (k !== hoverSeq) { hoverSeq = k; applyHover(); revealPin(); }
   });
   $('detail').addEventListener('mouseleave', () => { if (hoverSeq != null) { hoverSeq = null; applyHover(); } });
+  // remember which Details sections are open ('toggle' does not bubble, so listen in the capture phase)
+  $('detail').addEventListener('toggle', e => {
+    const id = e.target.dataset?.dsec; if (!id) return;
+    dsecOpen[id] = e.target.open; ls.set('so.dsec', JSON.stringify(dsecOpen));
+  }, true);
   $('alt').addEventListener('click', e => {
     if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
     const tg = e.target.closest('[data-tog]');
