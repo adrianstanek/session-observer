@@ -131,6 +131,31 @@ Restart Claude Code so the hooks stop running. You can also do it from `/plugin`
 **Manage plugins**, or keep it installed but off with
 `/plugin disable session-observer@session-observer-marketplace`.
 
+Uninstalling leaves three things behind. Remove them by hand:
+
+- **The dashboard server.** It runs as a detached process, so it keeps serving
+  `http://127.0.0.1:4777` until you stop it.
+- **The event log**, `~/.claude/session-observer/`.
+- **The cached plugin copy**, `~/.claude/plugins/cache/session-observer-marketplace/`.
+
+Windows (PowerShell):
+```powershell
+Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
+  Where-Object CommandLine -match 'session-observer.*server\.js' |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\session-observer",
+  "$env:USERPROFILE\.claude\plugins\cache\session-observer-marketplace"
+```
+
+macOS / Linux / WSL:
+```sh
+pkill -f 'session-observer.*server\.js'
+rm -rf ~/.claude/session-observer ~/.claude/plugins/cache/session-observer-marketplace
+```
+
+Claude Code on Windows and Claude Code in WSL each have their own `~/.claude`, so uninstall
+and clean up in each one you installed it in.
+
 ## Use
 
 The server starts automatically on the first `SessionStart`. Open
