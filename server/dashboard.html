@@ -613,6 +613,8 @@ function evMatches(ev) {
 const filtersActive = () => !!(state.station || state.category || state.problems || state.q);
 
 // ---------------------------------------------------------------- turns
+const BETWEEN_TURNS = new Set(['PreModelSwitch', 'PostModelSwitch', 'ConfigChange', 'DirectoryAdded', 'CwdChanged', 'InstructionsLoaded',
+  'WorktreeCreate', 'WorktreeRemove', 'SessionStart', 'PreCompact', 'PostCompact']);
 function computeTurns(evs) {
   const cur = new Map(), turns = [], owner = new Map();
   TURN_BY_SEQ = new Map();
@@ -627,7 +629,9 @@ function computeTurns(evs) {
     const expandsNext = ev.event === 'UserPromptExpansion' && !(t && t.prompt !== null && !t.tools && !t.steps && tms(ev) - Date.parse(t.start) < 2000);
     if (aid && ev.event !== 'SubagentStart' && owner.has(aid)) t = owner.get(aid);
     else if (ev.event === 'UserPromptSubmit' && t?.pending) { t.pending = false; t.prompt = String(ev.data?.prompt ?? ''); }
-    else if (ev.event === 'UserPromptSubmit' || expandsNext || !t) {
+    // things you do between turns (/model, /add-dir, settings edits, /clear or /compact…) belong to the turn
+    // they lead into: once a turn has finished, they open a prelude that the next prompt's turn takes over
+    else if (ev.event === 'UserPromptSubmit' || expandsNext || !t || (t.done && BETWEEN_TURNS.has(ev.event) && !prelude(t))) {
       const isPrompt = ev.event === 'UserPromptSubmit' || expandsNext;
       const nt = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : expandsNext ? String(ev.data?.prompt ?? '') : null,
         pending: expandsNext, events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
