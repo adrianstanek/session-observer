@@ -213,6 +213,16 @@
   .frow .what .proj { color: var(--muted); font-family: inherit; margin-right: 6px; }
   .frow.fail .what { color: var(--err); }
   .ic { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
+  /* language / tool badges: they carry their own colours, so they look the same in both themes */
+  .ic.tech { width: 17px; height: 17px; vertical-align: -4px; }
+  .ctool .ic.tech { width: 15px; height: 15px; }
+  .ic.tech + .ic.tech { margin-left: -2px; }
+  .tmore { font-size: 10.5px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+  .frow .who > span:not(.tmore) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .metro .tmore circle { fill: var(--panel); stroke: currentColor; stroke-width: 1.5; }
+  .metro .tmore text { fill: var(--text); font-size: 8px; font-weight: 700; text-anchor: middle; }
+  .tkx { font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif; font-weight: 800; }
+  .vrow .a .ic { margin-right: 6px; } .vrow .a .ic:not(.tech) { color: var(--faint); }
 
   .cats { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0 0; border-top: 1px solid var(--line-2); }
   .cats .ttl { font-weight: 600; margin-right: 4px; display: inline-flex; gap: 5px; align-items: center; }
@@ -501,6 +511,199 @@ const spaced = s => String(s || '').replace(/_/g, ' '); // hook enum values (use
 const icon = (id, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
 const tms = ev => ev._t ?? (ev._t = Date.parse(ev.ts));
 const ls = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+
+// >>> tech (test/tech.test.js runs everything between these two markers)
+// ---------------------------------------------------------------- languages & tools
+// What a tool call works with: the language of the file it reads or edits (C#, Kotlin, HTML…) or the program
+// a shell command runs (node, dotnet, docker…). Each one has a badge drawn right here — its usual colour, a
+// shape and a monogram or a small glyph — so there are no image files and nothing is downloaded.
+// id: [name, shape, background, foreground, monogram | glyph (SVG in the 24×24 box, drawn in the foreground colour)]
+const TECH = {
+  js: ['JavaScript', 'sq', '#f7df1e', '#1b1d22', 'JS'],
+  ts: ['TypeScript', 'sq', '#3178c6', '#fff', 'TS'],
+  react: ['React', 'circ', '#20232a', '#61dafb', '<g stroke-width="1.2"><ellipse cx="12" cy="12" rx="8.6" ry="3.3"/><ellipse cx="12" cy="12" rx="8.6" ry="3.3" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="8.6" ry="3.3" transform="rotate(120 12 12)"/></g><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>'],
+  vue: ['Vue', 'sq', '#42b883', '#fff', 'V'],
+  svelte: ['Svelte', 'sq', '#ff3e00', '#fff', 'S'],
+  node: ['Node.js', 'hex', '#3c873a', '#fff', 'JS'],
+  npm: ['npm', 'sq', '#cb3837', '#fff', 'npm'],
+  pnpm: ['pnpm', 'sq', '#f69220', '#1b1d22', 'pn'],
+  yarn: ['Yarn', 'circ', '#2c8ebb', '#fff', 'Y'],
+  bun: ['Bun', 'circ', '#fbf0df', '#3b2a1a', 'bun'],
+  deno: ['Deno', 'circ', '#1b1d22', '#fff', 'D'],
+  cs: ['C#', 'hex', '#68217a', '#fff', 'C#'],
+  dotnet: ['.NET', 'sq', '#512bd4', '#fff', '.NET'],
+  fs: ['F#', 'hex', '#378bba', '#fff', 'F#'],
+  vb: ['Visual Basic', 'sq', '#00539c', '#fff', 'VB'],
+  py: ['Python', 'sq', '#3776ab', '#ffd43b', 'Py'],
+  kt: ['Kotlin', 'sq', '#7f52ff', '#fff', 'K'],
+  java: ['Java', 'sq', '#e76f00', '#fff', 'J'],
+  gradle: ['Gradle', 'sq', '#02303a', '#00de7a', 'G'],
+  maven: ['Maven', 'sq', '#c71a36', '#fff', 'mvn'],
+  go: ['Go', 'sq', '#00add8', '#fff', 'GO'],
+  rs: ['Rust', 'circ', '#b7410e', '#fff', 'Rs'],
+  c: ['C', 'hex', '#5c6bc0', '#fff', 'C'],
+  cpp: ['C++', 'hex', '#00599c', '#fff', 'C++'],
+  rb: ['Ruby', 'sq', '#cc342d', '#fff', 'Rb'],
+  php: ['PHP', 'circ', '#777bb4', '#fff', 'php'],
+  swift: ['Swift', 'sq', '#f05138', '#fff', 'Sw'],
+  dart: ['Dart', 'sq', '#0175c2', '#fff', 'Da'],
+  html: ['HTML', 'shield', '#e34f26', '#fff', '5'],
+  css: ['CSS', 'shield', '#1572b6', '#fff', '3'],
+  sass: ['Sass', 'circ', '#cc6699', '#fff', 'S'],
+  json: ['JSON', 'sq', '#3f3f46', '#facc15', '{}'],
+  yaml: ['YAML', 'sq', '#cb171e', '#fff', 'yml'],
+  toml: ['TOML', 'sq', '#9c4221', '#fff', 'T'],
+  xml: ['XML', 'sq', '#0b7285', '#fff', '<>'],
+  md: ['Markdown', 'sq', '#083fa1', '#fff', 'M↓'],
+  sql: ['SQL', 'sq', '#336791', '#fff', '<g stroke-width="1.6"><ellipse cx="12" cy="7.5" rx="6" ry="2.5"/><path d="M6 7.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9M6 12c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/></g>'],
+  sh: ['Shell script', 'sq', '#4eaa25', '#fff', '$_'],
+  ps: ['PowerShell', 'sq', '#2671be', '#fff', '<path d="M7 7.5l5.5 4.5L7 16.5M13 16.5h4.5"/>'],
+  docker: ['Docker', 'sq', '#1d63ed', '#fff', '<g fill="currentColor" stroke="none"><rect x="5.5" y="9.5" width="3" height="3" rx=".5"/><rect x="9.5" y="9.5" width="3" height="3" rx=".5"/><rect x="13.5" y="9.5" width="3" height="3" rx=".5"/><rect x="9.5" y="5.5" width="3" height="3" rx=".5"/><path d="M4 14h16c-.4 3.2-3 5-7.5 5S4.6 17.2 4 14z"/></g>'],
+  k8s: ['Kubernetes', 'hex', '#326ce5', '#fff', 'K8'],
+  git: ['Git', 'dia', '#f05032', '#fff', '<g stroke-width="1.6"><circle cx="9.5" cy="8" r="1.5"/><circle cx="9.5" cy="16" r="1.5"/><circle cx="15" cy="11" r="1.5"/><path d="M9.5 9.5v5M15 12.5c0 2-2.5 2-4.2 2.6"/></g>'],
+  github: ['GitHub', 'circ', '#24292f', '#fff', 'GH'],
+  azure: ['Azure', 'sq', '#0078d4', '#fff', 'Az'],
+  aws: ['AWS', 'sq', '#232f3e', '#ff9900', 'aws'],
+  tf: ['Terraform', 'sq', '#7b42bc', '#fff', 'TF'],
+  lua: ['Lua', 'circ', '#000080', '#fff', 'Lua'],
+  r: ['R', 'circ', '#276dc3', '#fff', 'R'],
+  scala: ['Scala', 'sq', '#dc322f', '#fff', 'Sc'],
+  ex: ['Elixir', 'sq', '#4b275f', '#fff', 'Ex'],
+  zig: ['Zig', 'sq', '#f7a41d', '#1b1d22', 'Z'],
+  perl: ['Perl', 'sq', '#39457e', '#fff', 'Pl'],
+};
+const TECH_SHAPE = {
+  sq: '<rect x="1.5" y="1.5" width="21" height="21" rx="4.5"/>',
+  circ: '<circle cx="12" cy="12" r="10.75"/>',
+  hex: '<path d="M12 1l9.5 5.5v11L12 23l-9.5-5.5v-11z"/>',
+  shield: '<path d="M2.5 1.5h19l-1.7 17.6L12 22.5l-7.8-3.4z"/>',
+  dia: '<path d="M12 1.2L22.8 12 12 22.8 1.2 12z"/>',
+};
+// file extension → id
+const TECH_EXT = {};
+for (const [id, exts] of Object.entries({
+  js: 'js mjs cjs', ts: 'ts mts cts', react: 'jsx tsx', vue: 'vue', svelte: 'svelte',
+  cs: 'cs csx cshtml razor', dotnet: 'csproj sln slnx fsproj vbproj props targets nuspec', fs: 'fs fsx fsi', vb: 'vb',
+  py: 'py pyi pyw ipynb', kt: 'kt kts', java: 'java', gradle: 'gradle', go: 'go', rs: 'rs', c: 'c h', cpp: 'cpp cc cxx hpp hh hxx',
+  rb: 'rb erb gemspec', php: 'php', swift: 'swift', dart: 'dart', html: 'html htm', css: 'css', sass: 'scss sass',
+  json: 'json jsonc json5 jsonl', yaml: 'yml yaml', toml: 'toml', xml: 'xml xaml xsd xslt svg', md: 'md mdx markdown', sql: 'sql',
+  sh: 'sh bash zsh', ps: 'ps1 psm1 psd1', tf: 'tf tfvars', lua: 'lua', r: 'r', scala: 'scala', ex: 'ex exs', zig: 'zig', perl: 'pl pm',
+})) for (const x of exts.split(' ')) TECH_EXT[x] = id;
+// names ripgrep uses for a file type (Grep's `type`) where they differ from the extension
+const TECH_ALIAS = { rust: 'rs', csharp: 'cs', kotlin: 'kt', ruby: 'rb', markdown: 'md', python: 'py', typescript: 'ts', javascript: 'js', shell: 'sh' };
+// whole file names that say more than their extension does
+const TECH_FILE = [
+  [/^dockerfile(\..+)?$|^(docker-)?compose.*\.ya?ml$|^\.dockerignore$/, 'docker'],
+  [/^package(-lock)?\.json$|^\.npmrc$/, 'npm'], [/^pnpm-(lock|workspace)\.yaml$/, 'pnpm'], [/^yarn\.lock$|^\.yarnrc(\.yml)?$/, 'yarn'],
+  [/^tsconfig.*\.json$/, 'ts'], [/\.gradle\.kts$|^gradlew(\.bat)?$|^gradle\.properties$/, 'gradle'], [/^pom\.xml$/, 'maven'],
+  [/^cargo\.(toml|lock)$/, 'rs'], [/^go\.(mod|sum|work)$/, 'go'], [/^(requirements.*\.txt|pyproject\.toml|pipfile|uv\.lock)$/, 'py'],
+  [/^(gemfile|rakefile)(\.lock)?$/, 'rb'], [/^composer\.(json|lock)$/, 'php'],
+  [/^(appsettings.*\.json|global\.json|nuget\.config|launchsettings\.json|packages\.lock\.json)$/, 'dotnet'],
+  [/^\.git(ignore|attributes|modules)$/, 'git'],
+];
+// the language of a file path (also of a glob such as src/**/*.cs or *.{ts,tsx}); null when it is not a known one
+function fileTech(p) {
+  p = String(p || '');
+  const f = base(p).toLowerCase().replace(/\{([^,}]*)[^}]*\}/g, '$1'); if (!f) return null;
+  for (const [rx, id] of TECH_FILE) if (rx.test(f)) return id;
+  if (/(^|[\\/])\.github[\\/]/.test(p)) return 'github';
+  const i = f.lastIndexOf('.');
+  return i < 0 ? null : TECH_EXT[f.slice(i + 1)] || null;
+}
+// program name → id (the name without its folder and without .exe / .cmd / .bat)
+const TECH_CMD = [
+  [/^dotnet(-[\w-]+)?$|^msbuild$|^nuget$|^csc$/, 'dotnet'],
+  [/^node(js)?$/, 'node'], [/^np[mx]$/, 'npm'], [/^pnp[mx]$/, 'pnpm'], [/^yarn$/, 'yarn'], [/^bunx?$/, 'bun'], [/^deno$/, 'deno'], [/^tsc$|^tsx$|^ts-node$/, 'ts'],
+  [/^python[\d.]*$|^py$|^pip[\d.]*$|^pipx$|^uvx?$|^poetry$|^pytest$|^conda$/, 'py'],
+  [/^go$|^gofmt$/, 'go'], [/^cargo$|^rustc$|^rustup$/, 'rs'], [/^javac?$|^jar$/, 'java'], [/^gradlew?$/, 'gradle'], [/^mvnw?$/, 'maven'], [/^kotlinc?$/, 'kt'],
+  [/^docker(-compose)?$|^podman$/, 'docker'], [/^kubectl$|^helm$|^minikube$/, 'k8s'], [/^git$/, 'git'], [/^gh$/, 'github'], [/^pwsh$|^powershell$/, 'ps'],
+  [/^ruby$|^gem$|^bundle$|^rake$|^rails$/, 'rb'], [/^php$|^composer$/, 'php'], [/^swiftc?$/, 'swift'], [/^dart$|^flutter$/, 'dart'],
+  [/^g?cc$|^clang$/, 'c'], [/^[gc]\+\+$|^clang\+\+$|^cmake$/, 'cpp'], [/^psql$|^sqlite3?$|^mysql$|^sqlcmd$|^pg_dump$/, 'sql'], [/^jq$/, 'json'],
+  [/^azd?$/, 'azure'], [/^aws$/, 'aws'], [/^terraform$|^tofu$/, 'tf'], [/^lua$/, 'lua'], [/^rscript$/, 'r'], [/^scala$|^sbt$/, 'scala'],
+  [/^elixir$|^mix$|^iex$/, 'ex'], [/^zig$/, 'zig'], [/^perl$/, 'perl'],
+];
+// a program name (or a script run directly, such as ./build.ps1) → id
+function nameTech(w) {
+  const p = base(String(w || '')).toLowerCase(), n = p.replace(/\.(exe|cmd|bat)$/, '');
+  for (const [rx, id] of TECH_CMD) if (rx.test(n)) return id;
+  return /\.(py|ps1|rb|[cm]?js|ts|php|pl|sh)$/.test(p) ? fileTech(p) : null;
+}
+// the separate commands of a shell line: split at ; | & and line ends, but not inside quotes; comments and
+// heredoc bodies (a script handed to another program) are left out
+function shellSegments(cmd) {
+  const out = []; let cur = '', q = null, here = null;
+  for (const line of String(cmd || '').split('\n')) {
+    if (here) { if (line.trim() === here) here = null; continue; }
+    const hm = !q && line.match(/<<-?\s*(['"]?)(\w+)\1/);
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { cur += c; if (c === '\\' && q === '"') cur += line[++i] ?? ''; else if (c === q) q = null; continue; }
+      if (c === '"' || c === "'") { q = c; cur += c; continue; }
+      if (c === '#' && (i === 0 || /\s/.test(line[i - 1]))) break;
+      if (c === ';' || c === '|' || c === '&') { out.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    if (q) cur += '\n'; else { out.push(cur); cur = ''; }
+    if (hm) here = hm[2];
+  }
+  out.push(cur);
+  return out.map(s => s.trim()).filter(Boolean);
+}
+// words that come before the program actually being run
+const SH_LEAD = new Set(['sudo', 'env', 'time', 'command', 'exec', 'nohup', 'xargs', 'winpty', 'timeout', 'if', 'then', 'else', 'elif', 'do', 'while', 'until', '!', '{', '(']);
+// the program one command runs: its first word after variable assignments, options and words like sudo / time
+function progWord(seg) {
+  let sub = 0; // inside a $( … ) that is part of an assignment: OUT=$(ls -d build) ./run
+  for (const w0 of String(seg || '').match(/(?:"[^"]*"|'[^']*'|[^\s"'])+/g) || []) {
+    const inSub = sub > 0, w = w0.replace(/^["'(]+|["')]+$/g, '');
+    sub = Math.max(0, sub + (w0.match(/\(/g) || []).length - (w0.match(/\)/g) || []).length);
+    if (inSub || !w ||/^\$?[A-Za-z_][\w:]*=/.test(w) || /^-/.test(w) || /^\d+[smh]?$/.test(w) || /^\$[\w?:{}]*$/.test(w) || SH_LEAD.has(w.toLowerCase())) continue;
+    return w;
+  }
+  return '';
+}
+// what a tool call works with → ids, in the order they appear. A chained shell line can run several programs:
+// `cd api && npm ci && dotnet test` is npm and .NET. Empty when there is nothing specific to show
+function techsOf(tool, ti) {
+  ti = ti || {};
+  if (!tool) return [];
+  if (SHELL_TOOLS.has(tool)) {
+    const ks = [...new Set(shellSegments(ti.command).map(seg => nameTech(progWord(seg))).filter(Boolean))];
+    return ks.length ? ks : tool === 'PowerShell' ? ['ps'] : [];
+  }
+  let k = null;
+  if (tool === 'Glob') k = fileTech(ti.pattern);
+  else if (tool === 'Grep') { const ty = String(ti.type || '').toLowerCase(); k = fileTech(ti.glob) || TECH_EXT[TECH_ALIAS[ty] || ty] || fileTech(ti.path); }
+  else if (FILE_TOOLS.has(tool)) k = fileTech(ti.file_path || ti.notebook_path || ti.path);
+  return k ? [k] : [];
+}
+// the first of them (the one a Route stop is drawn with), or null
+const techOf = (tool, ti) => techsOf(tool, ti)[0] || null;
+// the monogram or glyph alone, in the 24×24 box (the Route draws it on a stop filled with the badge colour)
+function techMark(id) {
+  const [, , , fg, t] = TECH[id];
+  if (/<\w/.test(t)) return `<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:${fg}">${t}</g>`;
+  const n = [...t].length;
+  return `<text class="tkx" x="12" y="12" dy=".36em" text-anchor="middle" fill="${fg}" stroke="none" font-size="${[15, 15, 12, 9.4, 8][n] || 7}"${n > 2 ? ` textLength="${n > 3 ? 18.4 : 16.6}" lengthAdjust="spacingAndGlyphs"` : ''}>${esc(t)}</text>`;
+}
+// the whole badge as an inline icon; '' for an unknown id, so callers can fall back to the group icon
+function techIcon(id, cls = 'ic') {
+  const k = TECH[id]; if (!k) return '';
+  return `<svg class="${cls} tech" viewBox="0 0 24 24" role="img" aria-label="${esc(k[0])}"><title>${esc(k[0])}</title><g fill="${k[2]}" stroke="#808080" stroke-opacity=".5" stroke-width=".7">${TECH_SHAPE[k[1]]}</g>${techMark(id)}</svg>`;
+}
+// several badges in a row (a chained command): the first few, then "+n" for the rest; '' for an empty list
+function techIcons(ks, max = 3) {
+  if (!ks || !ks.length) return '';
+  const more = ks.slice(max);
+  return ks.slice(0, max).map(k => techIcon(k)).join('') + (more.length ? `<span class="tmore" title="${esc(more.map(k => TECH[k][0]).join(', '))}">+${more.length}</span>` : '');
+}
+// <<< tech
+// a tool event's languages / tools (worked out once per event), and the first of them
+const evTechs = ev => ev._tk !== undefined ? ev._tk : (ev._tk = ev.event === 'PreToolUse' || ev.event === 'PostToolUse' || ev.event === 'PostToolUseFailure' ? techsOf(ev.data?.tool_name, ev.data?.tool_input) : []);
+const evTech = ev => evTechs(ev)[0] || null;
+// the icons for a tool call: its language / tool badges when there are any, otherwise its group's icon
+const evIcon = (ev, st, max) => techIcons(evTechs(ev), max) || icon(st);
+const toolIcon = (tool, ti, st) => techIcons(techsOf(tool, ti)) || icon(st);
 
 function toolStation(tool, ti) {
   if (!tool) return 'other';
@@ -851,7 +1054,7 @@ function chatHtml() {
         case 'PreToolUse': {
           // __R<id>__ becomes "run" / "fail" / nothing, __S<id>__ the result's seq, once they are known
           const st = stationOf(ev) || 'other';
-          tools.push(`<span class="ctool __R${d.tool_use_id || ''}__" data-seq="${ev.seq}" data-seqs="${ev.seq}__S${d.tool_use_id || ''}__" style="--c:var(--s-${st})" title="${evTip(ev)}">${icon(st)}<span><b>${esc(toolLabel(d.tool_name))}</b> ${esc(trunc(st === 'files' ? base(String(toolArg(d) || '')) : short(toolArg(d), 60), 40))}</span></span>`);
+          tools.push(`<span class="ctool __R${d.tool_use_id || ''}__" data-seq="${ev.seq}" data-seqs="${ev.seq}__S${d.tool_use_id || ''}__" style="--c:var(--s-${st})" title="${evTip(ev)}">${evIcon(ev, st)}<span><b>${esc(toolLabel(d.tool_name))}</b> ${esc(trunc(st === 'files' ? base(String(toolArg(d) || '')) : short(toolArg(d), 60), 40))}</span></span>`);
           if (d.tool_use_id) open.set(d.tool_use_id, true);
           break;
         }
@@ -914,7 +1117,7 @@ function routeModel(t, lim) {
       }
       case 'PreToolUse': {
         tools++;
-        const s = add({ st, label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
+        const s = add({ st, tech: evTech(ev), techs: evTechs(ev), label: toolLabel(d.tool_name), sub: toolArg(d), seq: ev.seq, a: tms(ev), tip: evTip(ev), id: d.tool_use_id });
         if (s.id) open.set(s.id, s);
         if (!br && (d.tool_name === 'Agent' || d.tool_name === 'Task')) { s.desc = d.tool_input?.description; pendingAgent.push(s); }
         break;
@@ -1136,10 +1339,12 @@ function routeHtml() {
     }
     const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
     const r = s.lane && !s.branch ? 10 : 12;
+    // a call with a known language / tool: the stop is filled with the badge colour and carries its mark
+    const k = s.tech ? TECH[s.tech] : null, ks = r * 0.85, more = k ? s.techs.length - 1 : 0;
     svg += `<g class="stop ${s.fail ? 'fail' : ''} ${s.merge != null ? 'mg' : ''}${dim(s)}" data-ln="${sl(s)}" data-seqs="${(s.seqs || []).join(' ')}" transform="translate(${s.x.toFixed(1)},${s.y})" style="color:var(--s-${s.st})" data-seq="${s.seq}">
-      <circle class="sn" r="${r}"/>${svgIcon(s.st, -r * 0.62, -r * 0.62, (r * 0.052).toFixed(3))}${s.run ? `<circle class="ring" r="${r + 5}"/>` : ''}
+      <circle class="sn" r="${r}"${k ? ` style="fill:${k[2]}"` : ''}/>${k ? `<g transform="translate(${-ks.toFixed(2)},${-ks.toFixed(2)}) scale(${(ks / 12).toFixed(3)})">${techMark(s.tech)}</g>` : svgIcon(s.st, -r * 0.62, -r * 0.62, (r * 0.052).toFixed(3))}${more ? `<g class="tmore" transform="translate(${(r * 0.8).toFixed(1)},${(-r * 0.8).toFixed(1)})"><circle r="6.5"/><text y="3">+${more}</text></g>` : ''}${s.run ? `<circle class="ring" r="${r + 5}"/>` : ''}
       <text class="sl" y="${s.lane ? r + 16 : -r - 20}">${esc(trunc(s.label, 12))}</text><text class="ss ${s.fail ? 'err' : s.run ? 'run' : ''}" y="${s.lane ? r + 28 : -r - 8}">${esc(trunc(subTxt, 12))}</text>
-      <title>${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
+      <title>${k ? esc(s.techs.map(x => TECH[x][0]).join(' + ')) + ' · ' : ''}${s.tip}${s.dur != null ? ' · ' + fmtDur(s.dur) : ''}</title></g>`;
   }
   svg += '</svg>';
   const fr = rows.find(r => r.div === t), fy = fr ? Math.max(0, fr.divY - 6) : 0;
@@ -1263,7 +1468,7 @@ function feedRow(ev, running, opts = {}) {
   const proj = opts.proj ? `<span class="proj">${esc(opts.proj)}</span>` : '';
   const dur = opts.dur ? `<span class="dur">${running ? 'running…' : esc(fmtDur(ev.duration_ms))}</span>` : '';
   return `<div class="frow ${isProblem(ev) ? 'fail' : ''}" data-seq="${ev.seq}">${feedMarker(ev, running)}<span class="t">${fmtTime(opts.ts || ev.ts)}</span>
-    <span class="who" style="color:${color}">${icon(st)}<span>${esc(label)}</span></span><span class="what">${proj}${esc(short(sub, 300))}</span>${dur}</div>`;
+    <span class="who" style="color:${color}">${evIcon(ev, st, 2)}<span>${esc(label)}</span></span><span class="what">${proj}${esc(short(sub, 300))}</span>${dur}</div>`;
 }
 function renderCats() {
   const counts = {}, errs = {};
@@ -1466,7 +1671,7 @@ function filesList(evs) {
   const rel = p => cwd && p.startsWith(cwd + '/') ? p.slice(cwd.length + 1) : p;
   const dir = p => { const r = rel(p), d = r.slice(0, Math.max(0, r.length - base(r).length)); return d.length > 36 ? '…' + d.slice(-35) : d; };
   return vcard('Files', `${f.size} touched · top ${top.length}`, `<div class="vlist">${top.map(([p, o]) => `<div class="vrow" data-seq="${o.seq}" ${tipAttr(p + '\nclick to open the latest call')}>
-    <span class="a mono"><span class="d">${esc(trunc(dir(p), 40))}</span>${esc(base(p))}</span><span class="b">${o.w ? `<b>${o.w}</b> edit${o.w > 1 ? 's' : ''}` : ''}${o.w && o.r ? ' · ' : ''}${o.r ? `<b>${o.r}</b> read${o.r > 1 ? 's' : ''}` : ''}</span></div>`).join('')}</div>`);
+    <span class="a mono">${techIcon(fileTech(p)) || icon('files')}<span class="d">${esc(trunc(dir(p), 40))}</span>${esc(base(p))}</span><span class="b">${o.w ? `<b>${o.w}</b> edit${o.w > 1 ? 's' : ''}` : ''}${o.w && o.r ? ' · ' : ''}${o.r ? `<b>${o.r}</b> read${o.r > 1 ? 's' : ''}` : ''}</span></div>`).join('')}</div>`);
 }
 
 // shell commands by program (the part after any leading `cd … &&`)
@@ -1475,8 +1680,8 @@ function cmdList(evs) {
   for (const e of evs) {
     if (e.event !== 'PreToolUse' || !SHELL_TOOLS.has(e.data?.tool_name)) continue;
     const cmd = String(e.data.tool_input?.command || '').trim(); if (!cmd) continue;
-    const seg = cmd.split(/&&|\|\||;|\n/).map(x => x.trim()).find(x => x && !/^cd\s/.test(x) && !/^(export\s+)?\w+=\S*$/.test(x)) || cmd;
-    const prog = base((seg.match(/^(?:\w+=\S+\s+)*(\S+)/) || [, seg])[1]);
+    const seg = shellSegments(cmd).find(x => !/^(cd|export|for)\s/.test(x) && progWord(x)) || cmd;
+    const prog = base(progWord(seg) || seg);
     const o = c.get(prog) || { n: 0, x: 0, seq: e.seq, ex: seg }; o.n++; o.seq = e.seq; o.ex = seg;
     if (failed.has(e.data.tool_use_id)) o.x++;
     c.set(prog, o);
@@ -1484,7 +1689,7 @@ function cmdList(evs) {
   const top = [...c.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8);
   if (!top.length) return vcard('Commands', '', '<div class="none">No shell commands.</div>');
   return vcard('Commands', `${c.size} programs · top ${top.length}`, `<div class="vlist">${top.map(([p, o]) => `<div class="vrow ${o.x === o.n ? 'fail' : ''}" data-seq="${o.seq}" ${tipAttr('latest: ' + short(o.ex, 300))}>
-    <span class="a mono">${esc(p)}</span><span class="b"><b>${o.n}</b> run${o.n > 1 ? 's' : ''}${o.x ? ` · <span class="err">✕ ${o.x}</span>` : ''}</span></div>`).join('')}</div>`);
+    <span class="a mono">${techIcon(nameTech(p)) || icon('shell')}${esc(p)}</span><span class="b"><b>${o.n}</b> run${o.n > 1 ? 's' : ''}${o.x ? ` · <span class="err">✕ ${o.x}</span>` : ''}</span></div>`).join('')}</div>`);
 }
 
 // subagents: what type, what they were asked, how long they ran
@@ -1545,9 +1750,11 @@ function renderMid(again) {
 const dsecOpen = (() => { try { return JSON.parse(ls.get('so.dsec', '{}')) || {}; } catch { return {}; } })();
 const isDsecOpen = (id, dflt = true) => dsecOpen[id] ?? dflt;
 const dsec = (id, title, body) => `<details class="dsec" data-dsec="${id}"${isDsecOpen(id) ? ' open' : ''}><summary class="lbl2">${title}</summary>${body}</details>`;
-function colourKey() {
+function colourKey(t) {
+  const ks = t ? [...new Set(t.events.flatMap(evTechs))] : [];
+  const tech = ks.length ? `<div class="muted" style="margin-top:12px;font-size:12px">Languages and tools in this turn</div><div class="keygrid">${ks.map(k => `<div>${techIcon(k)}<span>${esc(TECH[k][0])}</span></div>`).join('')}</div>` : '';
   return `<details class="key dsec" data-dsec="key"${isDsecOpen('key', false) ? ' open' : ''}><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
-    <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
+    <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div>${tech}</details>`;
 }
 // ---- an opened event row: a readable card for every event, with the raw hook payload folded underneath
 const rawPre = e => `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${jsonHtml(e.data)}</pre>`;
@@ -1722,7 +1929,8 @@ function toolCard(e, t) {
     ? `<details class="hev"><summary><b>${esc(x.event)}</b> · ${esc(fmtTime(x.ts))} · #${x.seq}${x !== pre && pre ? ` · +${esc(fmtDur(tms(x) - tms(pre)))}` : ''}</summary>${rawPre(x)}</details>`
     : `<div class="hev muted">${missing}</div>`;
   const hooks = `<div class="hevs"><div class="k">Hook events</div>${hook(pre, 'PreToolUse · not received')}${hook(post, fail ? '' : 'PostToolUse · not yet (still running)')}</div>`;
-  return evCard(e, evHead(st, toolLabel(name), res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
+  const tks = techsOf(name, d.tool_input).map(k => `${techIcon(k)} ${esc(TECH[k][0])}`);
+  return evCard(e, evHead(st, toolLabel(name), ...tks, res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
     + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''), hooks);
 }
 const NOTE_TYPE = {
@@ -1764,7 +1972,7 @@ function evOpenHtml(e, t) {
     case 'Notification': return evCard(e, evHead('you', 'Notification', esc(NOTE_TYPE[d.notification_type] || d.notification_type || '')) + evText(d.message) + evKv(d, new Set([...EV_COMMON, 'message', 'notification_type'])));
     case 'SessionStart': return evCard(e, evHead('context', 'Session started', esc(d.source || ''), d.model && `<span class="muted">${esc(d.model)}</span>`) + evKv(d, new Set([...EV_COMMON, 'source', 'model'])));
     case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
-    case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
+    case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${toolIcon(c.tool_name, c.tool_input, st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
     case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
     case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(spaced(d.source))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
     case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + spaced(d.source))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
@@ -1806,7 +2014,7 @@ function stepCard(e, t) {
   const tools = calls.length ? `<div><div class="k">Tools it asked for${calls.some(c => c.guess) ? ' <span style="text-transform:none;letter-spacing:0">(matched by order; older log)</span>' : ''}</div>${calls.map(c => {
       const st = toolStation(c.name, c.pre?.data?.tool_input), x = c.post || c.pre, fail = c.post?.event === 'PostToolUseFailure';
       const res = fail ? '<span class="err">✕ failed</span>' : c.post ? `✓ ${esc(fmtDur(c.post.duration_ms ?? tms(c.post) - tms(c.pre || c.post)))}` : c.pre ? '<span class="busy">running…</span>' : '<span class="muted">no hook event</span>';
-      return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.name))}</span><span class="a" title="${esc(short(toolArg(x?.data || {}), 400))}">${esc(toolArg(x?.data || {}) || '')}</span><span class="r">${res}</span></div>`;
+      return `<div class="tu"><span class="n" style="color:var(--s-${st})">${toolIcon(c.name, c.pre?.data?.tool_input, st)}${esc(toolLabel(c.name))}</span><span class="a" title="${esc(short(toolArg(x?.data || {}), 400))}">${esc(toolArg(x?.data || {}) || '')}</span><span class="r">${res}</span></div>`;
     }).join('')}</div>` : d.stop_reason === 'tool_use' ? '<div class="muted">Asked for a tool, but the call isn\'t in the log yet.</div>' : '';
   const said = texts.length ? `<div><div class="k">What it wrote</div><div class="said">${texts.map(x => x.data.kind === 'thinking' ? `<span class="th">thinking: ${esc(x.data.text)}</span>` : esc(x.data.text)).join('\n\n')}</div></div>` : '';
   const seg = [['cache_read', 'read from cache', 'var(--s-context)'], ['cache_write', 'written to cache', 'var(--s-model)'], ['input', 'uncached input', 'var(--accent)']];
@@ -1819,7 +2027,7 @@ function renderDetail() {
   const el = $('detail'); const top = el.scrollTop;
   const t = state.turnSel && TURNS.find(x => x.key === state.turnSel);
   if (!t) {
-    el.innerHTML = `<div class="dh"><h2>Details</h2></div><p class="muted">Pick a turn: a bar on the Overview's Turns chart, a stop on the Route, or a message in the Chat. Keys: <b>[</b> / <b>]</b> previous / next turn, <b>Esc</b> close.</p>${colourKey()}`;
+    el.innerHTML = `<div class="dh"><h2>Details</h2></div><p class="muted">Pick a turn: a bar on the Overview's Turns chart, a stop on the Route, or a message in the Chat. Keys: <b>[</b> / <b>]</b> previous / next turn, <b>Esc</b> close.</p>${colourKey(t)}`;
     return;
   }
   // a finished tool call is one row, built from its result (PostToolUse) but placed where the call started,
@@ -1851,7 +2059,7 @@ function renderDetail() {
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
     ${dsec('prompt', 'Prompt', `<div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>`)}
     ${t.answer ? dsec('reply', 'Reply', `<div class="q ans">${esc(t.answer)}</div>`) : ''}
-    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span>`, `<div>${rows}</div>`)}${colourKey()}`;
+    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span>`, `<div>${rows}</div>`)}${colourKey(t)}`;
   el.scrollTop = top;
   applyHover(); // keep the row lit for the chat item / route stop under the mouse
 }
