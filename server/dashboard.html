@@ -467,7 +467,8 @@ const CATS = {
   compact: 'Compact', context: 'Context', lifecycle: 'Lifecycle', env: 'Env',
 };
 const CAT_COLOR = { model: 'model', prompt: 'you', tool: 'files', skill: 'skills', question: 'you', subagent: 'agents', task: 'other', mcp: 'mcp', permission: 'git', error: 'err', notification: 'agents', compact: 'context', context: 'context', lifecycle: 'other', env: 'other' };
-const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch', 'Setup', 'Notification']);
+// hidden from the Details list: MessageDisplay repeats the model's text, PostToolBatch repeats the tool rows
+const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch']);
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'NotebookRead', 'Glob', 'Grep', 'LS']);
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'KillShell', 'KillBash', 'Monitor']);
 
@@ -508,7 +509,9 @@ function stationOf(ev) {
     case 'SubagentStart': case 'SubagentStop': case 'TeammateIdle': s = 'agents'; break;
     case 'InstructionsLoaded': case 'PreCompact': case 'PostCompact': s = 'context'; break;
     case 'TaskCreated': case 'TaskCompleted': s = 'other'; break;
-    case 'FileChanged': s = 'files'; break;
+    case 'FileChanged': case 'DirectoryAdded': case 'WorktreeCreate': case 'WorktreeRemove': s = 'files'; break;
+    case 'PreModelSwitch': case 'PostModelSwitch': s = 'model'; break;
+    case 'ConfigChange': case 'CwdChanged': case 'Setup': s = 'context'; break;
   }
   return (ev._st = s);
 }
@@ -560,9 +563,15 @@ function describe(ev) {
     case 'InstructionsLoaded': return ['Memory', d.file_path || d.path || (d.files || []).join(', ')];
     case 'Elicitation': return ['MCP asks', d.message || d.server_name];
     case 'ElicitationResult': return ['You', 'answered MCP: ' + (d.action || JSON.stringify(d.content || ''))];
-    case 'PreModelSwitch': case 'PostModelSwitch': return ['Model', `switch ${d.from_model || '?'} → ${d.to_model || '?'}`];
-    case 'CwdChanged': return ['cwd', d.cwd];
-    case 'FileChanged': return ['File', 'changed ' + (d.file_path || d.path || '')];
+    case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? 'Model switch' : 'Model switched', `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
+    case 'CwdChanged': return ['cwd', d.old_cwd || d.new_cwd ? `${d.old_cwd || '?'} → ${d.new_cwd || '?'}` : d.cwd];
+    case 'FileChanged': return ['File', `${d.event || 'changed'} ${d.file_path || d.path || ''}`];
+    case 'ConfigChange': return ['Config', `changed ${(d.source || 'settings').replace(/_/g, ' ')}${d.file_path ? ' · ' + d.file_path : ''}`];
+    case 'DirectoryAdded': return ['Directory', `added ${d.directory || ''}${d.source ? ' · via ' + String(d.source).replace(/_/g, ' ') : ''}`];
+    case 'WorktreeCreate': return ['Worktree', 'created ' + (d.name || '')];
+    case 'WorktreeRemove': return ['Worktree', 'removed ' + (d.worktree_path || '')];
+    case 'Setup': return ['Setup', d.trigger || ''];
+    case 'TeammateIdle': return ['Teammate', `idle ${[d.teammate_name, d.team_name && `(${d.team_name})`].filter(Boolean).join(' ')}`];
     default: return [ev.event, ''];
   }
 }
@@ -596,11 +605,19 @@ function computeTurns(evs) {
     // a subagent's events stay with the turn that started it, even after a later prompt (a background
     // subagent's hand-back arrives as a new prompt) — so its branch can still merge back on the route
     const aid = ev.data?.agent_id != null ? ev.session_id + '/' + ev.data.agent_id : null;
+    const prelude = x => x && x.prompt === null && !x.tools && !x.steps;
+    // a slash command / skill fires UserPromptExpansion just before its UserPromptSubmit: the expansion opens
+    // the turn and the prompt joins it (unless the prompt came first and this turn has only just started)
+    const expandsNext = ev.event === 'UserPromptExpansion' && !(t && t.prompt !== null && !t.tools && !t.steps && tms(ev) - Date.parse(t.start) < 2000);
     if (aid && ev.event !== 'SubagentStart' && owner.has(aid)) t = owner.get(aid);
-    else if (ev.event === 'UserPromptSubmit' || !t) {
-      t = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : null,
-        events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
-      cur.set(ev.session_id, t); turns.push(t);
+    else if (ev.event === 'UserPromptSubmit' && t?.pending) { t.pending = false; t.prompt = String(ev.data?.prompt ?? ''); }
+    else if (ev.event === 'UserPromptSubmit' || expandsNext || !t) {
+      const isPrompt = ev.event === 'UserPromptSubmit' || expandsNext;
+      const nt = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : expandsNext ? String(ev.data?.prompt ?? '') : null,
+        pending: expandsNext, events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
+      // what happened before the first prompt (SessionStart, Setup, instructions loaded…) joins that prompt's turn
+      if (isPrompt && prelude(t)) { nt.events = t.events; t.events = []; for (const x of nt.events) TURN_BY_SEQ.set(x.seq, nt); }
+      t = nt; cur.set(ev.session_id, t); turns.push(t);
     }
     t.events.push(ev); t.end = ev.ts; TURN_BY_SEQ.set(ev.seq, t);
     const st = stationOf(ev), d = ev.data || {};
@@ -613,7 +630,8 @@ function computeTurns(evs) {
     if (ev.event === 'StopFailure') { t.done = true; t.failed = true; }
     if (ev.event === 'SessionEnd') t.done = true;
   }
-  // hide prelude "turns" with nothing in them
+  // hide prelude "turns" with nothing in them (a session that started but got no prompt yet, or whose
+  // prelude moved into its first prompt's turn)
   return turns.filter(t => t.prompt !== null || t.tools || t.steps);
 }
 function turnMatches(t) {
@@ -902,6 +920,8 @@ function routeModel(t, lim) {
       }
       case 'PermissionRequest': add({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
       case 'PermissionDenied': errs++; add({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
+      // a model switch mid-session is a stop on the main line: the steps after it run on a different model
+      case 'PostModelSwitch': br0 = null; add({ st: 'model', label: 'Model', sub: '→ ' + String(d.to_model || '?').replace(/^claude-/, ''), seq: ev.seq, tip: evTip(ev) }); break;
       case 'PreCompact': case 'InstructionsLoaded': br0 = null; add({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }
@@ -1675,7 +1695,12 @@ function toolCard(e, t) {
   return evCard(e, evHead(st, toolLabel(name), res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
     + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''), hooks);
 }
-const NOTE_TYPE = { idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', elicitation_dialog: 'MCP server is asking for input' };
+const NOTE_TYPE = {
+  idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', auth_storage_failure: 'could not store sign-in',
+  elicitation_dialog: 'MCP server is asking for input', elicitation_url_dialog: 'MCP server wants you to open a link', elicitation_complete: 'MCP input done', elicitation_response: 'MCP input answered',
+  agent_needs_input: 'an agent needs your input', agent_completed: 'an agent finished', plugin_notification: 'from a plugin',
+  quota_auto_resume_fired: 'resumed after the usage limit', quota_auto_resume_stale: 'auto-resume skipped (stale)', quota_auto_resume_disabled: 'auto-resume is off',
+};
 // the Agent call that started a subagent: the latest one before it asking for that agent type
 const agentCallFor = (e, t) => t.events.filter(x => x.event === 'PreToolUse' && (x.data?.tool_name === 'Agent' || x.data?.tool_name === 'Task') && tms(x) <= tms(e) && (!e.data?.agent_type || x.data.tool_input?.subagent_type === e.data.agent_type)).pop();
 function evOpenHtml(e, t) {
@@ -1711,6 +1736,17 @@ function evOpenHtml(e, t) {
     case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
     case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
     case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
+    case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(String(d.source || '').replace(/_/g, ' '))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
+    case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + String(d.source).replace(/_/g, ' '))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
+    case 'WorktreeCreate': return evCard(e, evHead('files', 'Worktree created', d.name && esc(d.name)) + evKv(d, new Set([...EV_COMMON, 'name'])));
+    case 'WorktreeRemove': return evCard(e, evHead('files', 'Worktree removed') + evKv({ path: d.worktree_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'worktree_path'])));
+    case 'CwdChanged': return evCard(e, evHead('context', 'Working directory changed') + evKv({ from: d.old_cwd, to: d.new_cwd }, new Set()) + evKv(d, new Set([...EV_COMMON, 'old_cwd', 'new_cwd'])));
+    case 'PreModelSwitch': case 'PostModelSwitch': {
+      const cost = d.estimated_cache_write_usd != null ? `≈ $${Number(d.estimated_cache_write_usd).toFixed(2)} to re-send the context` : '';
+      return evCard(e, evHead('model', e.event === 'PreModelSwitch' ? 'Switching model' : 'Model switched', esc(`${d.from_model || '?'} → ${d.to_model || '?'}`), d.source && esc(d.source))
+        + evKv({ requested: d.requested_model, 'context tokens': d.context_tokens != null ? fmtN(d.context_tokens) : null, 'cache warm': d.prompt_cache_warm == null ? null : d.prompt_cache_warm ? 'yes' : 'no', cost }, new Set())
+        + evKv(d, new Set([...EV_COMMON, 'from_model', 'to_model', 'source', 'requested_model', 'context_tokens', 'prompt_cache_warm', 'estimated_cache_write_usd'])));
+    }
     default: {
       const [label, sub] = describe(e);
       return evCard(e, evHead(stationOf(e) || 'other', label || e.event, sub && esc(short(sub, 160))) + evKv(d));
