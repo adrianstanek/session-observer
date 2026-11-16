@@ -165,6 +165,22 @@
   .metro .tdiv.cur line { stroke: var(--accent); }
   .metro .tdiv.cur text { fill: var(--text); font-weight: 600; }
   .metro .tdiv:hover text { fill: var(--text); }
+  /* context badge: on each turn divider (SVG) and in the route header (HTML) */
+  .metro .ctxs .cbg { fill: var(--panel-2); stroke: var(--line); }
+  .metro .ctxs .ctrk { fill: var(--line); }
+  .metro .ctxs .cfil { fill: var(--s-context); }
+  .metro .ctxs text { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .metro .ctxs .cv { fill: var(--text); font-weight: 600; }
+  .metro .tdiv .ctxs text.cd { font-weight: 700; }
+  .metro .ctxs .cd.up { fill: var(--accent); } .metro .ctxs .cd.big { fill: var(--warn, #d97706); } .metro .ctxs .cd.down { fill: var(--ok); }
+  .ctxb { display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); font-variant-numeric: tabular-nums; color: var(--text); }
+  .ctxb .cbar { width: 46px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .ctxb .cbar i { display: block; height: 100%; background: var(--s-context); }
+  .ctxb .cd { font-weight: 700; } .ctxb .cd.up { color: var(--accent); } .ctxb .cd.big { color: var(--warn, #d97706); } .ctxb .cd.down { color: var(--ok); }
+  .metro .ttog rect { fill: var(--panel-2); stroke: var(--line); }
+  .metro .ttog path { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .metro .ttog:hover rect { stroke: var(--accent); }
+  .metro .ttog:hover path { stroke: var(--text); }
   .metro .ml.flow { stroke-dasharray: 2 9; animation: dash .7s linear infinite; opacity: 1; }
   @keyframes dash { to { stroke-dashoffset: -11; } }
   .metro .stop, .metro .md { cursor: pointer; }
@@ -708,7 +724,8 @@ function drawAlt(now) {
     ch.onscroll = () => { chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop; };
     chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop;
   }
-  if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? (state.turnSel ? Number(sc2.dataset.fy) : sc2.scrollHeight) : (!state.turnSel && atBottom ? sc2.scrollHeight : top);
+  // route: newest turn is on top, so jump to the focused turn when it changes, otherwise keep the scroll position
+  if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? Number(sc2.dataset.fy) : top;
 }
 
 // ---- board: station cards
@@ -901,6 +918,38 @@ function routeModel(t, lim) {
   for (const s of stops) s.lane = s.br ? s.br.lane : 0;
   return { stops, branches, steps, tools, errs, ended, maxLane, mainLast, say, lastTs };
 }
+// context at the end of a turn: the last main-line model step's context tokens (null if none reported yet)
+function turnCtx(t, lim) {
+  let c = null;
+  for (const e of t.events) if (e.event === 'ModelStep' && !e.data?.subagent && e.data?.agent_id == null && e.data?.tokens?.context && tms(e) <= lim) c = e.data.tokens.context;
+  return c;
+}
+// context at the end of this turn, its change from the end of the turn before, and how full the window is
+function ctxInfo(sess, tt, lim) {
+  const c = turnCtx(tt, lim); if (c == null) return null;
+  let p = null; for (let i = sess.indexOf(tt) - 1; i >= 0 && p == null; i--) p = turnCtx(sess[i], lim);
+  const win = c > 200000 ? 1000000 : (state.sessions.get(tt.sid)?.context?.window || 200000);
+  const d = p == null ? null : c - p;
+  // delta colour: shrank (compaction) = ok, big jump (≥ 10% of the window) = warn, otherwise neutral
+  const tone = d == null ? '' : d < 0 ? 'down' : d >= win * 0.1 ? 'big' : 'up';
+  return { c, d, win, pct: Math.min(1, c / win), tone, dTxt: d == null ? '' : `${d >= 0 ? '+' : '−'}${fmtN(Math.abs(d))}` };
+}
+const ctxTip = x => `Context at the end of this turn: ${fmtN(x.c)} of ${fmtN(x.win)} (${Math.round(x.pct * 100)}%)${x.d == null ? '' : `\nChange from the previous turn: ${x.dTxt}${x.d < 0 ? ' (compacted)' : ''}`}`;
+// HTML badge for the route header
+function ctxBadge(x) {
+  if (!x) return '';
+  return `<span class="ctxb" title="${esc(ctxTip(x))}"><span class="cbar"><i style="width:${(x.pct * 100).toFixed(1)}%"></i></span><b>${fmtN(x.c)}</b><span class="muted">${Math.round(x.pct * 100)}%</span>${x.dTxt ? `<span class="cd ${x.tone}">${x.dTxt}</span>` : ''}</span>`;
+}
+// SVG badge right-aligned at xr on a turn divider (baseline y)
+function ctxBadgeSvg(x, xr, y) {
+  if (!x) return '';
+  const cw = 7.2, dW = x.dTxt ? x.dTxt.length * cw + 16 : 0, vTxt = `${fmtN(x.c)} · ${Math.round(x.pct * 100)}%`, vW = vTxt.length * cw + 12, BW = 46;
+  const w = 10 + BW + 8 + vW + dW, x0 = xr - w;
+  return `<g class="ctxs"><title>${esc(ctxTip(x))}</title><rect class="cbg" x="${x0}" y="${y - 15}" width="${w}" height="22" rx="11"/>`
+    + `<rect class="ctrk" x="${x0 + 10}" y="${y - 7}" width="${BW}" height="6" rx="3"/><rect class="cfil" x="${x0 + 10}" y="${y - 7}" width="${(BW * x.pct).toFixed(1)}" height="6" rx="3"/>`
+    + `<text class="cv" x="${x0 + 10 + BW + 8}" y="${y}">${esc(vTxt)}</text>`
+    + (x.dTxt ? `<text class="cd ${x.tone}" x="${xr - 10}" y="${y}" text-anchor="end">${esc(x.dTxt)}</text>` : '') + '</g>';
+}
 // spacing between two consecutive stops on one lane
 const routeW = s => s.small ? 24 : s.end ? 58 : 80;
 const routeGap = (a, b) => (routeW(a) + routeW(b)) / 2;
@@ -915,17 +964,22 @@ function routeHtml() {
   // chain this session's turns, oldest → newest (at most CAP, always including the focused one)
   const sess = TURNS.filter(x => x.sid === t.sid && Date.parse(x.start) <= lim), CAP = 30;
   let from = Math.max(0, sess.length - CAP); const fi = sess.indexOf(t); if (fi >= 0 && fi < from) from = fi;
-  const chain = sess.slice(from, from + CAP);
+  // newest turn on top; every turn is collapsed to its divider unless it is the focused one or toggled open
+  const chain = sess.slice(from, from + CAP).reverse(), newest = chain[0];
+  // the turn that just became focused opens even if it was collapsed by hand earlier
+  if (routeFocus !== t.key) { routeFocus = t.key; routeOpen.delete(t.key); }
+  const isOpen = tt => routeOpen.has(tt.key) ? routeOpen.get(tt.key) : tt.key === t.key || tt === newest;
   const stops = [], models = new Map(), tails = [];
-  chain.forEach((tt, ci) => {
+  chain.forEach(tt => {
     const R = routeModel(tt, lim), off = stops.length;
     models.set(tt.key, R);
+    if (!isOpen(tt)) return;
     let maxPos = 0;
     for (const s of R.stops) {
       s.i += off; for (const k of ['prev', 'fork', 'merge']) if (s[k] != null) s[k] += off;
       s.turn = tt.key; stops.push(s); maxPos = Math.max(maxPos, s.pos);
     }
-    const live = !R.ended && ci === chain.length - 1 && (state.cursor != null || turnRunning(tt));
+    const live = !R.ended && tt === newest &&(state.cursor != null || turnRunning(tt));
     const endAt = R.ended ? tms(R.ended) : sn;
     if (R.ended || (live && !R.stops.some(s => s.run && s.lane === 0))) {
       // the main line always runs to the end of the turn: past every subagent stop, not just its own last stop
@@ -942,14 +996,17 @@ function routeHtml() {
   // each lane running off the right edge and picking up again at the left edge of the row underneath
   const PAD = 56, TOPY = 18, LANEH = 52, BASEH = 50, ROWGAP = 34, DIVH = 50;
   const usable = Math.max(160, W - 2 * PAD - 30), SW = usable + 2 * PAD;
-  const byKey = new Map(chain.map(tt => [tt.key, tt]));
-  const rows = [];
-  let rowBase = 0, curTurn = null;
-  for (const s of stops) {
-    if (s.turn !== curTurn) { curTurn = s.turn; rowBase = rows.length; rows.push({ maxLane: 0, div: byKey.get(s.turn) }); }
-    const k = Math.floor(s.pos / usable);
-    while (rows.length <= rowBase + k) rows.push({ maxLane: 0 });
-    s.row = rowBase + k; s.x = PAD + s.pos - k * usable;
+  const rows = [], byTurn = new Map();
+  for (const s of stops) (byTurn.get(s.turn) || byTurn.set(s.turn, []).get(s.turn)).push(s);
+  for (const tt of chain) {
+    const rowBase = rows.length, open = isOpen(tt);
+    rows.push({ maxLane: 0, div: tt, collapsed: !open });
+    if (!open) continue;
+    for (const s of byTurn.get(tt.key) || []) {
+      const k = Math.floor(s.pos / usable);
+      while (rows.length <= rowBase + k) rows.push({ maxLane: 0 });
+      s.row = rowBase + k; s.x = PAD + s.pos - k * usable;
+    }
   }
   // every link between two stops; a link's travel lane is where it runs horizontally
   const links = [];
@@ -964,12 +1021,13 @@ function routeHtml() {
   // so every fork drops from its Agent call and every merge rises back into the main line from underneath.
   // Main-line labels sit above their stops (MAINL), out of the way of the forks leaving underneath
   const MAINL = 32;
-  let y = TOPY;
+  let y = TOPY, tailGap = 0;
   for (const r of rows) {
-    if (r.div) { r.divY = y; y += DIVH; }
-    r.y0 = y; r.main = y + MAINL; y = r.main + r.maxLane * LANEH + BASEH + ROWGAP;
+    if (r.div) { r.divY = y; y += r.collapsed ? 36 : DIVH; tailGap = 0; }
+    if (r.collapsed) continue;
+    r.y0 = y; r.main = y + MAINL; y = r.main + r.maxLane * LANEH + BASEH + ROWGAP; tailGap = ROWGAP;
   }
-  const SH = y - ROWGAP + 10;
+  const SH = y - tailGap + 10;
   const laneY = (r, L) => rows[r].main + L * LANEH, LE = 18, RE = SW - 18;
   for (const s of stops) s.y = laneY(s.row, s.lane);
 
@@ -996,8 +1054,13 @@ function routeHtml() {
   for (const r of rows) {
     if (!r.div) continue;
     const tt = r.div, n = sess.indexOf(tt) + 1, cur = tt.key === t.key, dy = r.divY + 6;
-    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), 90)}`;
-    svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/><text x="10" y="${dy + 20}">${esc(label)}</text><title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
+    const M2 = models.get(tt.key), sum = r.collapsed && M2 ? ` · ${M2.steps} steps · ${M2.tools} tools${M2.errs ? ` · ✕${M2.errs}` : ''}` : '';
+    const cx = ctxInfo(sess, tt, lim);
+    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), cx ? Math.max(20, Math.floor((usable - 260) / 8) - 30) : 90)}${sum}`;
+    // the chevron toggles the turn open / collapsed; the rest of the divider selects the turn
+    svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/>`
+      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="4" y="${dy + 4}" width="22" height="22" rx="5"/><path d="${r.collapsed ? `M12 ${dy + 10}l6 5l-6 5` : `M10 ${dy + 12}l5 6l5 -6`}"/><title>${r.collapsed ? 'Expand' : 'Collapse'} this turn</title></g>`
+      + `<text x="32" y="${dy + 20}">${esc(label)}</text>${ctxBadgeSvg(cx, usable + 2 * PAD - 6, dy + 20)}<title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
   }
   // draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one
   // has to cross another lane it passes over it with a small gap), then the main line on top
@@ -1043,6 +1106,9 @@ function stopLn(stops) {
 }
 // hoverSeq: an event row hovered in the details panel; its stop on the route is lit up, everything else fades
 let hoverLn = null, hoverSeq = null, viewHover = null;
+// route: turns the user expanded / collapsed by hand (key → open); the rest follow the default (focused + newest turn open)
+const routeOpen = new Map();
+let routeFocus = null; // the turn the route was last focused on
 const seqStop = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
 function applyHover() {
   const svg = $('alt').querySelector('svg.metro');
@@ -1115,7 +1181,7 @@ function routeFrame(t, pinned, sess, models, lim, H, svg, fy) {
   // live: what it is doing now, and the latest thing the model wrote in this turn
   const sn = simNow(), now = live ? `<div class="la"><b>Now:</b> <span class="act">${esc(routeActivity(R, sn))}</span>${R.say ? ` · “${esc(short(R.say.text, 220))}” <span class="muted">${agoMs(sn - R.say.ts)} ago</span>` : ''}</div>` : '';
   const head = `<div class="lhead${live ? ' live' : ''}"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
-    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
+    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${ctxBadge(ctxInfo(sess, t, lim))}${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
 </div>${now}</div>`;
   // turn navigator: previous / next turn, position, and a way back to the live (latest) turn
   const list = sess, idx = list.indexOf(t);
@@ -1882,6 +1948,8 @@ function initControls() {
   $('detail').addEventListener('mouseleave', () => { if (hoverSeq != null) { hoverSeq = null; applyHover(); } });
   $('alt').addEventListener('click', e => {
     if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
+    const tg = e.target.closest('[data-tog]');
+    if (tg) { const k = tg.dataset.tog; routeOpen.set(k, tg.dataset.open !== '1'); altDirty = true; return; }
     const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
     const q = e.target.closest('[data-seq]');
     if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
