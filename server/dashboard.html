@@ -331,6 +331,9 @@
   .evx .meta { color: var(--muted); font-size: 12px; }
   .evx details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
   .evx details pre.raw { margin: 6px 0 0; }
+  .evx .hevs { display: flex; flex-direction: column; gap: 4px; }
+  .evx .hev { padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; }
+  .evx .hev summary b { color: var(--text); font-weight: 600; }
   pre.raw { margin: 4px 0 10px 22px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
   /* overview: charts + detail lists that replace the turn list */
   .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; }
@@ -1558,9 +1561,10 @@ function evKv(o, skip = EV_COMMON) {
     return `<dt>${esc(k)}</dt><dd>${typeof v !== 'string' ? `<pre class="code fj">${jsonHtml(v)}</pre>` : s.length > 140 || s.includes('\n') ? evOut(s) : esc(s)}</dd>`;
   }).join('')}</dl>`;
 }
-function evCard(e, inner) {
+// raw: what goes under the meta line; by default the event's own payload
+function evCard(e, inner, raw) {
   const d = e.data || {}, bits = [fmtTime(e.ts), d.agent_type ? `subagent ${d.agent_type}` : d.subagent ? 'subagent' : 'main agent', d.effort?.level && `effort ${d.effort.level}`, d.permission_mode && `mode ${d.permission_mode}`, `#${e.seq}`];
-  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div><details><summary>Raw payload</summary>${rawPre(e)}</details></div>`;
+  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div>${raw ?? `<details><summary>Raw payload</summary>${rawPre(e)}</details>`}</div>`;
 }
 // ---- code display: a small syntax colouring for shell, Python and JavaScript (escaped token by token)
 const KW = {
@@ -1663,8 +1667,13 @@ function toolCard(e, t) {
   const fail = post?.event === 'PostToolUseFailure';
   const res = fail ? '<span class="err">✕ failed</span>' : post ? `<span style="color:var(--ok)">✓</span> ${esc(fmtDur(post.data.duration_ms ?? post.duration_ms ?? (pre ? tms(post) - tms(pre) : null)))}` : 'running…';
   const by = t.events.find(x => x.event === 'ModelStep' && x.data?.tool_ids?.includes(id));
+  // both hook events behind this one row: PreToolUse (the call) and PostToolUse / PostToolUseFailure (the result)
+  const hook = (x, missing) => x
+    ? `<details class="hev"><summary><b>${esc(x.event)}</b> · ${esc(fmtTime(x.ts))} · #${x.seq}${x !== pre && pre ? ` · +${esc(fmtDur(tms(x) - tms(pre)))}` : ''}</summary>${rawPre(x)}</details>`
+    : `<div class="hev muted">${missing}</div>`;
+  const hooks = `<div class="hevs"><div class="k">Hook events</div>${hook(pre, 'PreToolUse · not received')}${hook(post, fail ? '' : 'PostToolUse · not yet (still running)')}</div>`;
   return evCard(e, evHead(st, toolLabel(name), res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
-    + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''));
+    + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''), hooks);
 }
 const NOTE_TYPE = { idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', elicitation_dialog: 'MCP server is asking for input' };
 // the Agent call that started a subagent: the latest one before it asking for that agent type
