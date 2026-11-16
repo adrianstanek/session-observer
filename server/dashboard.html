@@ -482,6 +482,7 @@ const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) r
 const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n ?? 0);
 const clean = s => String(s ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
 const base = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || p || '';
+const spaced = s => String(s || '').replace(/_/g, ' '); // hook enum values (user_settings, add_dir…) as words
 const icon = (id, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
 const tms = ev => ev._t ?? (ev._t = Date.parse(ev.ts));
 const ls = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
@@ -566,8 +567,8 @@ function describe(ev) {
     case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? 'Model switch' : 'Model switched', `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
     case 'CwdChanged': return ['cwd', d.old_cwd || d.new_cwd ? `${d.old_cwd || '?'} → ${d.new_cwd || '?'}` : d.cwd];
     case 'FileChanged': return ['File', `${d.event || 'changed'} ${d.file_path || d.path || ''}`];
-    case 'ConfigChange': return ['Config', `changed ${(d.source || 'settings').replace(/_/g, ' ')}${d.file_path ? ' · ' + d.file_path : ''}`];
-    case 'DirectoryAdded': return ['Directory', `added ${d.directory || ''}${d.source ? ' · via ' + String(d.source).replace(/_/g, ' ') : ''}`];
+    case 'ConfigChange': return ['Config', `changed ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
+    case 'DirectoryAdded': return ['Directory', `added ${d.directory || ''}${d.source ? ' · via ' + spaced(d.source) : ''}`];
     case 'WorktreeCreate': return ['Worktree', 'created ' + (d.name || '')];
     case 'WorktreeRemove': return ['Worktree', 'removed ' + (d.worktree_path || '')];
     case 'Setup': return ['Setup', d.trigger || ''];
@@ -873,6 +874,8 @@ function routeModel(t, lim) {
     stops.push(s); return s;
   };
   let br0 = null;
+  // a stop on the main line (never on a subagent's branch)
+  const mainStop = (ev, st, label, sub) => { br0 = null; return add({ st, label, sub, seq: ev.seq, tip: evTip(ev) }); };
   const branchOf = d => { const b = d.agent_id != null && branches.get(String(d.agent_id)); return b && !b.closed ? b : null; };
   for (const ev of evs) {
     const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d);
@@ -921,8 +924,12 @@ function routeModel(t, lim) {
       case 'PermissionRequest': add({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
       case 'PermissionDenied': errs++; add({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
       // a model switch mid-session is a stop on the main line: the steps after it run on a different model
-      case 'PostModelSwitch': br0 = null; add({ st: 'model', label: 'Model', sub: '→ ' + String(d.to_model || '?').replace(/^claude-/, ''), seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PreCompact': case 'InstructionsLoaded': br0 = null; add({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PostModelSwitch': mainStop(ev, 'model', 'Model', '→ ' + String(d.to_model || '?').replace(/^claude-/, '')); break;
+      // session start, config changes and memory loads are stops too (the first turn opens with the ones before its prompt);
+      // the sub is kept short, since the route cuts it at 12 characters — the tooltip has the full description
+      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || 'started'); break;
+      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || 'changed'); break;
+      case 'PreCompact': case 'InstructionsLoaded': { const [label, sub] = describe(ev); mainStop(ev, 'context', label, base(sub)); break; }
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }
   }
@@ -1736,8 +1743,8 @@ function evOpenHtml(e, t) {
     case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
     case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
     case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
-    case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(String(d.source || '').replace(/_/g, ' '))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
-    case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + String(d.source).replace(/_/g, ' '))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
+    case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(spaced(d.source))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
+    case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + spaced(d.source))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
     case 'WorktreeCreate': return evCard(e, evHead('files', 'Worktree created', d.name && esc(d.name)) + evKv(d, new Set([...EV_COMMON, 'name'])));
     case 'WorktreeRemove': return evCard(e, evHead('files', 'Worktree removed') + evKv({ path: d.worktree_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'worktree_path'])));
     case 'CwdChanged': return evCard(e, evHead('context', 'Working directory changed') + evKv({ from: d.old_cwd, to: d.new_cwd }, new Set()) + evKv(d, new Set([...EV_COMMON, 'old_cwd', 'new_cwd'])));
