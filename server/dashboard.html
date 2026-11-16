@@ -967,8 +967,10 @@ function routeHtml() {
   // newest turn on top; every turn is collapsed to its divider unless it is the focused one or toggled open
   const chain = sess.slice(from, from + CAP).reverse(), newest = chain[0];
   // the turn that just became focused opens even if it was collapsed by hand earlier
-  if (routeFocus !== t.key) { routeFocus = t.key; routeOpen.delete(t.key); }
-  const isOpen = tt => routeOpen.has(tt.key) ? routeOpen.get(tt.key) : tt.key === t.key || tt === newest;
+  if (routeFocus !== t.key) { routeFocus = t.key; routeOpen.set(t.key, true); }
+  // a turn shown open stays open (a new turn starting, or picking another turn, never closes it) until collapsed by hand
+  for (const tt of chain) if (!routeOpen.has(tt.key) && (tt.key === t.key || tt === newest)) routeOpen.set(tt.key, true);
+  const isOpen = tt => routeOpen.get(tt.key) === true;
   const stops = [], models = new Map(), tails = [];
   chain.forEach(tt => {
     const R = routeModel(tt, lim), off = stops.length;
@@ -1106,7 +1108,8 @@ function stopLn(stops) {
 }
 // hoverSeq: an event row hovered in the details panel; its stop on the route is lit up, everything else fades
 let hoverLn = null, hoverSeq = null, viewHover = null;
-// route: turns the user expanded / collapsed by hand (key → open); the rest follow the default (focused + newest turn open)
+// route: which turns are open (key → open). Turns start collapsed; the focused and the newest turn get opened
+// and stay open after that, until collapsed by hand
 const routeOpen = new Map();
 let routeFocus = null; // the turn the route was last focused on
 const seqStop = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
