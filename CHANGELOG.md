@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/radekwojpl2/session-observer/compare/v0.4.0...v0.4.1) (2026-11-17)
+
+
+### Code Changes
+
+* split the dashboard into a stylesheet and twelve scripts ([762174c](https://github.com/radekwojpl2/session-observer/commit/762174c096179c668172769efd31aa94c34e3eb7))
+
 ## [0.4.0](https://github.com/radekwojpl2/session-observer/compare/v0.3.0...v0.4.0) (2026-11-17)
 
 
