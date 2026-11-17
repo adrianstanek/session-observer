@@ -1,13 +1,14 @@
 'use strict';
-// Session Observer dashboard — the middle stage: switching between Overview / Route / Chat, and the activity-by-group cards.
+// Session Observer dashboard — the middle stage: switching between Overview / Route / Chat / Context, and the activity-by-group cards.
 // ---------------------------------------------------------------- stage views
 // Two views of the same state (M, state.events, cursor):
 //   board — a grid of station cards with counts, 15-min sparklines and live "running" state
 //   route — the current turn as a metro line: every model step and tool call is a stop
 //   chat  — the conversation as a messenger: prompts, the agent's replies, tool calls as chips
-const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat']];
+//   context — one session's whole conversation in full, read from its transcript
+const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat'], ['context', 'Context']];
 const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
-let altDirty = true, lastAltT = 0, lastAltRaw = '';
+let altDirty = true, lastAltT = 0, lastAltRaw = '', ctxTurnShown = null;
 const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
 const agoMs = ms => ms < 60000 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m` : ms < 86400000 ? `${Math.floor(ms / 3600000)}h` : `${Math.floor(ms / 86400000)}d`;
 const trunc = (s, n) => { s = String(s ?? ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
@@ -20,20 +21,33 @@ function setLayout(id) {
   document.querySelector('.stage').dataset.layout = id;
   $('layouts').innerHTML = LAYOUTS.map(([k, l]) => `<button role="tab" aria-selected="${k === id}" data-layout="${k}" class="${k === id ? 'cur' : ''}">${l}</button>`).join('');
   $('alt').innerHTML = ''; lastAltRaw = ''; altDirty = true; mapDirty = true;
+  renderDetail(); // Details follows the Context view's order
   if (id === 'overview') schedule('mid');
 }
 function drawAlt(now) {
   if (!altDirty && now - lastAltT < 250) return;
   altDirty = false; lastAltT = now;
   if (state.layout === 'overview') return; // the overview is #mid, drawn by renderMid
-  const raw = state.layout === 'chat' ? chatHtml() : routeHtml();
+  const raw = state.layout === 'chat' ? chatHtml() : state.layout === 'context' ? contextHtml() : routeHtml();
   if (raw === lastAltRaw) return;
   lastAltRaw = raw;
   // keep CSS animations in phase across re-renders
   // route: jump to the focused turn when it changes; when following live, stay at the bottom unless the user scrolled up
   const sc = $('alt').querySelector('.mscroll');
   const prevKey = sc?.dataset.focus, atBottom = !sc || sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 8, top = sc ? sc.scrollTop : 0;
+  const cx = $('alt').querySelector('.cxs');
+  if (cx) ctxScroll = { sid: CTX.sid, fromBottom: cx.scrollHeight - cx.scrollTop, atTop: cx.scrollTop < 8 }; // newest is on top: hold the view still as items arrive above it
   $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
+  // context: keep the scroll position; stay at the bottom if you were there (new messages arrive at the bottom)
+  const cx2 = $('alt').querySelector('.cxs');
+  if (cx2 && ctxScroll.sid === CTX.sid) cx2.scrollTop = ctxScroll.atTop ? 0 : cx2.scrollHeight - ctxScroll.fromBottom;
+  // context: a turn picked outside the view (Prev / Next, keys, another view) scrolls to that turn's header
+  if (cx2) {
+    const tk = state.turnSel, el = tk && tk !== ctxTurnShown && Date.now() - ctxLocalPick > 600 && cx2.querySelector(`.cxturn[data-tk="${CSS.escape(tk)}"]`);
+    if (el?.classList.contains('shut')) ctxSetShut(el, false);
+    if (el) cx2.scrollTop += el.getBoundingClientRect().top - cx2.getBoundingClientRect().top - 4;
+    ctxTurnShown = tk;
+  }
   const sc2 = $('alt').querySelector('.mscroll');
   applyHover();
   const ch = $('alt').querySelector('.chat');

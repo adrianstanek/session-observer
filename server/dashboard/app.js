@@ -207,6 +207,11 @@ context ${fmtN(p.v)} of ${fmtN(VCTX.win)} (${Math.round(100 * p.v / VCTX.win)}%)
     if (e.target.closest('pre.raw, .evx')) return;
     const r = e.target.closest('.erow'); if (!r) return;
     const seq = Number(r.id.slice(3)), pre = Number(r.dataset.pre);
+    // beside the Context view a row click brings up its message there, and only the arrow opens or closes the row
+    if (state.layout === 'context' && !e.target.closest('.etog')) {
+      if (!e.target.closest('.erh')) return; // inside the open card
+      return ctxFocus([pre, seq], state.events.find(x => x.seq === pre)?.ts);
+    }
     if (state.evOpen.has(seq) || state.evOpen.has(pre)) { state.evOpen.delete(seq); state.evOpen.delete(pre); } else state.evOpen.add(seq);
     renderDetail();
   };

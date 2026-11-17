@@ -75,6 +75,13 @@ Each stop shows what it works with. A chained command lists every program it run
 
 You on the right, Claude on the left, tool calls as chips.
 
+**Context**
+
+![Context view on a real session: the conversation in turns, Turn 3 open and shown in Details, Turn 4 folded to its header](docs/context.jpg)
+
+The whole session on one page, in full, in the same turns as Details. Fold a turn down to its header,
+or click the header to open that turn in Details.
+
 ## How it works
 
 ```
@@ -174,6 +181,12 @@ Run it manually: `node server/server.js`.
 
 ![Dashboard layout: 1 filters, 2 sessions, 3 views, 4 route, 5 event types and replay, 6 details](docs/layout.jpg)
 
+The session list shows each session's title and a dot for its state (working, live or ended). Hover a
+session for the rest: when it was last active, its turns, tool calls and output tokens, the tool it ran
+last, and its folder, model, failures and context use.
+
+![A session hovered in the list: its details in a card beside it](docs/pr/sessions-hover.png)
+
 Hovering links the views both ways: an event row in Details lights up its stop on the Route
 and its bubble or chip in the Chat, and hovering a Route stop or a Chat item lights up its
 row in Details.
@@ -184,6 +197,44 @@ Kotlin, TypeScript, HTML…). `cd api && dotnet test` shows .NET, an edit to `Or
 shows C#. A chained command gets a badge for every program in it: `npm ci && docker build .`
 shows npm and Docker (a Route stop shows the first one and a "+1"). The badges are drawn by the page itself, so nothing is downloaded; hover one for
 its name. Calls with nothing specific keep their tool group's icon.
+
+**Context** shows one session's whole context on one scrolling page, read in full from its
+transcript rather than from the event log (which cuts long fields short). What the model is given up
+front stays on top. Below it the conversation is shown message by message, the way the model reads it:
+each Claude message is one model step with its thinking, text and tool calls, and each of your messages
+holds what came back in between (prompts, tool results, reminders and other attachments). The newest
+message is on top; switch to **Oldest first** to read it in order.
+
+The messages are grouped into turns, the same turns Details shows: a turn starts at a prompt and runs
+to the next one. Each turn's header (its prompt, model steps and tool calls) stays in view while you
+scroll through it. Click a header to open that turn in Details; the turn shown there is highlighted,
+and **Prev** / **Next** in Details scroll this view to theirs. The arrow on a header folds the turn
+down to the header, and **Expand turns** / **Collapse turns** fold or unfold all of them.
+
+What the view holds (**Copy** gives it oldest first):
+
+- the system prompt and tool definitions, when the transcript has them (only some Claude Code
+  versions record them);
+- the instruction files: global, project and local `CLAUDE.md`, `AGENTS.md` pulled in by an
+  `@AGENTS.md` import, rules and auto-memory, each with its path;
+- what the model knows it can use: skills, subagent types, deferred tools and each MCP server's
+  instructions;
+- every prompt, reply and thinking block, and every tool call with its complete input, and its result in
+  the message after it;
+- each subagent's own conversation, inside the Agent call that started it, with its own system prompt
+  (for a custom agent, the body of its `.md` file), tools and instructions;
+- the context size now, and after every model step, with the same bar and change as on the Route; each
+  compaction with the summary that replaced the history; **Since last compaction** shows only what the
+  model has in context now;
+- attachments the model reads: hook output, reminders, the environment, git status, changed files and
+  other injected text. Records Claude Code keeps in the transcript only for itself (prompt snapshots,
+  account and permission records) never reach the model; tick **bookkeeping** to see them anyway.
+
+Pick a session on the left first. Search filters this view too, and **Copy** puts everything shown on the
+clipboard as Markdown. The first request's size is measured, and it sets the session's characters per
+token, which the cards use for their sizes. Treat those sizes as close estimates: the ratio is an
+average over prose, code and JSON. Without a recorded request the cards fall back to about
+4 characters per token.
 
 Model steps, what the model wrote and the tool calls it asked for come from the session
 transcript (each assistant API response), since hooks don't see them.
@@ -215,6 +266,7 @@ word. Thinking is often stored empty, in which case there is nothing to show.
 | `OBSERVER_MAX_EVENTS` | `5000` | events kept in memory per session |
 | `OBSERVER_AUTOSTART` | `1` | set `0` to stop SessionStart from launching the server |
 | `OBSERVER_HOST` | `127.0.0.1` | bind address — keep it local |
+| `OBSERVER_CONTEXT_FIELD` | `100000` | max chars per text in the Context view |
 
 ## Privacy
 
@@ -245,7 +297,7 @@ folder don't list the same files, or if a script doesn't start with `'use strict
 | `core.js` | icons, tool groups, event categories, small helpers |
 | `tech.js` | language / tool badges: detection and drawing |
 | `model.js` | what events mean: groups and labels, filters, turns, replayable state |
-| `stage.js` | switching Overview / Route / Chat, activity-by-group cards |
+| `stage.js` | switching Overview / Route / Chat / Context, activity-by-group cards |
 | `chat.js` | Chat view |
 | `route.js` | Route view |
 | `panels.js` | event rows, replay bar, sessions panel |
@@ -253,6 +305,7 @@ folder don't list the same files, or if a script doesn't start with `'use strict
 | `detail-parts.js` | Details building blocks: sections, colour key, JSON, card parts |
 | `code.js` | syntax colouring, tool input and output |
 | `details.js` | Details panel: tool, event and model-step cards |
+| `context.js` | Context view: one session's whole conversation, from `/api/context` |
 | `app.js` | header, render scheduling, loading and live updates, controls, start-up |
 
 ### Releasing

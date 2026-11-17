@@ -128,6 +128,7 @@ function renderDetail() {
     // written text wins over thinking
     said.set(k, !o ? { txt, th: e.data.kind === 'thinking' } : o.th && e.data.kind !== 'thinking' ? { txt, th: false } : o.th === (e.data.kind === 'thinking') ? { txt: o.txt + ' ' + txt, th: o.th } : o);
   }
+  const cxSide = state.layout === 'context';
   const rows = t.events.filter(e => !((e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') && started.has(e.data?.tool_use_id)) && !FEED_HIDE.has(e.event) && !(e.event === 'Stop' && t.answer)
     && !(e.event === 'ModelText' && steps.has(e.data?.msg_id))).map(e => {
     const post = e.event === 'PreToolUse' ? posts.get(e.data?.tool_use_id) : null, r = post || e;
@@ -135,15 +136,21 @@ function renderDetail() {
     const open = state.evOpen.has(r.seq) || state.evOpen.has(e.seq);
     // a tool row says what was called; its result is in the row's card
     const sub = e.event === 'PreToolUse' ? describe(e)[1] : null;
-    return `<div class="erow ${open ? 'open' : ''} ${fa && (evMatches(e) || evMatches(r)) ? 'hit' : ''}" id="ev-${r.seq}" data-pre="${e.seq}">${feedRow(r, isRun, { dur: true, ts: e.ts, sub, said: e.event === 'ModelStep' ? said.get(e.data?.msg_id)?.txt : null })}${open ? evOpenHtml(r, t) : ''}</div>`;
-  }).join('');
+    const row = feedRow(r, isRun, { dur: true, ts: e.ts, sub, said: e.event === 'ModelStep' ? said.get(e.data?.msg_id)?.txt : null });
+    // beside the Context view a row click shows its message there; the arrow only opens and closes the row
+    const head = cxSide ? `<div class="erh"><button class="etog" title="${open ? 'Collapse' : 'Expand'}" aria-expanded="${open}">${open ? '▾' : '▸'}</button>${row}</div>` : row;
+    return `<div class="erow ${open ? 'open' : ''} ${fa && (evMatches(e) || evMatches(r)) ? 'hit' : ''}" id="ev-${r.seq}" data-pre="${e.seq}">${head}${open ? evOpenHtml(r, t) : ''}</div>`;
+  });
+  // beside the Context view, the events follow its order (newest first unless switched); elsewhere they read top down
+  const newest = cxSide && ctxOrder !== 'old';
+  if (newest) rows.reverse();
   const s = state.sessions.get(t.sid);
   const dur = Date.parse(t.end) - Date.parse(t.start);
   el.innerHTML = `<div class="dh"><h2>Turn · ${fmtTime(t.start)}</h2><span><button id="prevTurn" title="Previous turn ([)">‹ Prev</button> <button id="nextTurn" title="Next turn (])">Next ›</button> <button id="closeTurn" title="Close (Esc)">Close</button></span></div>
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
     ${dsec('prompt', 'Prompt', `<div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>`)}
     ${t.answer ? dsec('reply', 'Reply', `<div class="q ans">${esc(t.answer)}</div>`) : ''}
-    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span>`, `<div>${rows}</div>`)}${colourKey(t)}`;
+    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· ${newest ? 'newest first · ' : ''}${cxSide ? '▸ opens a row, a click on the row shows it in Context' : 'click a row for its details'}</span>`, `<div>${rows.join('')}</div>`)}${colourKey(t)}`;
   el.scrollTop = top;
   applyHover(); // keep the row lit for the chat item / route stop under the mouse
 }
