@@ -27,7 +27,7 @@ working, on **http://localhost:4800**. It doesn't touch `~/.claude`.
 
 ### Screenshots
 
-All taken from one real session.
+All taken from one real session, except the badges one, which uses a made-up .NET session.
 
 **Overview**
 
@@ -62,6 +62,12 @@ What the model wrote and how full the context was.
 ![Bash card from a subagent: command and output](docs/tool-card.jpg)
 
 A subagent's Bash command and its output.
+
+**Language and tool badges**
+
+![Route with C#, .NET, npm, Docker and Git badges on its stops, and a chained Bash command opened in Details](docs/badges.jpg)
+
+Each stop shows what it works with. A chained command lists every program it runs.
 
 **Chat**
 
@@ -224,10 +230,14 @@ node --test test/tech.test.js      # language / tool badges: what each command a
 claude plugin validate .           # plugin + marketplace manifests
 ```
 
+CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
+and Node 22 on macOS and Windows.
+
 The dashboard is `server/dashboard.html` (markup only) plus the files in `server/dashboard/`,
 which `server.js` serves as they are. There is still no build step: the scripts are plain
 browser scripts that share one global scope and load in the order the page lists them, so a
-file can use anything from the files above it.
+file can use anything from the files above it. `node test/check.js` fails if the page and the
+folder don't list the same files, or if a script doesn't start with `'use strict';`.
 
 | File | What is in it |
 |---|---|
@@ -244,9 +254,6 @@ file can use anything from the files above it.
 | `code.js` | syntax colouring, tool input and output |
 | `details.js` | Details panel: tool, event and model-step cards |
 | `app.js` | header, render scheduling, loading and live updates, controls, start-up |
-
-CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
-and Node 22 on macOS and Windows.
 
 ### Releasing
 
