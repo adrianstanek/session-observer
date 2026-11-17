@@ -19,6 +19,7 @@ const TOOLS = [
   ['Read', { file_path: 'src/routes/auth.ts' }], ['Grep', { pattern: 'rateLimit' }], ['Glob', { pattern: 'src/**/*.test.ts' }],
   ['Edit', { file_path: 'src/middleware/limiter.ts' }], ['Write', { file_path: 'src/middleware/limiter.test.ts' }],
   ['Bash', { command: 'npm test' }], ['Bash', { command: 'git status' }], ['Bash', { command: 'git diff --stat' }],
+  ['Bash', { command: 'node scripts/seed.js' }], ['Bash', { command: 'docker compose up -d redis' }], ['Read', { file_path: 'package.json' }],
   ['WebFetch', { url: 'https://expressjs.com/en/guide/behind-proxies.html' }], ['WebSearch', { query: 'express rate limit redis store' }],
   ['Skill', { skill: 'patterns' }], ['Agent', { subagent_type: 'Explore', description: 'find all route handlers' }],
   ['mcp__claude-in-chrome__navigate', { url: 'http://localhost:3000' }], ['mcp__codebase-memory-mcp__search_graph', { name_pattern: 'Limiter' }],

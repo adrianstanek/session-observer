@@ -169,6 +169,13 @@ Hovering links the views both ways: an event row in Details lights up its stop o
 and its bubble or chip in the Chat, and hovering a Route stop or a Chat item lights up its
 row in Details.
 
+Tool calls carry a badge for what they work with: the program a shell command runs (`node`,
+`dotnet`, `npm`, `docker`, `git`…) or the language of the file being read or edited (C#,
+Kotlin, TypeScript, HTML…). `cd api && dotnet test` shows .NET, an edit to `OrderService.cs`
+shows C#. A chained command gets a badge for every program in it: `npm ci && docker build .`
+shows npm and Docker (a Route stop shows the first one and a "+1"). The badges are drawn by the page itself, so nothing is downloaded; hover one for
+its name. Calls with nothing specific keep their tool group's icon.
+
 Model steps, what the model wrote and the tool calls it asked for come from the session
 transcript (each assistant API response), since hooks don't see them.
 
@@ -210,10 +217,11 @@ the dashboard or delete `~/.claude/session-observer/events.jsonl`.
 ```bash
 node test/check.js                 # JSON, JS syntax, hook wiring, version
 node --test test/smoke.test.js     # hook → log → server → API, end to end
+node --test test/tech.test.js      # language / tool badges: what each command and file maps to
 claude plugin validate .           # plugin + marketplace manifests
 ```
 
-CI (`.github/workflows/ci.yml`) runs all three on every push and PR, on Node 18–24 (Linux)
+CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
 and Node 22 on macOS and Windows.
 
 ### Releasing
