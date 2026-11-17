@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/radekwojpl2/session-observer/compare/v0.4.1...v0.5.0) (2026-11-17)
+
+
+### Features
+
+* Context view, one session's whole context on one page ([5481a17](https://github.com/radekwojpl2/session-observer/commit/5481a174ec01326c5dc2858606eee0bb1a425f99))
+
 ## [0.4.1](https://github.com/radekwojpl2/session-observer/compare/v0.4.0...v0.4.1) (2026-11-17)
 
 
