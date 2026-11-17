@@ -27,7 +27,7 @@ working, on **http://localhost:4800**. It doesn't touch `~/.claude`.
 
 ### Screenshots
 
-All taken from one real session.
+All taken from one real session, except the badges one, which uses a made-up .NET session.
 
 **Overview**
 
@@ -62,6 +62,12 @@ What the model wrote and how full the context was.
 ![Bash card from a subagent: command and output](docs/tool-card.jpg)
 
 A subagent's Bash command and its output.
+
+**Language and tool badges**
+
+![Route with C#, .NET, npm, Docker and Git badges on its stops, and a chained Bash command opened in Details](docs/badges.jpg)
+
+Each stop shows what it works with. A chained command lists every program it runs.
 
 **Chat**
 
@@ -119,7 +125,10 @@ version is the same, reinstall to get the latest commit:
 /plugin install session-observer@session-observer-marketplace
 ```
 
-Using `--plugin-dir`? Run `git pull` in the clone and restart Claude Code.
+Using `--plugin-dir`? Run `git pull` in the clone and restart Claude Code. The dashboard server
+keeps running in the background across restarts, so stop it too (commands under
+[Uninstall](#uninstall)); the next session starts the new one. If the page says it could not
+load its files, this is why.
 
 ### Uninstall
 
@@ -223,6 +232,28 @@ claude plugin validate .           # plugin + marketplace manifests
 
 CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
 and Node 22 on macOS and Windows.
+
+The dashboard is `server/dashboard.html` (markup only) plus the files in `server/dashboard/`,
+which `server.js` serves as they are. There is still no build step: the scripts are plain
+browser scripts that share one global scope and load in the order the page lists them, so a
+file can use anything from the files above it. `node test/check.js` fails if the page and the
+folder don't list the same files, or if a script doesn't start with `'use strict';`.
+
+| File | What is in it |
+|---|---|
+| `dashboard.css` | all styles, light and dark |
+| `core.js` | icons, tool groups, event categories, small helpers |
+| `tech.js` | language / tool badges: detection and drawing |
+| `model.js` | what events mean: groups and labels, filters, turns, replayable state |
+| `stage.js` | switching Overview / Route / Chat, activity-by-group cards |
+| `chat.js` | Chat view |
+| `route.js` | Route view |
+| `panels.js` | event rows, replay bar, sessions panel |
+| `overview.js` | Overview: tiles, charts, lists |
+| `detail-parts.js` | Details building blocks: sections, colour key, JSON, card parts |
+| `code.js` | syntax colouring, tool input and output |
+| `details.js` | Details panel: tool, event and model-step cards |
+| `app.js` | header, render scheduling, loading and live updates, controls, start-up |
 
 ### Releasing
 

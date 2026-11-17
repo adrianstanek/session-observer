@@ -1,5 +1,5 @@
-// Language / tool detection for the dashboard's badges. The code lives in the dashboard's inline script,
-// between the ">>> tech" and "<<< tech" markers; this runs that part on its own.
+// Language / tool detection for the dashboard's badges (server/dashboard/tech.js). The dashboard's scripts are
+// plain browser scripts, so this evaluates tech.js after core.js, the one file it takes helpers from.
 // Zero dependencies — run with `node --test test/tech.test.js`.
 'use strict';
 const { test } = require('node:test');
@@ -7,17 +7,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard.html'), 'utf8');
-const block = html.match(/\/\/ >>> tech[^\n]*\n([\s\S]*?)\/\/ <<< tech/);
-assert.ok(block, 'tech block markers not found in server/dashboard.html');
-// the few helpers the block takes from the rest of the script
-const pre = `
-  const base = p => String(p || '').split(/[\\\\/]/).filter(Boolean).pop() || p || '';
-  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'NotebookRead', 'Glob', 'Grep', 'LS']);
-  const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'KillShell', 'KillBash', 'Monitor']);
-`;
-const T = new Function(pre + block[1] + '\nreturn { TECH, TECH_SHAPE, TECH_EXT, TECH_CMD, TECH_FILE, fileTech, nameTech, shellSegments, progWord, techsOf, techOf, techMark, techIcon, techIcons };')();
+const src = f => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', f), 'utf8');
+const T = new Function(src('core.js') + '\n' + src('tech.js') + '\nreturn { TECH, TECH_SHAPE, TECH_EXT, TECH_CMD, TECH_FILE, fileTech, nameTech, shellSegments, progWord, techsOf, techOf, techMark, techIcon, techIcons };')();
 
 const sh = (command, tool = 'Bash') => T.techOf(tool, { command });
 const file = (file_path, tool = 'Edit') => T.techOf(tool, { file_path });
