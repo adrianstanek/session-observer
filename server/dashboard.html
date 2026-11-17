@@ -165,6 +165,22 @@
   .metro .tdiv.cur line { stroke: var(--accent); }
   .metro .tdiv.cur text { fill: var(--text); font-weight: 600; }
   .metro .tdiv:hover text { fill: var(--text); }
+  /* context badge: on each turn divider (SVG) and in the route header (HTML) */
+  .metro .ctxs .cbg { fill: var(--panel-2); stroke: var(--line); }
+  .metro .ctxs .ctrk { fill: var(--line); }
+  .metro .ctxs .cfil { fill: var(--s-context); }
+  .metro .ctxs text { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .metro .ctxs .cv { fill: var(--text); font-weight: 600; }
+  .metro .tdiv .ctxs text.cd { font-weight: 700; }
+  .metro .ctxs .cd.up { fill: var(--accent); } .metro .ctxs .cd.big { fill: var(--warn, #d97706); } .metro .ctxs .cd.down { fill: var(--ok); }
+  .ctxb { display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); font-variant-numeric: tabular-nums; color: var(--text); }
+  .ctxb .cbar { width: 46px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .ctxb .cbar i { display: block; height: 100%; background: var(--s-context); }
+  .ctxb .cd { font-weight: 700; } .ctxb .cd.up { color: var(--accent); } .ctxb .cd.big { color: var(--warn, #d97706); } .ctxb .cd.down { color: var(--ok); }
+  .metro .ttog rect { fill: var(--panel-2); stroke: var(--line); }
+  .metro .ttog path { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .metro .ttog:hover rect { stroke: var(--accent); }
+  .metro .ttog:hover path { stroke: var(--text); }
   .metro .ml.flow { stroke-dasharray: 2 9; animation: dash .7s linear infinite; opacity: 1; }
   @keyframes dash { to { stroke-dashoffset: -11; } }
   .metro .stop, .metro .md { cursor: pointer; }
@@ -264,8 +280,23 @@
   .turn .mk { padding-top: 4px; }
 
   .dh { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line-2); margin-bottom: 12px; }
+  /* every collapsible section: the same chevron toggle as the Route's turn dividers — a small rounded box
+     whose chevron points right when collapsed and down when open */
+  details > summary { list-style: none; cursor: pointer; position: relative; padding-left: 26px; min-height: 18px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: ''; position: absolute; left: 0; top: 50%; width: 18px; height: 18px; box-sizing: border-box; transform: translateY(-50%);
+    border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
+  details > summary::after { content: ''; position: absolute; left: 0; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); transition: transform .12s;
+    background: var(--muted); -webkit-mask: var(--chev) center / 18px 18px no-repeat; mask: var(--chev) center / 18px 18px no-repeat; }
+  details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
+  details > summary:hover::before { border-color: var(--accent); }
+  details > summary:hover::after { background: var(--text); }
+  :root { --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M7 5l4 4l-4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
   details.key { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
-  details.key summary { cursor: pointer; font-weight: 500; }
+  details.key summary { font-weight: 500; }
+  /* Details panel sections (Prompt / Reply / Events): the section label is the toggle */
+  details.dsec > summary.lbl2 { display: block; line-height: 18px; }
+  details.dsec:not([open]) > summary.lbl2 { margin-bottom: 0; }
   .keygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin-top: 10px; font-size: 12.5px; }
   .keygrid div { display: flex; align-items: center; gap: 6px; }
   .q { background: var(--panel-2); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; max-height: 260px; overflow: auto; }
@@ -302,7 +333,7 @@
   .jk { color: var(--s-files); } .js { color: var(--s-browser); } .jn { color: var(--s-mcp); } .jb { color: var(--s-git); }
   .evx .code .jl { color: var(--text); font-weight: 600; }
   .evx .code.fj { max-height: 420px; }
-  .evx .jfold summary { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+  .evx .jfold summary { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
   .evx .jfold summary:hover .jl { color: var(--accent); }
   .evx .jfold[open] summary { margin-bottom: 2px; }
   .evx .jfold .jbody { white-space: pre-wrap; padding: 2px 0 6px 16px; border-left: 1px solid var(--line-2); margin-left: 4px; }
@@ -313,8 +344,11 @@
   .evx dl.kv dt { color: var(--muted); } .evx dl.kv dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; min-width: 0; }
   .evx .q2 { margin-bottom: 6px; } .evx .q2 .opt { padding-left: 10px; }
   .evx .meta { color: var(--muted); font-size: 12px; }
-  .evx details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  .evx details summary { color: var(--muted); font-size: 12px; line-height: 18px; }
   .evx details pre.raw { margin: 6px 0 0; }
+  .evx .hevs { display: flex; flex-direction: column; gap: 4px; }
+  .evx .hev { padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; }
+  .evx .hev summary b { color: var(--text); font-weight: 600; }
   pre.raw { margin: 4px 0 10px 22px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
   /* overview: charts + detail lists that replace the turn list */
   .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; }
@@ -448,7 +482,8 @@ const CATS = {
   compact: 'Compact', context: 'Context', lifecycle: 'Lifecycle', env: 'Env',
 };
 const CAT_COLOR = { model: 'model', prompt: 'you', tool: 'files', skill: 'skills', question: 'you', subagent: 'agents', task: 'other', mcp: 'mcp', permission: 'git', error: 'err', notification: 'agents', compact: 'context', context: 'context', lifecycle: 'other', env: 'other' };
-const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch', 'Setup', 'Notification']);
+// hidden from the Details list: MessageDisplay repeats the model's text, PostToolBatch repeats the tool rows
+const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch']);
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'NotebookRead', 'Glob', 'Grep', 'LS']);
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'KillShell', 'KillBash', 'Monitor']);
 
@@ -462,6 +497,7 @@ const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) r
 const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n ?? 0);
 const clean = s => String(s ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
 const base = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || p || '';
+const spaced = s => String(s || '').replace(/_/g, ' '); // hook enum values (user_settings, add_dir…) as words
 const icon = (id, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
 const tms = ev => ev._t ?? (ev._t = Date.parse(ev.ts));
 const ls = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
@@ -489,7 +525,9 @@ function stationOf(ev) {
     case 'SubagentStart': case 'SubagentStop': case 'TeammateIdle': s = 'agents'; break;
     case 'InstructionsLoaded': case 'PreCompact': case 'PostCompact': s = 'context'; break;
     case 'TaskCreated': case 'TaskCompleted': s = 'other'; break;
-    case 'FileChanged': s = 'files'; break;
+    case 'FileChanged': case 'DirectoryAdded': case 'WorktreeCreate': case 'WorktreeRemove': s = 'files'; break;
+    case 'PreModelSwitch': case 'PostModelSwitch': s = 'model'; break;
+    case 'ConfigChange': case 'CwdChanged': case 'Setup': s = 'context'; break;
   }
   return (ev._st = s);
 }
@@ -541,9 +579,15 @@ function describe(ev) {
     case 'InstructionsLoaded': return ['Memory', d.file_path || d.path || (d.files || []).join(', ')];
     case 'Elicitation': return ['MCP asks', d.message || d.server_name];
     case 'ElicitationResult': return ['You', 'answered MCP: ' + (d.action || JSON.stringify(d.content || ''))];
-    case 'PreModelSwitch': case 'PostModelSwitch': return ['Model', `switch ${d.from_model || '?'} → ${d.to_model || '?'}`];
-    case 'CwdChanged': return ['cwd', d.cwd];
-    case 'FileChanged': return ['File', 'changed ' + (d.file_path || d.path || '')];
+    case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? 'Model switch' : 'Model switched', `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
+    case 'CwdChanged': return ['cwd', d.old_cwd || d.new_cwd ? `${d.old_cwd || '?'} → ${d.new_cwd || '?'}` : d.cwd];
+    case 'FileChanged': return ['File', `${d.event || 'changed'} ${d.file_path || d.path || ''}`];
+    case 'ConfigChange': return ['Config', `changed ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
+    case 'DirectoryAdded': return ['Directory', `added ${d.directory || ''}${d.source ? ' · via ' + spaced(d.source) : ''}`];
+    case 'WorktreeCreate': return ['Worktree', 'created ' + (d.name || '')];
+    case 'WorktreeRemove': return ['Worktree', 'removed ' + (d.worktree_path || '')];
+    case 'Setup': return ['Setup', d.trigger || ''];
+    case 'TeammateIdle': return ['Teammate', `idle ${[d.teammate_name, d.team_name && `(${d.team_name})`].filter(Boolean).join(' ')}`];
     default: return [ev.event, ''];
   }
 }
@@ -569,6 +613,8 @@ function evMatches(ev) {
 const filtersActive = () => !!(state.station || state.category || state.problems || state.q);
 
 // ---------------------------------------------------------------- turns
+const BETWEEN_TURNS = new Set(['PreModelSwitch', 'PostModelSwitch', 'ConfigChange', 'DirectoryAdded', 'CwdChanged', 'InstructionsLoaded',
+  'WorktreeCreate', 'WorktreeRemove', 'SessionStart', 'PreCompact', 'PostCompact']);
 function computeTurns(evs) {
   const cur = new Map(), turns = [], owner = new Map();
   TURN_BY_SEQ = new Map();
@@ -577,11 +623,21 @@ function computeTurns(evs) {
     // a subagent's events stay with the turn that started it, even after a later prompt (a background
     // subagent's hand-back arrives as a new prompt) — so its branch can still merge back on the route
     const aid = ev.data?.agent_id != null ? ev.session_id + '/' + ev.data.agent_id : null;
+    const prelude = x => x && x.prompt === null && !x.tools && !x.steps;
+    // a slash command / skill fires UserPromptExpansion just before its UserPromptSubmit: the expansion opens
+    // the turn and the prompt joins it (unless the prompt came first and this turn has only just started)
+    const expandsNext = ev.event === 'UserPromptExpansion' && !(t && t.prompt !== null && !t.tools && !t.steps && tms(ev) - Date.parse(t.start) < 2000);
     if (aid && ev.event !== 'SubagentStart' && owner.has(aid)) t = owner.get(aid);
-    else if (ev.event === 'UserPromptSubmit' || !t) {
-      t = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : null,
-        events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
-      cur.set(ev.session_id, t); turns.push(t);
+    else if (ev.event === 'UserPromptSubmit' && t?.pending) { t.pending = false; t.prompt = String(ev.data?.prompt ?? ''); }
+    // things you do between turns (/model, /add-dir, settings edits, /clear or /compact…) belong to the turn
+    // they lead into: once a turn has finished, they open a prelude that the next prompt's turn takes over
+    else if (ev.event === 'UserPromptSubmit' || expandsNext || !t || (t.done && BETWEEN_TURNS.has(ev.event) && !prelude(t))) {
+      const isPrompt = ev.event === 'UserPromptSubmit' || expandsNext;
+      const nt = { key: ev.session_id + ':' + ev.seq, sid: ev.session_id, start: ev.ts, end: ev.ts, prompt: ev.event === 'UserPromptSubmit' ? String(ev.data?.prompt ?? '') : expandsNext ? String(ev.data?.prompt ?? '') : null,
+        pending: expandsNext, events: [], tools: 0, steps: 0, errors: 0, stations: {}, answer: null, done: false, failed: false, out: 0, toolMs: 0 };
+      // what happened before the first prompt (SessionStart, Setup, instructions loaded…) joins that prompt's turn
+      if (isPrompt && prelude(t)) { nt.events = t.events; t.events = []; for (const x of nt.events) TURN_BY_SEQ.set(x.seq, nt); }
+      t = nt; cur.set(ev.session_id, t); turns.push(t);
     }
     t.events.push(ev); t.end = ev.ts; TURN_BY_SEQ.set(ev.seq, t);
     const st = stationOf(ev), d = ev.data || {};
@@ -594,7 +650,8 @@ function computeTurns(evs) {
     if (ev.event === 'StopFailure') { t.done = true; t.failed = true; }
     if (ev.event === 'SessionEnd') t.done = true;
   }
-  // hide prelude "turns" with nothing in them
+  // hide prelude "turns" with nothing in them (a session that started but got no prompt yet, or whose
+  // prelude moved into its first prompt's turn)
   return turns.filter(t => t.prompt !== null || t.tools || t.steps);
 }
 function turnMatches(t) {
@@ -708,7 +765,8 @@ function drawAlt(now) {
     ch.onscroll = () => { chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop; };
     chatScroll.atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8; chatScroll.top = ch.scrollTop;
   }
-  if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? (state.turnSel ? Number(sc2.dataset.fy) : sc2.scrollHeight) : (!state.turnSel && atBottom ? sc2.scrollHeight : top);
+  // route: newest turn is on top, so jump to the focused turn when it changes, otherwise keep the scroll position
+  if (sc2) sc2.scrollTop = sc2.dataset.focus !== prevKey ? Number(sc2.dataset.fy) : top;
 }
 
 // ---- board: station cards
@@ -835,6 +893,8 @@ function routeModel(t, lim) {
     stops.push(s); return s;
   };
   let br0 = null;
+  // a stop on the main line (never on a subagent's branch)
+  const mainStop = (ev, st, label, sub) => { br0 = null; return add({ st, label, sub, seq: ev.seq, tip: evTip(ev) }); };
   const branchOf = d => { const b = d.agent_id != null && branches.get(String(d.agent_id)); return b && !b.closed ? b : null; };
   for (const ev of evs) {
     const d = ev.data || {}, st = stationOf(ev) || 'other', br = branchOf(d);
@@ -882,7 +942,13 @@ function routeModel(t, lim) {
       }
       case 'PermissionRequest': add({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
       case 'PermissionDenied': errs++; add({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PreCompact': case 'InstructionsLoaded': br0 = null; add({ st: 'context', label: describe(ev)[0], sub: base(describe(ev)[1]), seq: ev.seq, tip: evTip(ev) }); break;
+      // a model switch mid-session is a stop on the main line: the steps after it run on a different model
+      case 'PostModelSwitch': mainStop(ev, 'model', 'Model', '→ ' + String(d.to_model || '?').replace(/^claude-/, '')); break;
+      // session start, config changes and memory loads are stops too (the first turn opens with the ones before its prompt);
+      // the sub is kept short, since the route cuts it at 12 characters — the tooltip has the full description
+      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || 'started'); break;
+      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || 'changed'); break;
+      case 'PreCompact': case 'InstructionsLoaded': { const [label, sub] = describe(ev); mainStop(ev, 'context', label, base(sub)); break; }
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }
   }
@@ -901,6 +967,38 @@ function routeModel(t, lim) {
   for (const s of stops) s.lane = s.br ? s.br.lane : 0;
   return { stops, branches, steps, tools, errs, ended, maxLane, mainLast, say, lastTs };
 }
+// context at the end of a turn: the last main-line model step's context tokens (null if none reported yet)
+function turnCtx(t, lim) {
+  let c = null;
+  for (const e of t.events) if (e.event === 'ModelStep' && !e.data?.subagent && e.data?.agent_id == null && e.data?.tokens?.context && tms(e) <= lim) c = e.data.tokens.context;
+  return c;
+}
+// context at the end of this turn, its change from the end of the turn before, and how full the window is
+function ctxInfo(sess, tt, lim) {
+  const c = turnCtx(tt, lim); if (c == null) return null;
+  let p = null; for (let i = sess.indexOf(tt) - 1; i >= 0 && p == null; i--) p = turnCtx(sess[i], lim);
+  const win = c > 200000 ? 1000000 : (state.sessions.get(tt.sid)?.context?.window || 200000);
+  const d = p == null ? null : c - p;
+  // delta colour: shrank (compaction) = ok, big jump (≥ 10% of the window) = warn, otherwise neutral
+  const tone = d == null ? '' : d < 0 ? 'down' : d >= win * 0.1 ? 'big' : 'up';
+  return { c, d, win, pct: Math.min(1, c / win), tone, dTxt: d == null ? '' : `${d >= 0 ? '+' : '−'}${fmtN(Math.abs(d))}` };
+}
+const ctxTip = x => `Context at the end of this turn: ${fmtN(x.c)} of ${fmtN(x.win)} (${Math.round(x.pct * 100)}%)${x.d == null ? '' : `\nChange from the previous turn: ${x.dTxt}${x.d < 0 ? ' (compacted)' : ''}`}`;
+// HTML badge for the route header
+function ctxBadge(x) {
+  if (!x) return '';
+  return `<span class="ctxb" title="${esc(ctxTip(x))}"><span class="cbar"><i style="width:${(x.pct * 100).toFixed(1)}%"></i></span><b>${fmtN(x.c)}</b><span class="muted">${Math.round(x.pct * 100)}%</span>${x.dTxt ? `<span class="cd ${x.tone}">${x.dTxt}</span>` : ''}</span>`;
+}
+// SVG badge right-aligned at xr on a turn divider (baseline y)
+function ctxBadgeSvg(x, xr, y) {
+  if (!x) return '';
+  const cw = 7.2, dW = x.dTxt ? x.dTxt.length * cw + 16 : 0, vTxt = `${fmtN(x.c)} · ${Math.round(x.pct * 100)}%`, vW = vTxt.length * cw + 12, BW = 46;
+  const w = 10 + BW + 8 + vW + dW, x0 = xr - w;
+  return `<g class="ctxs"><title>${esc(ctxTip(x))}</title><rect class="cbg" x="${x0}" y="${y - 15}" width="${w}" height="22" rx="11"/>`
+    + `<rect class="ctrk" x="${x0 + 10}" y="${y - 7}" width="${BW}" height="6" rx="3"/><rect class="cfil" x="${x0 + 10}" y="${y - 7}" width="${(BW * x.pct).toFixed(1)}" height="6" rx="3"/>`
+    + `<text class="cv" x="${x0 + 10 + BW + 8}" y="${y}">${esc(vTxt)}</text>`
+    + (x.dTxt ? `<text class="cd ${x.tone}" x="${xr - 10}" y="${y}" text-anchor="end">${esc(x.dTxt)}</text>` : '') + '</g>';
+}
 // spacing between two consecutive stops on one lane
 const routeW = s => s.small ? 24 : s.end ? 58 : 80;
 const routeGap = (a, b) => (routeW(a) + routeW(b)) / 2;
@@ -915,17 +1013,24 @@ function routeHtml() {
   // chain this session's turns, oldest → newest (at most CAP, always including the focused one)
   const sess = TURNS.filter(x => x.sid === t.sid && Date.parse(x.start) <= lim), CAP = 30;
   let from = Math.max(0, sess.length - CAP); const fi = sess.indexOf(t); if (fi >= 0 && fi < from) from = fi;
-  const chain = sess.slice(from, from + CAP);
+  // newest turn on top; every turn is collapsed to its divider unless it is the focused one or toggled open
+  const chain = sess.slice(from, from + CAP).reverse(), newest = chain[0];
+  // the turn that just became focused opens even if it was collapsed by hand earlier
+  if (routeFocus !== t.key) { routeFocus = t.key; routeOpen.set(t.key, true); }
+  // a turn shown open stays open (a new turn starting, or picking another turn, never closes it) until collapsed by hand
+  for (const tt of chain) if (!routeOpen.has(tt.key) && (tt.key === t.key || tt === newest)) routeOpen.set(tt.key, true);
+  const isOpen = tt => routeOpen.get(tt.key) === true;
   const stops = [], models = new Map(), tails = [];
-  chain.forEach((tt, ci) => {
+  chain.forEach(tt => {
     const R = routeModel(tt, lim), off = stops.length;
     models.set(tt.key, R);
+    if (!isOpen(tt)) return;
     let maxPos = 0;
     for (const s of R.stops) {
       s.i += off; for (const k of ['prev', 'fork', 'merge']) if (s[k] != null) s[k] += off;
       s.turn = tt.key; stops.push(s); maxPos = Math.max(maxPos, s.pos);
     }
-    const live = !R.ended && ci === chain.length - 1 && (state.cursor != null || turnRunning(tt));
+    const live = !R.ended && tt === newest &&(state.cursor != null || turnRunning(tt));
     const endAt = R.ended ? tms(R.ended) : sn;
     if (R.ended || (live && !R.stops.some(s => s.run && s.lane === 0))) {
       // the main line always runs to the end of the turn: past every subagent stop, not just its own last stop
@@ -942,14 +1047,17 @@ function routeHtml() {
   // each lane running off the right edge and picking up again at the left edge of the row underneath
   const PAD = 56, TOPY = 18, LANEH = 52, BASEH = 50, ROWGAP = 34, DIVH = 50;
   const usable = Math.max(160, W - 2 * PAD - 30), SW = usable + 2 * PAD;
-  const byKey = new Map(chain.map(tt => [tt.key, tt]));
-  const rows = [];
-  let rowBase = 0, curTurn = null;
-  for (const s of stops) {
-    if (s.turn !== curTurn) { curTurn = s.turn; rowBase = rows.length; rows.push({ maxLane: 0, div: byKey.get(s.turn) }); }
-    const k = Math.floor(s.pos / usable);
-    while (rows.length <= rowBase + k) rows.push({ maxLane: 0 });
-    s.row = rowBase + k; s.x = PAD + s.pos - k * usable;
+  const rows = [], byTurn = new Map();
+  for (const s of stops) (byTurn.get(s.turn) || byTurn.set(s.turn, []).get(s.turn)).push(s);
+  for (const tt of chain) {
+    const rowBase = rows.length, open = isOpen(tt);
+    rows.push({ maxLane: 0, div: tt, collapsed: !open });
+    if (!open) continue;
+    for (const s of byTurn.get(tt.key) || []) {
+      const k = Math.floor(s.pos / usable);
+      while (rows.length <= rowBase + k) rows.push({ maxLane: 0 });
+      s.row = rowBase + k; s.x = PAD + s.pos - k * usable;
+    }
   }
   // every link between two stops; a link's travel lane is where it runs horizontally
   const links = [];
@@ -964,12 +1072,13 @@ function routeHtml() {
   // so every fork drops from its Agent call and every merge rises back into the main line from underneath.
   // Main-line labels sit above their stops (MAINL), out of the way of the forks leaving underneath
   const MAINL = 32;
-  let y = TOPY;
+  let y = TOPY, tailGap = 0;
   for (const r of rows) {
-    if (r.div) { r.divY = y; y += DIVH; }
-    r.y0 = y; r.main = y + MAINL; y = r.main + r.maxLane * LANEH + BASEH + ROWGAP;
+    if (r.div) { r.divY = y; y += r.collapsed ? 36 : DIVH; tailGap = 0; }
+    if (r.collapsed) continue;
+    r.y0 = y; r.main = y + MAINL; y = r.main + r.maxLane * LANEH + BASEH + ROWGAP; tailGap = ROWGAP;
   }
-  const SH = y - ROWGAP + 10;
+  const SH = y - tailGap + 10;
   const laneY = (r, L) => rows[r].main + L * LANEH, LE = 18, RE = SW - 18;
   for (const s of stops) s.y = laneY(s.row, s.lane);
 
@@ -996,8 +1105,13 @@ function routeHtml() {
   for (const r of rows) {
     if (!r.div) continue;
     const tt = r.div, n = sess.indexOf(tt) + 1, cur = tt.key === t.key, dy = r.divY + 6;
-    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), 90)}`;
-    svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/><text x="10" y="${dy + 20}">${esc(label)}</text><title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
+    const M2 = models.get(tt.key), sum = r.collapsed && M2 ? ` · ${M2.steps} steps · ${M2.tools} tools${M2.errs ? ` · ✕${M2.errs}` : ''}` : '';
+    const cx = ctxInfo(sess, tt, lim);
+    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), cx ? Math.max(20, Math.floor((usable - 260) / 8) - 30) : 90)}${sum}`;
+    // the chevron toggles the turn open / collapsed; the rest of the divider selects the turn
+    svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/>`
+      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="6" y="${dy + 6}" width="18" height="18" rx="5"/><path d="${r.collapsed ? `M13 ${dy + 11}l4 4l-4 4` : `M11 ${dy + 13}l4 4l4 -4`}"/><title>${r.collapsed ? 'Expand' : 'Collapse'} this turn</title></g>`
+      + `<text x="32" y="${dy + 20}">${esc(label)}</text>${ctxBadgeSvg(cx, usable + 2 * PAD - 6, dy + 20)}<title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
   }
   // draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one
   // has to cross another lane it passes over it with a small gap), then the main line on top
@@ -1043,6 +1157,10 @@ function stopLn(stops) {
 }
 // hoverSeq: an event row hovered in the details panel; its stop on the route is lit up, everything else fades
 let hoverLn = null, hoverSeq = null, viewHover = null;
+// route: which turns are open (key → open). Turns start collapsed; the focused and the newest turn get opened
+// and stay open after that, until collapsed by hand
+const routeOpen = new Map();
+let routeFocus = null; // the turn the route was last focused on
 const seqStop = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
 function applyHover() {
   const svg = $('alt').querySelector('svg.metro');
@@ -1115,7 +1233,7 @@ function routeFrame(t, pinned, sess, models, lim, H, svg, fy) {
   // live: what it is doing now, and the latest thing the model wrote in this turn
   const sn = simNow(), now = live ? `<div class="la"><b>Now:</b> <span class="act">${esc(routeActivity(R, sn))}</span>${R.say ? ` · “${esc(short(R.say.text, 220))}” <span class="muted">${agoMs(sn - R.say.ts)} ago</span>` : ''}</div>` : '';
   const head = `<div class="lhead${live ? ' live' : ''}"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
-    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
+    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${ctxBadge(ctxInfo(sess, t, lim))}${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
 </div>${now}</div>`;
   // turn navigator: previous / next turn, position, and a way back to the live (latest) turn
   const list = sess, idx = list.indexOf(t);
@@ -1423,8 +1541,12 @@ function renderMid(again) {
 }
 
 // ---------------------------------------------------------------- detail panel
+// collapsible sections of the Details panel; which ones you closed is remembered across turns and reloads
+const dsecOpen = (() => { try { return JSON.parse(ls.get('so.dsec', '{}')) || {}; } catch { return {}; } })();
+const isDsecOpen = (id, dflt = true) => dsecOpen[id] ?? dflt;
+const dsec = (id, title, body) => `<details class="dsec" data-dsec="${id}"${isDsecOpen(id) ? ' open' : ''}><summary class="lbl2">${title}</summary>${body}</details>`;
 function colourKey() {
-  return `<details class="key"><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
+  return `<details class="key dsec" data-dsec="key"${isDsecOpen('key', false) ? ' open' : ''}><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
     <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div></details>`;
 }
 // ---- an opened event row: a readable card for every event, with the raw hook payload folded underneath
@@ -1489,9 +1611,10 @@ function evKv(o, skip = EV_COMMON) {
     return `<dt>${esc(k)}</dt><dd>${typeof v !== 'string' ? `<pre class="code fj">${jsonHtml(v)}</pre>` : s.length > 140 || s.includes('\n') ? evOut(s) : esc(s)}</dd>`;
   }).join('')}</dl>`;
 }
-function evCard(e, inner) {
+// raw: what goes under the meta line; by default the event's own payload
+function evCard(e, inner, raw) {
   const d = e.data || {}, bits = [fmtTime(e.ts), d.agent_type ? `subagent ${d.agent_type}` : d.subagent ? 'subagent' : 'main agent', d.effort?.level && `effort ${d.effort.level}`, d.permission_mode && `mode ${d.permission_mode}`, `#${e.seq}`];
-  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div><details><summary>Raw payload</summary>${rawPre(e)}</details></div>`;
+  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div>${raw ?? `<details><summary>Raw payload</summary>${rawPre(e)}</details>`}</div>`;
 }
 // ---- code display: a small syntax colouring for shell, Python and JavaScript (escaped token by token)
 const KW = {
@@ -1594,10 +1717,20 @@ function toolCard(e, t) {
   const fail = post?.event === 'PostToolUseFailure';
   const res = fail ? '<span class="err">✕ failed</span>' : post ? `<span style="color:var(--ok)">✓</span> ${esc(fmtDur(post.data.duration_ms ?? post.duration_ms ?? (pre ? tms(post) - tms(pre) : null)))}` : 'running…';
   const by = t.events.find(x => x.event === 'ModelStep' && x.data?.tool_ids?.includes(id));
+  // both hook events behind this one row: PreToolUse (the call) and PostToolUse / PostToolUseFailure (the result)
+  const hook = (x, missing) => x
+    ? `<details class="hev"><summary><b>${esc(x.event)}</b> · ${esc(fmtTime(x.ts))} · #${x.seq}${x !== pre && pre ? ` · +${esc(fmtDur(tms(x) - tms(pre)))}` : ''}</summary>${rawPre(x)}</details>`
+    : `<div class="hev muted">${missing}</div>`;
+  const hooks = `<div class="hevs"><div class="k">Hook events</div>${hook(pre, 'PreToolUse · not received')}${hook(post, fail ? '' : 'PostToolUse · not yet (still running)')}</div>`;
   return evCard(e, evHead(st, toolLabel(name), res, by && `<span class="muted">asked for by the model at ${esc(fmtTime(by.ts))}</span>`)
-    + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''));
+    + evSec('Input', toolInputHtml(name, d.tool_input)) + (post ? evSec(fail ? 'Error' : 'Output', toolOutputHtml(name, post)) : ''), hooks);
 }
-const NOTE_TYPE = { idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', elicitation_dialog: 'MCP server is asking for input' };
+const NOTE_TYPE = {
+  idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', auth_storage_failure: 'could not store sign-in',
+  elicitation_dialog: 'MCP server is asking for input', elicitation_url_dialog: 'MCP server wants you to open a link', elicitation_complete: 'MCP input done', elicitation_response: 'MCP input answered',
+  agent_needs_input: 'an agent needs your input', agent_completed: 'an agent finished', plugin_notification: 'from a plugin',
+  quota_auto_resume_fired: 'resumed after the usage limit', quota_auto_resume_stale: 'auto-resume skipped (stale)', quota_auto_resume_disabled: 'auto-resume is off',
+};
 // the Agent call that started a subagent: the latest one before it asking for that agent type
 const agentCallFor = (e, t) => t.events.filter(x => x.event === 'PreToolUse' && (x.data?.tool_name === 'Agent' || x.data?.tool_name === 'Task') && tms(x) <= tms(e) && (!e.data?.agent_type || x.data.tool_input?.subagent_type === e.data.agent_type)).pop();
 function evOpenHtml(e, t) {
@@ -1633,6 +1766,17 @@ function evOpenHtml(e, t) {
     case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
     case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${icon(st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
     case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
+    case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(spaced(d.source))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
+    case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + spaced(d.source))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
+    case 'WorktreeCreate': return evCard(e, evHead('files', 'Worktree created', d.name && esc(d.name)) + evKv(d, new Set([...EV_COMMON, 'name'])));
+    case 'WorktreeRemove': return evCard(e, evHead('files', 'Worktree removed') + evKv({ path: d.worktree_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'worktree_path'])));
+    case 'CwdChanged': return evCard(e, evHead('context', 'Working directory changed') + evKv({ from: d.old_cwd, to: d.new_cwd }, new Set()) + evKv(d, new Set([...EV_COMMON, 'old_cwd', 'new_cwd'])));
+    case 'PreModelSwitch': case 'PostModelSwitch': {
+      const cost = d.estimated_cache_write_usd != null ? `≈ $${Number(d.estimated_cache_write_usd).toFixed(2)} to re-send the context` : '';
+      return evCard(e, evHead('model', e.event === 'PreModelSwitch' ? 'Switching model' : 'Model switched', esc(`${d.from_model || '?'} → ${d.to_model || '?'}`), d.source && esc(d.source))
+        + evKv({ requested: d.requested_model, 'context tokens': d.context_tokens != null ? fmtN(d.context_tokens) : null, 'cache warm': d.prompt_cache_warm == null ? null : d.prompt_cache_warm ? 'yes' : 'no', cost }, new Set())
+        + evKv(d, new Set([...EV_COMMON, 'from_model', 'to_model', 'source', 'requested_model', 'context_tokens', 'prompt_cache_warm', 'estimated_cache_write_usd'])));
+    }
     default: {
       const [label, sub] = describe(e);
       return evCard(e, evHead(stationOf(e) || 'other', label || e.event, sub && esc(short(sub, 160))) + evKv(d));
@@ -1705,10 +1849,9 @@ function renderDetail() {
   const dur = Date.parse(t.end) - Date.parse(t.start);
   el.innerHTML = `<div class="dh"><h2>Turn · ${fmtTime(t.start)}</h2><span><button id="prevTurn" title="Previous turn ([)">‹ Prev</button> <button id="nextTurn" title="Next turn (])">Next ›</button> <button id="closeTurn" title="Close (Esc)">Close</button></span></div>
     <p class="lead">${esc(base(s?.cwd))} · ${running ? 'running' : t.failed ? 'failed' : t.done ? 'done' : 'unfinished'} · ${fmtDur(dur)} · ${t.steps} model steps · ${t.tools} tool calls (${fmtDur(t.toolMs)}) · ${fmtN(t.out)} output tokens${t.errors ? ` · <span class="err">${t.errors} problems</span>` : ''}</p>
-    <div class="lbl2">Prompt</div><div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>
-    ${t.answer ? `<div class="lbl2">Reply</div><div class="q ans">${esc(t.answer)}</div>` : ''}
-    <div class="lbl2">Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span></div>
-    <div>${rows}</div>${colourKey()}`;
+    ${dsec('prompt', 'Prompt', `<div class="q">${t.prompt !== null ? esc(t.prompt) : '<span class="muted">Session start (no prompt)</span>'}</div>`)}
+    ${t.answer ? dsec('reply', 'Reply', `<div class="q ans">${esc(t.answer)}</div>`) : ''}
+    ${dsec('events', `Events <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click a row for its details</span>`, `<div>${rows}</div>`)}${colourKey()}`;
   el.scrollTop = top;
   applyHover(); // keep the row lit for the chat item / route stop under the mouse
 }
@@ -1880,8 +2023,15 @@ function initControls() {
     if (k !== hoverSeq) { hoverSeq = k; applyHover(); revealPin(); }
   });
   $('detail').addEventListener('mouseleave', () => { if (hoverSeq != null) { hoverSeq = null; applyHover(); } });
+  // remember which Details sections are open ('toggle' does not bubble, so listen in the capture phase)
+  $('detail').addEventListener('toggle', e => {
+    const id = e.target.dataset?.dsec; if (!id) return;
+    dsecOpen[id] = e.target.open; ls.set('so.dsec', JSON.stringify(dsecOpen));
+  }, true);
   $('alt').addEventListener('click', e => {
     if (e.target.closest('[data-follow]')) { state.turnSel = null; renderDetail(); renderMid(); altDirty = true; return; }
+    const tg = e.target.closest('[data-tog]');
+    if (tg) { const k = tg.dataset.tog; routeOpen.set(k, tg.dataset.open !== '1'); altDirty = true; return; }
     const k = e.target.closest('[data-key]'); if (k) { selectTurn(k.dataset.key); altDirty = true; return; }
     const q = e.target.closest('[data-seq]');
     if (q) { const seq = Number(q.dataset.seq), t = TURN_BY_SEQ.get(seq); if (t) { selectTurn(t.key, seq); altDirty = true; } return; }
