@@ -77,7 +77,7 @@ You on the right, Claude on the left, tool calls as chips.
 
 **Context**
 
-![Context view: the conversation in turns, Turn 3 open and shown in Details, the other turns collapsed to their headers](docs/context.jpg)
+![Context view on a real session: the conversation in turns, Turn 3 open and shown in Details, Turn 4 folded to its header](docs/context.jpg)
 
 The whole session on one page, in full, in the same turns as Details. Fold a turn down to its header,
 or click the header to open that turn in Details.
