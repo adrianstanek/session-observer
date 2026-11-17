@@ -130,6 +130,43 @@ test('nothing else is served from the dashboard folder', async () => {
   }
 });
 
+test('context: the whole transcript, in full, with subagents and the request shape', async () => {
+  const tp = path.join(DATA_DIR, 'ctx-sess.jsonl'), subDir = path.join(DATA_DIR, 'ctx-sess', 'subagents');
+  fs.mkdirSync(subDir, { recursive: true });
+  const big = 'x'.repeat(20000); // longer than the hook log keeps (OBSERVER_MAX_FIELD 8000)
+  const usage = { input_tokens: 10, cache_read_input_tokens: 1000, cache_creation_input_tokens: 0, output_tokens: 50 };
+  const rows = [
+    { type: 'api-request-shape', shape: { system: [{ type: 'text', text: 'You are a test.' }], tools: [{ name: 'Bash', description: 'Run a command', input_schema: { type: 'object' } }] } },
+    { type: 'user', timestamp: '2026-01-01T00:00:00Z', message: { role: 'user', content: 'run the tests' } },
+    { type: 'assistant', timestamp: '2026-01-01T00:00:01Z', message: { id: 'm1', role: 'assistant', model: 'claude-test', usage, content: [{ type: 'thinking', thinking: 'plan' }] } },
+    { type: 'assistant', timestamp: '2026-01-01T00:00:01Z', message: { id: 'm1', role: 'assistant', model: 'claude-test', usage, content: [{ type: 'tool_use', id: 'tu1', name: 'Bash', input: { command: 'npm test' } }] } },
+    { type: 'user', timestamp: '2026-01-01T00:00:02Z', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tu1', content: big }] } },
+    { type: 'assistant', timestamp: '2026-01-01T00:00:03Z', message: { id: 'm2', role: 'assistant', usage, content: [{ type: 'tool_use', id: 'tu2', name: 'Agent', input: { subagent_type: 'Explore', prompt: 'look' } }] } },
+    { type: 'user', timestamp: '2026-01-01T00:00:04Z', toolUseResult: { agentId: 'a1' }, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tu2', content: [{ type: 'text', text: 'found it' }] }] } },
+    { type: 'attachment', timestamp: '2026-01-01T00:00:05Z', attachment: { type: 'hook_success', hookName: 'SessionStart:startup', content: 'hello from a hook' } },
+    { type: 'system', subtype: 'compact_boundary', timestamp: '2026-01-01T00:00:06Z', compactMetadata: { trigger: 'auto', preTokens: 150000 } },
+    { type: 'user', timestamp: '2026-01-01T00:00:06Z', isCompactSummary: true, message: { role: 'user', content: 'Summary of before' } },
+    { type: 'assistant', timestamp: '2026-01-01T00:00:07Z', message: { id: 'm3', role: 'assistant', usage, content: [{ type: 'text', text: 'All green.' }] } },
+  ];
+  fs.writeFileSync(tp, rows.map(r => JSON.stringify(r)).join('\n') + '\n');
+  fs.writeFileSync(path.join(subDir, 'agent-a1.jsonl'), JSON.stringify({ type: 'assistant', isSidechain: true, message: { id: 's1', role: 'assistant', usage, content: [{ type: 'text', text: 'searching' }] } }) + '\n');
+  fs.writeFileSync(path.join(subDir, 'agent-a1.meta.json'), JSON.stringify({ agentType: 'Explore', description: 'look around', toolUseId: 'tu2' }));
+  runHook('SessionStart', { hook_event_name: 'SessionStart', session_id: 'sess-ctx', cwd: '/tmp/proj', transcript_path: tp });
+
+  const d = await waitFor(async () => { const r = await get('/api/context?session=sess-ctx'); return r.status === 200 && JSON.parse(r.body); });
+  assert.equal(d.system, 'You are a test.');
+  assert.deepEqual(d.tools.map(t => t.name), ['Bash']);
+  const kinds = d.items.map(i => i.kind);
+  assert.deepEqual(kinds, ['user', 'step', 'thinking', 'call', 'result', 'step', 'call', 'result', 'attachment', 'compact', 'summary', 'step', 'text']);
+  const result = d.items.find(i => i.kind === 'result' && i.id === 'tu1');
+  assert.equal(result.text.length, 20000, 'tool results are not cut at the hook log limit');
+  assert.equal(d.items.find(i => i.kind === 'step').ctx, 1010);
+  assert.equal(d.items.find(i => i.kind === 'compact').preTokens, 150000);
+  assert.equal(d.subagents.a1.toolUseId, 'tu2');
+  assert.equal(d.subagents.a1.items.find(i => i.kind === 'text').text, 'searching');
+  assert.equal((await get('/api/context?session=nope')).status, 404);
+});
+
 test('clear wipes the log and sessions', async () => {
   const r = await fetch(base + '/api/clear', { method: 'POST' });
   assert.equal(r.status, 200);

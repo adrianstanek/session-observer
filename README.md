@@ -75,6 +75,12 @@ Each stop shows what it works with. A chained command lists every program it run
 
 You on the right, Claude on the left, tool calls as chips.
 
+**Context**
+
+![Context view: a prompt, a subagent nested under its Agent call, a compaction and the summary that replaced the history](docs/context.png)
+
+The whole session on one page, in full. A subagent sits inside the call that started it.
+
 ## How it works
 
 ```
@@ -185,6 +191,20 @@ shows C#. A chained command gets a badge for every program in it: `npm ci && doc
 shows npm and Docker (a Route stop shows the first one and a "+1"). The badges are drawn by the page itself, so nothing is downloaded; hover one for
 its name. Calls with nothing specific keep their tool group's icon.
 
+**Context** shows one session's whole context on one scrolling page, read in full from its
+transcript rather than from the event log (which cuts long fields short):
+
+- every prompt, reply and thinking block, and every tool call with its complete input and result;
+- each subagent's own conversation, inside the Agent call that started it;
+- the context size after every model step and how much it grew, and each compaction with the summary
+  that replaced the history; **Since last compaction** shows only what the model has in context now;
+- the system prompt and tool definitions, when the transcript has them (only some Claude Code
+  versions record them);
+- attachments (hook output, reminders and other injected text), off by default.
+
+Pick a session on the left first. Search filters this view too, **Copy** puts everything shown on the
+clipboard as Markdown, and token counts on cards are estimates (about 4 characters per token).
+
 Model steps, what the model wrote and the tool calls it asked for come from the session
 transcript (each assistant API response), since hooks don't see them.
 
@@ -215,6 +235,7 @@ word. Thinking is often stored empty, in which case there is nothing to show.
 | `OBSERVER_MAX_EVENTS` | `5000` | events kept in memory per session |
 | `OBSERVER_AUTOSTART` | `1` | set `0` to stop SessionStart from launching the server |
 | `OBSERVER_HOST` | `127.0.0.1` | bind address — keep it local |
+| `OBSERVER_CONTEXT_FIELD` | `100000` | max chars per text in the Context view |
 
 ## Privacy
 
@@ -245,7 +266,7 @@ folder don't list the same files, or if a script doesn't start with `'use strict
 | `core.js` | icons, tool groups, event categories, small helpers |
 | `tech.js` | language / tool badges: detection and drawing |
 | `model.js` | what events mean: groups and labels, filters, turns, replayable state |
-| `stage.js` | switching Overview / Route / Chat, activity-by-group cards |
+| `stage.js` | switching Overview / Route / Chat / Context, activity-by-group cards |
 | `chat.js` | Chat view |
 | `route.js` | Route view |
 | `panels.js` | event rows, replay bar, sessions panel |
@@ -253,6 +274,7 @@ folder don't list the same files, or if a script doesn't start with `'use strict
 | `detail-parts.js` | Details building blocks: sections, colour key, JSON, card parts |
 | `code.js` | syntax colouring, tool input and output |
 | `details.js` | Details panel: tool, event and model-step cards |
+| `context.js` | Context view: one session's whole conversation, from `/api/context` |
 | `app.js` | header, render scheduling, loading and live updates, controls, start-up |
 
 ### Releasing

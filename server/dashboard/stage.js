@@ -1,11 +1,12 @@
 'use strict';
-// Session Observer dashboard — the middle stage: switching between Overview / Route / Chat, and the activity-by-group cards.
+// Session Observer dashboard — the middle stage: switching between Overview / Route / Chat / Context, and the activity-by-group cards.
 // ---------------------------------------------------------------- stage views
 // Two views of the same state (M, state.events, cursor):
 //   board — a grid of station cards with counts, 15-min sparklines and live "running" state
 //   route — the current turn as a metro line: every model step and tool call is a stop
 //   chat  — the conversation as a messenger: prompts, the agent's replies, tool calls as chips
-const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat']];
+//   context — one session's whole conversation in full, read from its transcript
+const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat'], ['context', 'Context']];
 const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
 let altDirty = true, lastAltT = 0, lastAltRaw = '';
 const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
@@ -26,14 +27,19 @@ function drawAlt(now) {
   if (!altDirty && now - lastAltT < 250) return;
   altDirty = false; lastAltT = now;
   if (state.layout === 'overview') return; // the overview is #mid, drawn by renderMid
-  const raw = state.layout === 'chat' ? chatHtml() : routeHtml();
+  const raw = state.layout === 'chat' ? chatHtml() : state.layout === 'context' ? contextHtml() : routeHtml();
   if (raw === lastAltRaw) return;
   lastAltRaw = raw;
   // keep CSS animations in phase across re-renders
   // route: jump to the focused turn when it changes; when following live, stay at the bottom unless the user scrolled up
   const sc = $('alt').querySelector('.mscroll');
   const prevKey = sc?.dataset.focus, atBottom = !sc || sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 8, top = sc ? sc.scrollTop : 0;
+  const cx = $('alt').querySelector('.cxs');
+  if (cx) ctxScroll = { sid: CTX.sid, top: cx.scrollTop, atBottom: cx.scrollTop > 0 && cx.scrollTop + cx.clientHeight >= cx.scrollHeight - 8 };
   $('alt').innerHTML = raw.replaceAll('__D__', `-${Math.round(now % 1400)}ms`);
+  // context: keep the scroll position; stay at the bottom if you were there (new messages arrive at the bottom)
+  const cx2 = $('alt').querySelector('.cxs');
+  if (cx2 && ctxScroll.sid === CTX.sid) cx2.scrollTop = ctxScroll.atBottom ? cx2.scrollHeight : ctxScroll.top;
   const sc2 = $('alt').querySelector('.mscroll');
   applyHover();
   const ch = $('alt').querySelector('.chat');

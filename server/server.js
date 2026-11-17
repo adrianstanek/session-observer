@@ -295,6 +295,95 @@ function summary(s) {
   return { ...rest, eventCount: events.length, running: pending.size };
 }
 
+// ---------- whole context: one session's transcript, in full, for the Context view ----------
+// The hook log keeps at most OBSERVER_MAX_FIELD chars per field and the model's text at TEXT_MAX, so this view reads the
+// transcript itself: every prompt, reply, thinking block, tool call with its input and result, attachment and compaction.
+// Read on request (only while the view is open), cached per file until it changes.
+const CTX_FIELD_MAX = Number(process.env.OBSERVER_CONTEXT_FIELD || 100000); // chars kept per text, so one huge output can't stall the page
+const ctxCache = new Map(); // file -> { mtimeMs, size, rows }
+function readRows(file) {
+  let st; try { st = fs.statSync(file); } catch { return null; }
+  const c = ctxCache.get(file);
+  if (c && c.mtimeMs === st.mtimeMs && c.size === st.size) return c.rows;
+  const rows = [];
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) { if (line) try { rows.push(JSON.parse(line)); } catch { /* partial line */ } }
+  ctxCache.set(file, { mtimeMs: st.mtimeMs, size: st.size, rows });
+  if (ctxCache.size > 50) ctxCache.delete(ctxCache.keys().next().value);
+  return rows;
+}
+const clipStr = s => s.length > CTX_FIELD_MAX ? s.slice(0, CTX_FIELD_MAX) + `\n… [+${s.length - CTX_FIELD_MAX} chars not shown]` : s;
+function clipDeep(v, d = 0) {
+  if (typeof v === 'string') return clipStr(v);
+  if (!v || typeof v !== 'object' || d > 10) return v;
+  if (Array.isArray(v)) return v.map(x => clipDeep(x, d + 1));
+  return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, clipDeep(x, d + 1)]));
+}
+const blockText = c => typeof c === 'string' ? c : Array.isArray(c)
+  ? c.map(b => b?.type === 'text' ? b.text : b?.type === 'image' ? '[image]' : JSON.stringify(b)).join('\n') : c == null ? '' : JSON.stringify(c);
+
+// transcript rows → the items the view shows, in order
+function contextItems(rows) {
+  const items = [], steps = new Set();
+  for (const r of rows) {
+    const ts = r.timestamp || null;
+    if (r.type === 'system' && r.subtype === 'compact_boundary') {
+      items.push({ kind: 'compact', ts, trigger: r.compactMetadata?.trigger || null, preTokens: r.compactMetadata?.preTokens || null });
+      continue;
+    }
+    if (r.type === 'attachment' && r.attachment) {
+      const a = r.attachment, t = a.content ?? a.prompt ?? a.text;
+      items.push({ kind: 'attachment', ts, label: [a.type, a.hookName].filter(Boolean).join(' · '), text: clipStr(typeof t === 'string' ? t : JSON.stringify(a, null, 2)) });
+      continue;
+    }
+    const m = r.message;
+    if (!m || (r.type !== 'user' && r.type !== 'assistant')) continue;
+    if (r.type === 'user') {
+      const kind = r.isCompactSummary ? 'summary' : r.isMeta ? 'meta' : 'user';
+      if (typeof m.content === 'string') { items.push({ kind, ts, text: clipStr(m.content) }); continue; }
+      for (const b of Array.isArray(m.content) ? m.content : []) {
+        if (b?.type === 'tool_result') items.push({ kind: 'result', ts, id: b.tool_use_id, error: !!b.is_error, text: clipStr(blockText(b.content)), agentId: r.toolUseResult?.agentId || null });
+        else if (b?.type === 'text') items.push({ kind, ts, text: clipStr(b.text || '') });
+        else if (b?.type === 'image') items.push({ kind, ts, text: '[image]' });
+      }
+      continue;
+    }
+    // one API response spans several lines (one per content block); its first line marks the model step
+    const u = m.usage, key = m.id || r.uuid;
+    if (u && key && !steps.has(key)) {
+      steps.add(key);
+      items.push({ kind: 'step', ts, model: m.model || null, out: u.output_tokens || 0, ctx: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) });
+    }
+    for (const b of Array.isArray(m.content) ? m.content : []) {
+      if (b?.type === 'text' && b.text?.trim()) items.push({ kind: 'text', ts, text: clipStr(b.text) });
+      else if (b?.type === 'thinking' && b.thinking?.trim()) items.push({ kind: 'thinking', ts, text: clipStr(b.thinking) });
+      else if (b?.type === 'tool_use') items.push({ kind: 'call', ts, id: b.id, name: b.name, input: clipDeep(b.input) });
+    }
+  }
+  return items;
+}
+
+function sessionContext(s) {
+  const main = s.transcript_path;
+  const rows = main && readRows(main);
+  if (!rows) return { error: 'transcript not found', transcript: main || null };
+  // the system prompt and tool definitions, when this Claude Code version records the request shape in the transcript
+  let shape = null;
+  for (let i = rows.length - 1; i >= 0; i--) if (rows[i].type === 'api-request-shape' && rows[i].shape) { shape = rows[i].shape; break; }
+  const system = shape && Array.isArray(shape.system) ? clipStr(shape.system.map(b => b?.text || '').join('\n\n')) : null;
+  const tools = shape && Array.isArray(shape.tools)
+    ? shape.tools.map(t => ({ name: t.name || t.type || '?', description: clipStr(String(t.description || '')), schema: t.input_schema || null })) : null;
+  // subagents: <transcript>/subagents/agent-<id>.jsonl, with agent-<id>.meta.json next to it
+  const subagents = {};
+  const subDir = path.join(path.dirname(main), path.basename(main, '.jsonl'), 'subagents');
+  let files = []; try { files = fs.readdirSync(subDir).filter(f => /^agent-[\w-]+\.jsonl$/.test(f)); } catch { /* none */ }
+  for (const f of files) {
+    const id = f.slice(6, -6), sub = readRows(path.join(subDir, f)) || [];
+    let meta = {}; try { meta = JSON.parse(fs.readFileSync(path.join(subDir, `agent-${id}.meta.json`), 'utf8')); } catch { /* optional */ }
+    subagents[id] = { type: meta.agentType || null, description: meta.description || null, toolUseId: meta.toolUseId || null, items: contextItems(sub) };
+  }
+  return { session: s.id, transcript: main, model: s.model, context: s.context, system, tools, items: contextItems(rows), subagents };
+}
+
 // ---------- log tailing ----------
 let offset = 0;
 let partial = '';
@@ -369,6 +458,11 @@ const server = http.createServer((req, res) => {
     const s = sessions.get(id);
     if (!s) return json(res, 404, { error: 'unknown session' });
     return json(res, 200, since ? s.events.filter(e => e.ts >= since) : s.events);
+  }
+  if (url.pathname === '/api/context') {
+    const s = sessions.get(url.searchParams.get('session'));
+    if (!s) return json(res, 404, { error: 'unknown session' });
+    try { return json(res, 200, sessionContext(s)); } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
   }
   if (url.pathname === '/api/stream') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
