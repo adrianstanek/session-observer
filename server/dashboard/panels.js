@@ -124,11 +124,33 @@ function renderSessions() {
       const [st, dot] = sessState(s);
       const out = s.usage ? s.usage.output : 0;
       const lt = !s.ended && s.lastTool ? `<div class="meta">last: <b>${esc(toolLabel(s.lastTool.name))}</b> <span class="mono">${esc(short(s.lastTool.arg, 60))}</span></div>` : '';
+      const name = esc(clean(s.title) || base(s.cwd) || s.id.slice(0, 8));
+      // the list shows only the state dot and the title; the rest is in a card that floats beside it on hover
       return `<div class="card ${s.id === state.scope ? 'sel' : ''}" data-id="${esc(s.id)}">
-        <div class="row1"><span class="name">${esc(clean(s.title) || base(s.cwd) || s.id.slice(0, 8))}</span><span class="state"><span class="${dot}"></span>${st}</span></div>
+        <div class="row1"><span class="${dot}" title="${st}"></span><span class="name">${name}</span></div>
+        <template class="sdet"><div class="row1"><span class="name">${name}</span><span class="state"><span class="${dot}"></span>${st}</span></div>
         <div class="meta">${s.last ? fmtAgo(s.last) : ''} · ${s.turns || 0} turns · ${s.toolCalls} tools${out ? ` · ${fmtN(out)} out` : ''}</div>${lt}
-        <div class="chips">${s.title ? `<span class="chip" title="${esc(s.cwd || '')}">${icon('files')}${esc(base(s.cwd) || '?')}</span>` : ''}${s.model ? `<span class="chip">${esc(s.model)}</span>` : ''}${s.subagents ? `<span class="chip">${icon('agents')}${s.subagents}</span>` : ''}${s.failures ? `<span class="chip"><span class="x">✕ ${s.failures}</span></span>` : ''}${s.context ? `<span class="chip" title="context window">ctx ${Math.round(s.context.pct * 100)}%</span>` : ''}</div>
+        <div class="chips">${s.cwd ? `<span class="chip" title="${esc(s.cwd)}">${icon('files')}${esc(base(s.cwd) || '?')}</span>` : ''}${s.model ? `<span class="chip">${esc(s.model)}</span>` : ''}${s.subagents ? `<span class="chip">${icon('agents')}${s.subagents}</span>` : ''}${s.failures ? `<span class="chip"><span class="x">✕ ${s.failures}</span></span>` : ''}${s.context ? `<span class="chip" title="context window">ctx ${Math.round(s.context.pct * 100)}%</span>` : ''}</div></template>
       </div>`;
     }).join('') || '<div class="empty">No sessions in this range.</div>'}</div>`;
   el.scrollTop = top;
+  sessTip(); // the list was rebuilt: refresh (or hide) the hover card
 }
+// the hover card: one floating box beside the list (a box inside the list would be clipped by its scrolling)
+let sessHover = null;
+function sessTip() {
+  let tip = $('sesstip');
+  if (!tip) tip = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'sesstip' }));
+  const card = sessHover && $('sessions').querySelector(`.card[data-id="${CSS.escape(sessHover)}"]`), t = card?.querySelector('template.sdet');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.innerHTML; tip.style.display = 'block';
+  const a = card.getBoundingClientRect(), r = tip.getBoundingClientRect();
+  tip.style.left = Math.min(innerWidth - r.width - 8, a.right + 8) + 'px';
+  tip.style.top = Math.max(8, Math.min(innerHeight - r.height - 8, a.top)) + 'px';
+}
+$('sessions').addEventListener('mouseover', e => {
+  const id = e.target.closest('.sess-list .card')?.dataset.id ?? null;
+  if (id !== sessHover) { sessHover = id; sessTip(); }
+});
+$('sessions').addEventListener('mouseleave', () => { sessHover = null; sessTip(); });
+$('sessions').addEventListener('scroll', () => { if (sessHover) { sessHover = null; sessTip(); } });

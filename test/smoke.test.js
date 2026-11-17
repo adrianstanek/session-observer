@@ -137,6 +137,7 @@ test('context: the whole transcript, in full, with subagents and the request sha
   const usage = { input_tokens: 10, cache_read_input_tokens: 1000, cache_creation_input_tokens: 0, output_tokens: 50 };
   const rows = [
     { type: 'api-request-shape', shape: { system: [{ type: 'text', text: 'You are a test.' }], tools: [{ name: 'Bash', description: 'Run a command', input_schema: { type: 'object' } }] } },
+    { type: 'attachment', timestamp: '2026-01-01T00:00:00Z', attachment: { type: 'instructions', files: [{ path: '/home/me/.claude/CLAUDE.md', type: 'User', content: 'Be brief.' }, { path: '/tmp/proj/AGENTS.md', type: 'Project', content: 'Run npm test.' }] } },
     { type: 'user', timestamp: '2026-01-01T00:00:00Z', message: { role: 'user', content: 'run the tests' } },
     { type: 'assistant', timestamp: '2026-01-01T00:00:01Z', message: { id: 'm1', role: 'assistant', model: 'claude-test', usage, content: [{ type: 'thinking', thinking: 'plan' }] } },
     { type: 'assistant', timestamp: '2026-01-01T00:00:01Z', message: { id: 'm1', role: 'assistant', model: 'claude-test', usage, content: [{ type: 'tool_use', id: 'tu1', name: 'Bash', input: { command: 'npm test' } }] } },
@@ -148,8 +149,27 @@ test('context: the whole transcript, in full, with subagents and the request sha
     { type: 'user', timestamp: '2026-01-01T00:00:06Z', isCompactSummary: true, message: { role: 'user', content: 'Summary of before' } },
     { type: 'assistant', timestamp: '2026-01-01T00:00:07Z', message: { id: 'm3', role: 'assistant', usage, content: [{ type: 'text', text: 'All green.' }] } },
   ];
+  // listings: skills (plugin names hold a colon), subagent types, deferred tools; they are pinned, not counted as items
+  const listings = [
+    { type: 'attachment', attachment: { type: 'skill_listing', isInitial: true, names: ['tidy', 'obs:dashboard'], content: '- tidy: Tidy up\n  across two lines\n- obs:dashboard: Open the dashboard' } },
+    { type: 'attachment', attachment: { type: 'agent_listing_delta', isInitial: true, addedTypes: ['Explore', 'Plan'], addedLines: ['- Explore: Search', '- Plan: Design'], removedTypes: [] } },
+    { type: 'attachment', attachment: { type: 'agent_listing_delta', addedTypes: [], removedTypes: ['Plan'] } },
+    { type: 'attachment', attachment: { type: 'deferred_tools_delta', addedNames: ['WebFetch', 'Monitor'], removedNames: [], surfacedNames: ['Monitor'], failedMcpServers: [{ name: 'down', error: 'ECONNREFUSED' }] } },
+    { type: 'attachment', attachment: { type: 'mcp_instructions_delta', addedNames: ['docs'], addedBlocks: ['## docs\nUse the docs tools.'] } },
+    { type: 'attachment', attachment: { type: 'prompt_snapshot', systemPrompt: ['You are a test.'] } }, // bookkeeping: never sent
+    { type: 'attachment', attachment: { type: 'date', date: '2026-01-01' } }, // sent as text made from data
+  ];
+  rows.splice(2, 0, ...listings);
+  // the requests as sent: the first one is stored in full; the second keeps those two messages and adds the reply and the
+  // tool result, which are not stored as blobs and come back from the transcript
+  rows.unshift(
+    { type: 'api-request-blob', hash: 'h1', message: { role: 'user', content: [{ type: 'text', text: '<system-reminder>\nBe brief.\n</system-reminder>' }, { type: 'text', text: 'run the tests' }] } },
+    { type: 'api-request-blob', hash: 'h2', message: { role: 'system', content: [{ type: 'text', text: 'hook said hi' }, { type: 'tool_addition', tool: { type: 'tool_definition', definition: { name: 'Monitor', description: 'Watch', input_schema: { type: 'object' } } } }] } },
+    { type: 'api-request', timestamp: '2026-01-01T00:00:00.500Z', querySource: 'repl_main_thread', keep: 0, tail: ['h1', 'h2'], params: { model: 'claude-test', context_management: { edits: [{ type: 'clear_thinking_20251015' }] } } },
+    { type: 'api-request', timestamp: '2026-01-01T00:00:02.500Z', querySource: 'repl_main_thread', keep: 2, tail: ['h3', 'h4'], params: { model: 'claude-test' } },
+  );
   fs.writeFileSync(tp, rows.map(r => JSON.stringify(r)).join('\n') + '\n');
-  fs.writeFileSync(path.join(subDir, 'agent-a1.jsonl'), JSON.stringify({ type: 'assistant', isSidechain: true, message: { id: 's1', role: 'assistant', usage, content: [{ type: 'text', text: 'searching' }] } }) + '\n');
+  fs.writeFileSync(path.join(subDir, 'agent-a1.jsonl'), JSON.stringify({ type: 'api-request-shape', shape: { system: [{ type: 'text', text: 'You are the reviewer agent.' }], tools: [] } }) + '\n' + JSON.stringify({ type: 'assistant', isSidechain: true, message: { id: 's1', role: 'assistant', usage, content: [{ type: 'text', text: 'searching' }] } }) + '\n');
   fs.writeFileSync(path.join(subDir, 'agent-a1.meta.json'), JSON.stringify({ agentType: 'Explore', description: 'look around', toolUseId: 'tu2' }));
   runHook('SessionStart', { hook_event_name: 'SessionStart', session_id: 'sess-ctx', cwd: '/tmp/proj', transcript_path: tp });
 
@@ -157,12 +177,35 @@ test('context: the whole transcript, in full, with subagents and the request sha
   assert.equal(d.system, 'You are a test.');
   assert.deepEqual(d.tools.map(t => t.name), ['Bash']);
   const kinds = d.items.map(i => i.kind);
-  assert.deepEqual(kinds, ['user', 'step', 'thinking', 'call', 'result', 'step', 'call', 'result', 'attachment', 'compact', 'summary', 'step', 'text']);
+  assert.deepEqual(kinds, ['attachment', 'attachment', 'attachment', 'attachment', 'attachment', 'attachment', 'attachment', 'attachment', 'user','step', 'thinking', 'call', 'result', 'step', 'call', 'result', 'attachment', 'compact', 'summary', 'step', 'text']);
   const result = d.items.find(i => i.kind === 'result' && i.id === 'tu1');
   assert.equal(result.text.length, 20000, 'tool results are not cut at the hook log limit');
   assert.equal(d.items.find(i => i.kind === 'step').ctx, 1010);
   assert.equal(d.items.find(i => i.kind === 'compact').preTokens, 150000);
+  assert.deepEqual(d.instructions.map(f => [f.path, f.type, f.content]), [['/home/me/.claude/CLAUDE.md', 'User', 'Be brief.'], ['/tmp/proj/AGENTS.md', 'Project', 'Run npm test.']]);
+  assert.match(d.items[0].text, /Contents of \/tmp\/proj\/AGENTS\.md \(Project\):\s+Run npm test\./);
+  assert.deepEqual(d.skills, [{ name: 'tidy', description: 'Tidy up\n  across two lines' }, { name: 'obs:dashboard', description: 'Open the dashboard' }]);
+  assert.deepEqual(d.agents, [{ name: 'Explore', description: 'Search' }]);
+  assert.deepEqual(d.deferred, { tools: [{ name: 'WebFetch', loaded: false }, { name: 'Monitor', loaded: true }], failedMcp: [{ name: 'down', error: 'ECONNREFUSED' }] });
+  assert.deepEqual(d.mcp, [{ name: 'docs', description: '## docs\nUse the docs tools.' }]);
+  // attachments: sent, pinned on top, or bookkeeping; data-only ones are turned into readable text
+  const att = d.items.filter(i => i.kind === 'attachment');
+  assert.deepEqual(att.map(i => [i.type, i.role]), [['instructions', 'pinned'], ['skill_listing', 'pinned'], ['agent_listing_delta', 'pinned'], ['agent_listing_delta', 'pinned'],
+    ['deferred_tools_delta', 'pinned'], ['mcp_instructions_delta', 'pinned'], ['prompt_snapshot', 'meta'], ['date', 'sent'], ['hook_success', 'sent']]);
+  assert.equal(att.find(i => i.type === 'date').text, "Today's date is 2026-01-01.");
+  assert.equal(att.find(i => i.type === 'hook_success').text, 'SessionStart:startup hook success: hello from a hook');
+  // as sent: two stored messages, then the reply and the tool result rebuilt from the transcript
+  assert.deepEqual(d.wire.messages.map(m => [m.role, m.recorded]), [['user', true], ['system', true], ['assistant', false], ['user', false]]);
+  assert.deepEqual(d.wire.messages[1].blocks.map(b => b.type), ['text', 'tool_addition']);
+  assert.equal(d.wire.messages[1].blocks[1].name, 'Monitor');
+  assert.deepEqual(d.wire.messages[2].blocks.map(b => b.type), ['thinking', 'tool_use']);
+  assert.equal(d.wire.messages[3].blocks[0].id, 'tu1');
+  assert.equal(d.wire.messages[3].blocks[0].text.length, 20000);
+  assert.deepEqual(d.wire.edits, []);
+  assert.equal(d.wire.requests, 2);
+  assert.equal(d.measured.firstCtx, 1010);
   assert.equal(d.subagents.a1.toolUseId, 'tu2');
+  assert.equal(d.subagents.a1.system, 'You are the reviewer agent.', "a subagent's own system prompt (a custom agent's .md body)");
   assert.equal(d.subagents.a1.items.find(i => i.kind === 'text').text, 'searching');
   assert.equal((await get('/api/context?session=nope')).status, 404);
 });

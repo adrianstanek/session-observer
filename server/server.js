@@ -321,6 +321,198 @@ function clipDeep(v, d = 0) {
 const blockText = c => typeof c === 'string' ? c : Array.isArray(c)
   ? c.map(b => b?.type === 'text' ? b.text : b?.type === 'image' ? '[image]' : JSON.stringify(b)).join('\n') : c == null ? '' : JSON.stringify(c);
 
+// CLAUDE.md, AGENTS.md (pulled in by an @import), rules and auto-memory reach the model as an 'instructions' attachment:
+// a list of { path, type: User | Project | Local | AutoMem | …, content }
+const instructionsText = files => files.map(f => `Contents of ${f.path} (${f.type}):\n\n${f.content || ''}`).join('\n\n');
+
+// "- name: description" lines (skill and agent listings) → name → description; a line not starting "- " continues the one
+// before. Split at the first ": ", since plugin skill names hold a colon ("plugin:skill").
+function listingLines(lines, into) {
+  let last = null;
+  for (const l of lines) {
+    const m = /^- (.+?): ([\s\S]*)$/.exec(l);
+    if (m) { last = m[1]; into.set(last, m[2]); } else if (/^- /.test(l)) { last = l.slice(2).trim(); into.set(last, ''); }
+    else if (last != null && l.trim()) into.set(last, into.get(last) + '\n' + l);
+  }
+}
+
+// What the model knows it can use, beyond the tool definitions, as attachments that set or change a list:
+// skill_listing (skills by name and description; a skill's SKILL.md arrives only when it is invoked),
+// agent_listing_delta (subagent types) and deferred_tools_delta (tools known by name only, loaded through ToolSearch;
+// also which MCP servers failed to connect) and mcp_instructions_delta (each MCP server's own instructions).
+// An initial listing replaces the list; a delta adds and removes.
+function listingsOf(rows) {
+  const skills = new Map(), agents = new Map(), deferred = new Map(), mcp = new Map(); let failed = null;
+  for (const r of rows) {
+    const a = r.attachment; if (!a) continue;
+    if (a.type === 'mcp_instructions_delta') {
+      for (const n of a.removedNames || []) mcp.delete(n);
+      (a.addedNames || []).forEach((n, i) => mcp.set(n, String(a.addedBlocks?.[i] ?? '')));
+    } else if (a.type === 'skill_listing') {
+      if (a.isInitial !== false) skills.clear();
+      if (typeof a.content === 'string') listingLines(a.content.split('\n'), skills);
+      for (const n of Array.isArray(a.names) ? a.names : []) if (!skills.has(n)) skills.set(n, '');
+    } else if (a.type === 'agent_listing_delta') {
+      if (a.isInitial) agents.clear();
+      for (const n of a.removedTypes || []) agents.delete(n);
+      if (Array.isArray(a.addedLines)) listingLines(a.addedLines, agents);
+      for (const n of a.addedTypes || []) if (!agents.has(n)) agents.set(n, '');
+    } else if (a.type === 'deferred_tools_delta') {
+      for (const n of a.removedNames || []) deferred.delete(n);
+      for (const n of [...(a.addedNames || []), ...(a.readdedNames || [])]) if (!deferred.has(n)) deferred.set(n, false);
+      for (const n of a.surfacedNames || []) deferred.set(n, true);
+      if (Array.isArray(a.failedMcpServers)) failed = a.failedMcpServers;
+    }
+  }
+  const list = m => [...m].map(([name, description]) => ({ name, description: clipStr(description) }));
+  return {
+    skills: skills.size ? list(skills) : null,
+    agents: agents.size ? list(agents) : null,
+    mcp: mcp.size ? list(mcp) : null,
+    deferred: deferred.size || failed?.length ? {
+      tools: [...deferred].map(([name, loaded]) => ({ name, loaded })),
+      failedMcp: (failed || []).map(f => ({ name: String(f?.name || '?'), error: clipStr(String(f?.error || f?.errorCode || '')) })),
+    } : null,
+  };
+}
+
+// what the model is told before the conversation: the system prompt and tool definitions, when this Claude Code version
+// records the request shape in the transcript, the instruction files, newest copy of each, and the listings above
+function promptOf(rows) {
+  let shape = null; const files = new Map();
+  for (const r of rows) {
+    if (r.type === 'api-request-shape' && r.shape) shape = r.shape;
+    if (r.attachment?.type === 'instructions' && Array.isArray(r.attachment.files))
+      for (const f of r.attachment.files) if (f?.path) files.set(f.path, { path: f.path, type: f.type || null, content: clipStr(String(f.content ?? '')) });
+  }
+  return {
+    system: shape && Array.isArray(shape.system) ? clipStr(shape.system.map(b => b?.text || '').join('\n\n')) : null,
+    tools: shape && Array.isArray(shape.tools)
+      ? shape.tools.map(t => ({ name: t.name || t.type || '?', description: clipStr(String(t.description || '')), schema: t.input_schema || null })) : null,
+    instructions: [...files.values()],
+    ...listingsOf(rows),
+  };
+}
+
+// Attachments are of three kinds. Most reach the model as text (a system-reminder or a system message): 'sent'.
+// Some are lists the view pins on top (instructions, skills, subagent types, deferred tools, MCP instructions): 'pinned'.
+// And some are records Claude Code keeps for itself and never sends: 'meta' (bookkeeping).
+const ATT_META = new Set(['prompt_snapshot', 'credential_org', 'deferred_tools_record', 'command_permissions', 'thinking_drop']);
+const ATT_PINNED = new Set(['instructions', 'skill_listing', 'agent_listing_delta', 'deferred_tools_delta', 'mcp_instructions_delta']);
+const attRole = t => ATT_META.has(t) ? 'meta' : ATT_PINNED.has(t) ? 'pinned' : 'sent';
+// Some are stored as data and turned into text when sent; this is a readable form of that data, not the exact wording
+// (the "As sent" view has the exact text when the transcript records the request).
+const asText = v => typeof v === 'string' ? v : JSON.stringify(v);
+const ATT_RENDER = {
+  environment: a => Object.entries(a.snapshot || {}).map(([k, v]) => `${k}: ${asText(v)}`).join('\n'),
+  session_context: a => Object.entries(a.context || {}).map(([k, v]) => `# ${k}\n${asText(v)}`).join('\n\n'),
+  date: a => `Today's date is ${a.date}.`,
+  remote_session_change: a => [a.commit && `End git commit messages with:\n${a.commit}`, a.pr && `End pull request descriptions with:\n${a.pr}`].filter(Boolean).join('\n\n'),
+  auto_mode: a => `Auto mode is active. Settings: ${JSON.stringify(Object.fromEntries(Object.entries(a).filter(([k]) => k !== 'type')))}`,
+  hook_non_blocking_error: a => `${a.hookName || 'hook'} error: ${a.stderr || a.stdout || ''}`,
+  file: a => `Contents of ${a.filename || a.displayPath}:\n\n${asText(a.content?.file?.content ?? a.content ?? '')}`,
+  edited_text_file: a => `${a.filename} changed on disk since it was last read${a.snippet ? `:\n\n${a.snippet}` : ''}`,
+  compact_file_reference: a => `${a.displayPath || a.filename} was read before the compaction`,
+  task_status: a => `Background task ${a.taskId}${a.description ? ` (${a.description})` : ''}: ${a.status}`,
+};
+function attachmentItem(a, ts) {
+  const role = attRole(a.type), render = ATT_RENDER[a.type];
+  const t = a.type === 'instructions' && Array.isArray(a.files) ? instructionsText(a.files)
+    : render ? render(a) : a.type === 'hook_success' && a.hookName && typeof a.content === 'string' ? `${a.hookName} hook success: ${a.content}`
+    : a.content ?? a.prompt ?? a.text;
+  return { kind: 'attachment', ts, type: a.type || null, role, rendered: !!render, label: [a.type, a.hookName].filter(Boolean).join(' · '),
+    text: clipStr(typeof t === 'string' ? t : JSON.stringify(a, null, 2)) };
+}
+
+// The exact messages of the latest API request, when this Claude Code version records them. Each 'api-request' row keeps
+// the first `keep` messages of the request before it (same querySource) and adds `tail`, a list of message hashes;
+// 'api-request-blob' rows hold messages by hash. Messages the transcript already has (the model's replies and tool
+// results) are mostly not stored as blobs: those are rebuilt from the transcript and marked recorded: false.
+const blockChars = b => b.type === 'text' || b.type === 'thinking' || b.type === 'tool_result' ? ctxStrLen(b.text) : JSON.stringify(b).length;
+const ctxStrLen = s => String(s ?? '').length;
+function wireBlock(b) {
+  switch (b?.type) {
+    case 'text': return { type: 'text', text: clipStr(b.text || '') };
+    case 'thinking': return { type: 'thinking', text: clipStr(b.thinking || ''), signature: String(b.signature || '').length };
+    case 'redacted_thinking': return { type: 'thinking', text: '', signature: String(b.data || '').length };
+    case 'tool_use': return { type: 'tool_use', id: b.id, name: b.name, input: clipDeep(b.input) };
+    case 'tool_result': return { type: 'tool_result', id: b.tool_use_id, error: !!b.is_error, text: clipStr(blockText(b.content)) };
+    case 'tool_addition': { const d = b.tool?.definition || b.tool || {}; return { type: 'tool_addition', name: d.name || '?', description: clipStr(String(d.description || '')), schema: d.input_schema || null }; }
+    case 'image': return { type: 'image' };
+    default: return { type: b?.type || '?', text: clipStr(JSON.stringify(b)) };
+  }
+}
+const wireBlocks = m => typeof m.content === 'string' ? [{ type: 'text', text: clipStr(m.content) }] : (Array.isArray(m.content) ? m.content : []).map(wireBlock);
+function wireOf(rows) {
+  const blobs = new Map(), reqs = [];
+  for (const r of rows) {
+    if (r.type === 'api-request-blob' && r.hash && r.message) blobs.set(r.hash, r.message);
+    else if (r.type === 'api-request' && Array.isArray(r.tail)) reqs.push(r);
+  }
+  if (!reqs.length) return null;
+  const chain = reqs.filter(r => r.querySource === reqs.at(-1).querySource);
+  // the model's replies (one per API response, its blocks spread over several rows) and tool results by tool_use id
+  const replies = [], byId = new Map(), results = new Map(), prompts = [];
+  for (const r of rows) {
+    const m = r.message; if (!m || (r.type !== 'user' && r.type !== 'assistant')) continue;
+    if (r.type === 'assistant' && m.usage) {
+      const k = m.id || r.uuid; let x = byId.get(k);
+      if (!x) { x = { role: 'assistant', content: [], ts: r.timestamp || '' }; byId.set(k, x); replies.push(x); }
+      if (Array.isArray(m.content)) x.content.push(...m.content);
+    } else if (r.type === 'user' && Array.isArray(m.content) && m.content.some(b => b?.type === 'tool_result')) {
+      for (const b of m.content) if (b?.type === 'tool_result') results.set(b.tool_use_id, b);
+    } else if (r.type === 'user' && !r.isMeta && !r.isCompactSummary) prompts.push({ role: 'user', content: m.content, ts: r.timestamp || '' });
+  }
+  const promptsUsed = new Set(); // your prompts used so far
+  const promptAfter = x => prompts.find(p => !promptsUsed.has(p) && p.ts >= (x?.ts || ''));
+  const used = new Set();
+  const replyTo = q => replies.find(x => !used.has(x) && x.ts >= (q.timestamp || '')); // the first reply after the request
+  const cache = new Map(); let msgs = [], firstChars = null;
+  chain.forEach((q, i) => {
+    const next = msgs.slice(0, q.keep || 0);
+    q.tail.forEach((h, j) => {
+      let m = cache.get(h);
+      if (!m && blobs.has(h)) m = { ...blobs.get(h), recorded: true };
+      if (!m && j === 0 && i > 0) { const x = replyTo(chain[i - 1]); if (x) { used.add(x); m = x; } } // the reply to the request before
+      if (!m && next.at(-1)?.role === 'assistant') { // the results of the calls in the message before
+        const got = (next.at(-1).content || []).filter(b => b?.type === 'tool_use').map(b => results.get(b.id)).filter(Boolean);
+        if (got.length) m = { role: 'user', content: got };
+        else { const p = promptAfter(next.at(-1)); if (p) { promptsUsed.add(p); m = p; } } // a reply with no calls: your next prompt
+      }
+      if (m) cache.set(h, m);
+      next.push(m || { role: '?', missing: true, content: [] });
+    });
+    if (i === 0) firstChars = next.reduce((n, m) => n + wireBlocks(m).reduce((k, b) => k + blockChars(b), 0), 0);
+    msgs = next;
+  });
+  const last = chain.at(-1);
+  return {
+    ts: last.timestamp || null, requests: chain.length, model: last.params?.model || null,
+    edits: (last.params?.context_management?.edits || []).map(e => e?.type || '?'), firstChars,
+    messages: msgs.map(m => ({ role: m.role, recorded: !!m.recorded, missing: !!m.missing, blocks: wireBlocks(m) })),
+  };
+}
+
+// Measured size: the first model step's context (from usage) is everything the model was given up front, so it sets this
+// session's characters per token, used for the cards' sizes instead of a flat 4.
+function measuredOf(rows, shape, wire) {
+  const first = rows.find(r => r.type === 'assistant' && r.message?.usage), u = first?.message.usage;
+  if (!u) return null;
+  const firstCtx = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+  let chars = null;
+  if (shape) {
+    chars = (shape.system || []).reduce((n, b) => n + ctxStrLen(b?.text), 0) + JSON.stringify(shape.tools || []).length;
+    if (wire?.firstChars != null) chars += wire.firstChars;
+    else for (const r of rows) {
+      if (r === first) break;
+      if (r.type === 'attachment' && r.attachment && attRole(r.attachment.type) !== 'meta') chars += attachmentItem(r.attachment, null).text.length;
+      else if (r.type === 'user' && r.message) chars += ctxStrLen(blockText(r.message.content));
+    }
+  }
+  const cpt = chars && firstCtx ? chars / firstCtx : null;
+  return { firstCtx, chars, cpt: cpt && cpt >= 1.5 && cpt <= 8 ? cpt : null };
+}
+
 // transcript rows → the items the view shows, in order
 function contextItems(rows) {
   const items = [], steps = new Set();
@@ -330,11 +522,7 @@ function contextItems(rows) {
       items.push({ kind: 'compact', ts, trigger: r.compactMetadata?.trigger || null, preTokens: r.compactMetadata?.preTokens || null });
       continue;
     }
-    if (r.type === 'attachment' && r.attachment) {
-      const a = r.attachment, t = a.content ?? a.prompt ?? a.text;
-      items.push({ kind: 'attachment', ts, label: [a.type, a.hookName].filter(Boolean).join(' · '), text: clipStr(typeof t === 'string' ? t : JSON.stringify(a, null, 2)) });
-      continue;
-    }
+    if (r.type === 'attachment' && r.attachment) { items.push(attachmentItem(r.attachment, ts)); continue; }
     const m = r.message;
     if (!m || (r.type !== 'user' && r.type !== 'assistant')) continue;
     if (r.type === 'user') {
@@ -366,12 +554,6 @@ function sessionContext(s) {
   const main = s.transcript_path;
   const rows = main && readRows(main);
   if (!rows) return { error: 'transcript not found', transcript: main || null };
-  // the system prompt and tool definitions, when this Claude Code version records the request shape in the transcript
-  let shape = null;
-  for (let i = rows.length - 1; i >= 0; i--) if (rows[i].type === 'api-request-shape' && rows[i].shape) { shape = rows[i].shape; break; }
-  const system = shape && Array.isArray(shape.system) ? clipStr(shape.system.map(b => b?.text || '').join('\n\n')) : null;
-  const tools = shape && Array.isArray(shape.tools)
-    ? shape.tools.map(t => ({ name: t.name || t.type || '?', description: clipStr(String(t.description || '')), schema: t.input_schema || null })) : null;
   // subagents: <transcript>/subagents/agent-<id>.jsonl, with agent-<id>.meta.json next to it
   const subagents = {};
   const subDir = path.join(path.dirname(main), path.basename(main, '.jsonl'), 'subagents');
@@ -379,9 +561,24 @@ function sessionContext(s) {
   for (const f of files) {
     const id = f.slice(6, -6), sub = readRows(path.join(subDir, f)) || [];
     let meta = {}; try { meta = JSON.parse(fs.readFileSync(path.join(subDir, `agent-${id}.meta.json`), 'utf8')); } catch { /* optional */ }
-    subagents[id] = { type: meta.agentType || null, description: meta.description || null, toolUseId: meta.toolUseId || null, items: contextItems(sub) };
+    // a subagent has its own system prompt (a custom agent's is the body of its .md file), tools and instructions
+    subagents[id] = { type: meta.agentType || null, description: meta.description || null, toolUseId: meta.toolUseId || null, ...promptOf(sub), items: contextItems(sub) };
   }
-  return { session: s.id, transcript: main, model: s.model, context: s.context, system, tools, items: contextItems(rows), subagents };
+  // the first request's shape, to match the first model step it is measured against (later requests carry more tools)
+  const wire = wireOf(rows), shape = rows.find(r => r.type === 'api-request-shape' && r.shape)?.shape || null;
+  return { session: s.id, transcript: main, model: s.model, context: s.context, window: reportedWindow(rows), ...promptOf(rows), items: contextItems(rows), subagents, wire, measured: measuredOf(rows, shape, wire) };
+}
+
+// The context window, from the latest /context report in the transcript ("**Tokens:** 51.9k / 1m (5%)"): the model id
+// doesn't always say whether the session has the 1M window.
+function reportedWindow(rows) {
+  const unit = { k: 1e3, m: 1e6 };
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const c = rows[i].type === 'user' ? rows[i].message?.content : null;
+    const m = typeof c === 'string' && c.startsWith('## Context Usage') && /\*\*Tokens:\*\*\s*[\d.]+[km]?\s*\/\s*([\d.]+)([km]?)/i.exec(c);
+    if (m) return Math.round(parseFloat(m[1]) * (unit[m[2].toLowerCase()] || 1)) || null;
+  }
+  return null;
 }
 
 // ---------- log tailing ----------
