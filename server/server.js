@@ -17,6 +17,8 @@ const MAX_EVENTS_PER_SESSION = Number(process.env.OBSERVER_MAX_EVENTS || 5000);
 const MAX_ALL_EVENTS = Number(process.env.OBSERVER_MAX_ALL_EVENTS || 10000);
 const CONTEXT_WINDOW = Number(process.env.OBSERVER_CONTEXT_WINDOW || 200000);
 const DASHBOARD = path.join(__dirname, 'dashboard.html');
+const ASSETS = path.join(__dirname, 'dashboard'); // the page's stylesheet and scripts
+const ASSET_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 
 // ---------- classification ----------
 const QUESTION_TOOLS = new Set(['AskUserQuestion']);
@@ -344,6 +346,15 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/' || url.pathname === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return fs.createReadStream(DASHBOARD).pipe(res);
+  }
+  // the page's own files. Only a bare file name with a known extension matches, so a request can't leave the folder.
+  const asset = /^[/]dashboard[/]([A-Za-z0-9_-]+)([.]css|[.]js)$/.exec(url.pathname);
+  if (asset) {
+    return fs.readFile(path.join(ASSETS, asset[1] + asset[2]), (err, body) => {
+      if (err) return json(res, 404, { error: 'not found' });
+      res.writeHead(200, { 'Content-Type': ASSET_TYPES[asset[2]], 'Cache-Control': 'no-store' });
+      res.end(body);
+    });
   }
   if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
   if (url.pathname === '/api/health') return json(res, 200, { ok: true, port: PORT, log: LOG_FILE, sessions: sessions.size });

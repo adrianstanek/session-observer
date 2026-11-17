@@ -112,6 +112,24 @@ test('dashboard HTML is served', async () => {
   assert.match(r.body, /<html/i);
 });
 
+test('every stylesheet and script the dashboard asks for is served', async () => {
+  const html = (await get('/')).body;
+  const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(refs.length > 1, 'the dashboard should load its files from dashboard/');
+  for (const ref of refs) {
+    const r = await get('/' + ref);
+    assert.equal(r.status, 200, ref);
+    assert.match(r.type, ref.endsWith('.css') ? /text[/]css/ : /javascript/, ref);
+    assert.ok(r.body.length > 0, ref);
+  }
+});
+
+test('nothing else is served from the dashboard folder', async () => {
+  for (const p of ['/dashboard/nope.js', '/dashboard/', '/dashboard/..%2Fserver.js', '/dashboard/%2e%2e/server.js', '/dashboard/sub/core.js', '/dashboard/core.js.map', '/server.js']) {
+    assert.equal((await get(p)).status, 404, p);
+  }
+});
+
 test('clear wipes the log and sessions', async () => {
   const r = await fetch(base + '/api/clear', { method: 'POST' });
   assert.equal(r.status, 200);

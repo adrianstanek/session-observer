@@ -119,7 +119,10 @@ version is the same, reinstall to get the latest commit:
 /plugin install session-observer@session-observer-marketplace
 ```
 
-Using `--plugin-dir`? Run `git pull` in the clone and restart Claude Code.
+Using `--plugin-dir`? Run `git pull` in the clone and restart Claude Code. The dashboard server
+keeps running in the background across restarts, so stop it too (commands under
+[Uninstall](#uninstall)); the next session starts the new one. If the page says it could not
+load its files, this is why.
 
 ### Uninstall
 
@@ -220,6 +223,27 @@ node --test test/smoke.test.js     # hook → log → server → API, end to end
 node --test test/tech.test.js      # language / tool badges: what each command and file maps to
 claude plugin validate .           # plugin + marketplace manifests
 ```
+
+The dashboard is `server/dashboard.html` (markup only) plus the files in `server/dashboard/`,
+which `server.js` serves as they are. There is still no build step: the scripts are plain
+browser scripts that share one global scope and load in the order the page lists them, so a
+file can use anything from the files above it.
+
+| File | What is in it |
+|---|---|
+| `dashboard.css` | all styles, light and dark |
+| `core.js` | icons, tool groups, event categories, small helpers |
+| `tech.js` | language / tool badges: detection and drawing |
+| `model.js` | what events mean: groups and labels, filters, turns, replayable state |
+| `stage.js` | switching Overview / Route / Chat, activity-by-group cards |
+| `chat.js` | Chat view |
+| `route.js` | Route view |
+| `panels.js` | event rows, replay bar, sessions panel |
+| `overview.js` | Overview: tiles, charts, lists |
+| `detail-parts.js` | Details building blocks: sections, colour key, JSON, card parts |
+| `code.js` | syntax colouring, tool input and output |
+| `details.js` | Details panel: tool, event and model-step cards |
+| `app.js` | header, render scheduling, loading and live updates, controls, start-up |
 
 CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
 and Node 22 on macOS and Windows.

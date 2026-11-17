@@ -34,11 +34,22 @@ for (const f of files.filter(f => f.endsWith('.js'))) {
   if (r.status !== 0) fail(`${rel(f)}: syntax error\n${r.stderr}`);
 }
 
-// 3. Inline <script> in the dashboard compiles
+// 3. Inline <script> in the dashboard compiles, and the files it loads are the ones in server/dashboard
 const html = fs.readFileSync(path.join(ROOT, 'server', 'dashboard.html'), 'utf8');
 [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].forEach((m, i) => {
   try { new Function(m[1]); } catch (e) { fail(`server/dashboard.html: inline script #${i + 1} does not parse (${e.message})`); }
 });
+
+const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]);
+for (const r of refs) if (!fs.existsSync(path.join(ROOT, 'server', r))) fail(`server/dashboard.html: ${r} does not exist`);
+for (const f of fs.readdirSync(path.join(ROOT, 'server', 'dashboard'))) {
+  if (!refs.includes('dashboard/' + f)) fail(`server/dashboard/${f}: not loaded by server/dashboard.html`);
+}
+// each script is strict on its own (they are separate files, so one 'use strict' no longer covers them all)
+for (const r of refs.filter(r => r.endsWith('.js'))) {
+  const f = path.join(ROOT, 'server', r);
+  if (fs.existsSync(f) && !/^'use strict';/.test(fs.readFileSync(f, 'utf8'))) fail(`server/${r}: must start with 'use strict';`);
+}
 
 // 4. Hook commands reference existing scripts
 const hooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8')).hooks || {};
