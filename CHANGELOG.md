@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/radekwojpl2/session-observer/compare/v0.5.0...v0.6.0) (2026-11-18)
+
+
+### Features
+
+* eye icon and screenshot cover instead of the grid ([72b2c35](https://github.com/radekwojpl2/session-observer/commit/72b2c35a1108467759c2989dfba7ffa402142840))
+* eye icon, screenshot cover and server version in the dashboard header ([8a0954d](https://github.com/radekwojpl2/session-observer/commit/8a0954dad0827c24e59f62376cdc590aab168ee3))
+* grid icon and server version in the dashboard header ([59cffe1](https://github.com/radekwojpl2/session-observer/commit/59cffe1cd38c709f87555445a95c5dbb08337f73))
+
 ## [0.5.0](https://github.com/radekwojpl2/session-observer/compare/v0.4.1...v0.5.0) (2026-11-17)
 
 
