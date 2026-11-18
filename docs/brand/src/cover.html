@@ -1,117 +1,48 @@
 <!doctype html>
-<!-- The repo cover (GitHub social preview and README banner). Set data-theme to "dark" for the dark version;
-     render.js turns this page into cover.png. -->
-<html data-theme="light"><head><meta charset="utf-8"><title>Session Observer cover</title>
+<html><head><meta charset="utf-8"><title>Cover: screenshot</title>
 <style>
-  :root[data-theme="dark"] {
-    --bg: #0e0f11; --panel: #17181b; --line: #2d3036; --text: #e6e7ea; --muted: #b9bec7; --faint: #858a94; --plus: #6b9cf8;
-    --you: #2dd4bf; --model: #a78bfa; --files: #60a5fa; --shell: #cbd5e1; --agents: #fbbf24; --skills: #a3e635; --mcp: #fb923c;
-    --context: #22d3ee; --ok: #22c55e; --station: #0e0f11;
-  }
-  :root[data-theme="light"] {
-    --bg: #f4f5f7; --panel: #ffffff; --line: #dcdfe5; --text: #1b1d22; --muted: #4b5260; --faint: #80868f; --plus: #1d4ed8;
-    --you: #0f766e; --model: #7c3aed; --files: #2563eb; --shell: #64748b; --agents: #d97706; --skills: #65a30d; --mcp: #ea580c;
-    --context: #0891b2; --ok: #16a34a; --station: #ffffff;
-  }
   html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
-  body { font-family: "Segoe UI Variable Display", "Segoe UI", Inter, sans-serif; color: var(--text); position: relative; }
-
-  /* dark: the screenshot cover's background, glows and a grid fading out to the right */
-  [data-theme="dark"] body {
-    background: radial-gradient(900px 500px at 0% 0%, #1c2d4d 0%, transparent 60%),
-                radial-gradient(700px 500px at 100% 100%, #2a1f45 0%, transparent 60%), var(--bg);
+  body {
+    font-family: "Segoe UI Variable Display", "Segoe UI", Inter, sans-serif; color: #e6e7ea;
+    background:
+      radial-gradient(900px 500px at 0% 0%, #1c2d4d 0%, transparent 60%),
+      radial-gradient(700px 500px at 100% 100%, #2a1f45 0%, transparent 60%),
+      #0e0f11;
+    position: relative;
   }
-  [data-theme="dark"] body::before { content: ""; position: absolute; inset: 0;
+  body::before { content: ""; position: absolute; inset: 0;
     background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
     background-size: 32px 32px; mask-image: linear-gradient(90deg, #000 0%, transparent 70%); }
-  /* light: the light cover's background, a soft glow and the context-usage grid in two corners */
-  [data-theme="light"] body { background: radial-gradient(800px 420px at 50% -10%, #ebf1ff 0%, transparent 70%), var(--bg); }
-  .grid { display: none; position: absolute; grid-template-columns: repeat(22, 22px); gap: 6px; }
-  [data-theme="light"] .grid { display: grid; }
-  .grid i { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid #dcdfe5; box-sizing: border-box; }
-  .grid.l { left: -60px; top: 20px; transform: rotate(-8deg); mask-image: linear-gradient(90deg, #000 5%, transparent 55%); opacity: .8; }
-  .grid.r { right: -60px; bottom: 10px; transform: rotate(-8deg); mask-image: linear-gradient(270deg, #000 10%, transparent 70%); }
-
-  header { position: absolute; left: 80px; right: 80px; top: 70px; display: flex; align-items: flex-start; justify-content: space-between; }
-  .title { display: flex; align-items: center; gap: 22px; }
-  .title img { width: 84px; height: 84px; border-radius: 19px; }
-  [data-theme="light"] .title img { box-shadow: 0 10px 22px #1b1d2230; }
-  h1 { margin: 0; font-size: 62px; letter-spacing: -.025em; line-height: 1; font-weight: 700; }
-  .sub { margin-top: 10px; font-size: 24px; color: var(--muted); }
-  .badge { display: inline-flex; align-items: center; gap: 12px; padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
-    font: 600 20px Consolas, "Cascadia Mono", monospace; margin-top: 10px; white-space: nowrap; flex-shrink: 0; }
-  [data-theme="light"] .badge, [data-theme="light"] footer .cmds { box-shadow: 0 1px 3px #0000000f; }
-  .badge .bar { width: 70px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; }
-  .badge .bar i { display: block; width: 26%; height: 100%; background: var(--context); }
-  .badge .plus { color: var(--plus); }
-
-  svg { position: absolute; left: 0; top: 230px; }
-  svg .ln { fill: none; stroke-linecap: round; }
-  svg .st { fill: var(--station); }
-  text { font-family: Consolas, "Cascadia Mono", monospace; }
-  .lbl { font: 600 19px "Segoe UI", sans-serif; fill: var(--text); }
-  .lbl.sm { font-size: 16px; }
-  .arg { font-size: 15px; fill: var(--faint); }
-
-  footer { position: absolute; left: 80px; bottom: 30px; display: flex; align-items: center; gap: 18px; font-size: 18px; line-height: 1.25; letter-spacing: .02em; }
-  footer b { color: var(--muted); font-weight: 600; }
-  footer .cmds { display: flex; flex-direction: column; gap: 4px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-  footer code { font: 17px Consolas, "Cascadia Mono", monospace; color: var(--muted); letter-spacing: 0; }
+  .left { position: absolute; left: 72px; top: 0; bottom: 0; width: 470px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand img { width: 64px; height: 64px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; color: #b9bec7; }
+  .live i { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
+  h1 { margin: 0; font-size: 64px; line-height: 1.02; letter-spacing: -.025em; font-weight: 700; }
+  p { margin: 0; font-size: 25px; line-height: 1.35; color: #b9bec7; }
+  p b { color: #e6e7ea; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid #2d3036; border-radius: 999px; background: #17181bcc; font-size: 15px; color: #b9bec7; }
+  .chip i { width: 9px; height: 9px; border-radius: 2px; }
+  .shot { position: absolute; left: 590px; top: 70px; width: 820px; height: 500px; border-radius: 14px; overflow: hidden;
+    border: 1px solid #3a3e46; box-shadow: 0 40px 80px #000a, 0 0 0 6px #ffffff06;
+    transform: perspective(1800px) rotateY(-13deg) rotateX(3deg); transform-origin: left center; }
+  .shot img { position: absolute; width: 1240px; left: -250px; top: -100px; }
 </style></head>
 <body>
-  <div class="grid l" id="gl"></div>
-  <div class="grid r" id="gr"></div>
-  <header>
-    <div class="title"><img src="icon-grid.svg" alt="">
-      <div><h1>Session Observer</h1><div class="sub">Every prompt, tool call, subagent and token, live.</div></div></div>
-    <span class="badge"><span class="bar"><i></i></span>36.5k · 18% <span class="plus">+660</span></span>
-  </header>
-  <svg width="1280" height="340" viewBox="0 0 1280 340">
-    <path class="ln" d="M110 70H1170" style="stroke:var(--model)" stroke-width="10"/>
-    <path class="ln" d="M110 70H250" style="stroke:var(--you)" stroke-width="10"/>
-    <path class="ln" d="M1010 70H1170" style="stroke:var(--ok)" stroke-width="10"/>
-    <path class="ln" d="M400 70v50a40 40 0 0 0 40 40H780a40 40 0 0 0 40-40V70" style="stroke:var(--agents)" stroke-width="10"/>
-    <path class="ln" d="M470 160v40a36 36 0 0 0 36 36H700a36 36 0 0 0 36-36v-40" style="stroke:var(--agents)" stroke-width="8" opacity=".75"/>
-
-    <circle class="st" cx="110" cy="70" r="20" style="stroke:var(--you)" stroke-width="6"/>
-    <text class="lbl" x="110" y="28" text-anchor="middle">You</text>
-    <path d="M250 56l14 14-14 14-14-14z" style="fill:var(--model);stroke:var(--station)" stroke-width="3"/>
-    <text class="lbl" x="250" y="28" text-anchor="middle">Model</text>
-    <circle class="st" cx="400" cy="70" r="20" style="stroke:var(--agents)" stroke-width="6"/>
-    <text class="lbl" x="400" y="28" text-anchor="middle">Agent</text>
-    <circle class="st" cx="560" cy="70" r="18" style="stroke:var(--files)" stroke-width="5"/>
-    <text class="lbl" x="560" y="28" text-anchor="middle">Read</text>
-    <circle class="st" cx="700" cy="70" r="18" style="stroke:var(--shell)" stroke-width="5"/>
-    <text class="lbl" x="700" y="28" text-anchor="middle">Bash</text>
-    <circle class="st" cx="900" cy="70" r="18" style="stroke:var(--mcp)" stroke-width="5"/>
-    <text class="lbl" x="900" y="28" text-anchor="middle">MCP</text>
-    <path d="M1010 56l14 14-14 14-14-14z" style="fill:var(--model);stroke:var(--station)" stroke-width="3"/>
-    <text class="lbl" x="1010" y="28" text-anchor="middle">Model</text>
-    <circle cx="1170" cy="70" r="22" style="fill:var(--ok);stroke:var(--station)" stroke-width="4"/>
-    <circle cx="1170" cy="70" r="28" fill="none" style="stroke:var(--ok)" stroke-width="2" opacity=".5"/>
-    <text class="lbl" x="1170" y="28" text-anchor="middle">done</text>
-
-    <circle class="st" cx="560" cy="160" r="16" style="stroke:var(--files)" stroke-width="5"/>
-    <text class="lbl sm" x="560" y="128" text-anchor="middle">Grep</text>
-    <path d="M640 150l10 10-10 10-10-10z" style="fill:var(--agents)"/>
-    <circle class="st" cx="730" cy="160" r="16" style="stroke:var(--skills)" stroke-width="5"/>
-    <text class="lbl sm" x="730" y="128" text-anchor="middle">Skill</text>
-    <circle class="st" cx="600" cy="236" r="14" style="stroke:var(--files)" stroke-width="4"/>
-    <text class="lbl sm" x="600" y="280" text-anchor="middle">Glob</text>
-    <text class="arg" x="600" y="300" text-anchor="middle">src/**/*.ts</text>
-  </svg>
-  <footer><b>Install in<br>Claude Code</b><span class="cmds"><code>/plugin marketplace add radekwojpl2/session-observer</code><code>/plugin install session-observer@session-observer-marketplace</code></span></footer>
-  <script>
-    // the light theme's backdrop: the context-usage grid, a few cells filled by category, the rest empty
-    const cols = ['#565d6a', '#565d6a', '#137138', '#b23b0b', '#a14a08', '#a14a08', '#6d28d9', '#7c6fd6', '#7c6fd6', '#0e7490'];
-    for (const [id, seed] of [['gl', 3], ['gr', 7]]) {
-      let html = '', r = seed;
-      for (let n = 0; n < 22 * 7; n++) {
-        r = (r * 9301 + 49297) % 233280;
-        const fill = n < 50 && r / 233280 < .75 ? cols[Math.floor(r / 233280 * 1e4) % cols.length] : null;
-        html += fill ? `<i style="background:${fill};border-color:${fill};opacity:.28"></i>` : '<i></i>';
-      }
-      document.getElementById(id).innerHTML = html;
-    }
-  </script>
+  <div class="left">
+    <div class="brand"><img src="icon-eye.svg" alt=""><span class="live"><i></i>live · local · zero deps</span></div>
+    <h1>Session<br>Observer</h1>
+    <p>See <b>everything Claude Code does</b> in a session, live, on one local dashboard.</p>
+    <div class="chips">
+      <span class="chip"><i style="background:#2dd4bf"></i>Prompts</span>
+      <span class="chip"><i style="background:#a78bfa"></i>Model steps</span>
+      <span class="chip"><i style="background:#60a5fa"></i>Tools</span>
+      <span class="chip"><i style="background:#fbbf24"></i>Subagents</span>
+      <span class="chip"><i style="background:#fb923c"></i>MCP</span>
+      <span class="chip"><i style="background:#22d3ee"></i>Context</span>
+    </div>
+  </div>
+  <!-- the README Route screenshot (demo data), copied from PR 15 -->
+  <div class="shot"><img src="route.jpg" alt=""></div>
 </body></html>

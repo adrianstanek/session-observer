@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Renders the repo cover (src/cover.html → cover.png, 1280x640) and the app icon (src/icon-grid.svg → icon-grid/, 16-512 px)
+// Renders the repo cover (src/cover.html → cover.png, 1280x640) and the app icon (src/icon-eye.svg → icon-eye/, 16-512 px)
 // with headless Chrome or Edge. Run it after editing either source.
 // Usage: node docs/brand/src/render.js [path-to-chrome]
 'use strict';
@@ -9,7 +9,7 @@ const { execFileSync } = require('child_process');
 const { pathToFileURL } = require('url');
 
 const SRC = __dirname, OUT = path.join(__dirname, '..');
-const ICONS = ['icon-grid'];
+const ICONS = ['icon-eye'];
 const SIZES = [16, 32, 48, 64, 128, 180, 256, 512];
 const browser = process.argv[2] || [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',

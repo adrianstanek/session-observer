@@ -105,16 +105,29 @@ test('server ingests hook events and serves the API', async () => {
   assert.equal((await get('/api/nope')).status, 404);
 });
 
+test('the server reports its version: in the health check and first on the live stream', async () => {
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
+  assert.equal((await getJson('/api/health')).version, version);
+  const ac = new AbortController();
+  const r = await fetch(base + '/api/stream', { signal: ac.signal });
+  const reader = r.body.getReader(); let text = '';
+  while (!text.includes('event: hello')) { const { value, done } = await reader.read(); if (done) break; text += Buffer.from(value).toString(); }
+  ac.abort();
+  assert.match(text, /event: hello\ndata: (.+)\n/);
+  assert.equal(JSON.parse(/event: hello\ndata: (.+)\n/.exec(text)[1]).version, version);
+});
+
 test('dashboard HTML is served', async () => {
   const r = await get('/');
   assert.equal(r.status, 200);
   assert.match(r.type, /text\/html/);
   assert.match(r.body, /<html/i);
+  assert.match(r.body, /<link rel="icon" type="image\/svg\+xml" href="data:image\/svg\+xml,/, 'the tab icon is inline, so the server needs no route for it');
 });
 
 test('every stylesheet and script the dashboard asks for is served', async () => {
   const html = (await get('/')).body;
-  const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]);
+  const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]).filter(r => !r.startsWith('data:'));
   assert.ok(refs.length > 1, 'the dashboard should load its files from dashboard/');
   for (const ref of refs) {
     const r = await get('/' + ref);

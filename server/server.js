@@ -19,6 +19,8 @@ const CONTEXT_WINDOW = Number(process.env.OBSERVER_CONTEXT_WINDOW || 200000);
 const DASHBOARD = path.join(__dirname, 'dashboard.html');
 const ASSETS = path.join(__dirname, 'dashboard'); // the page's stylesheet and scripts
 const ASSET_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+// this server's version, shown in the dashboard header: the server outlives plugin updates until it is restarted
+const VERSION = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '.claude-plugin', 'plugin.json'), 'utf8')).version || null; } catch { return null; } })();
 
 // ---------- classification ----------
 const QUESTION_TOOLS = new Set(['AskUserQuestion']);
@@ -643,7 +645,7 @@ const server = http.createServer((req, res) => {
     });
   }
   if (url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
-  if (url.pathname === '/api/health') return json(res, 200, { ok: true, port: PORT, log: LOG_FILE, sessions: sessions.size });
+  if (url.pathname === '/api/health') return json(res, 200, { ok: true, version: VERSION, port: PORT, log: LOG_FILE, sessions: sessions.size });
   if (url.pathname === '/api/sessions') {
     const list = [...sessions.values()].map(summary).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
     return json(res, 200, list);
@@ -664,6 +666,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/stream') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write('retry: 2000\n\n');
+    res.write(`event: hello\ndata: ${JSON.stringify({ version: VERSION })}\n\n`); // on every (re)connect, so a restarted server shows its own version
     clients.add(res);
     req.on('close', () => clients.delete(res));
     return;

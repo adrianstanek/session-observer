@@ -90,6 +90,7 @@ function connect() {
   const es = new EventSource('/api/stream');
   es.onopen = () => { state.connected = true; schedule('header'); };
   es.onerror = () => { state.connected = false; schedule('header'); };
+  es.addEventListener('hello', m => { const v = JSON.parse(m.data).version; $('ver').textContent = v ? 'v' + v : ''; });
   es.addEventListener('session', m => {
     const s = JSON.parse(m.data); state.sessions.set(s.id, s); state.updated = Date.now();
     if (state.paused) return schedule('header');
