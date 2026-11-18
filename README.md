@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/cover.png" alt="Session Observer: a live dashboard of every prompt, tool call, subagent and token in a Claude Code session" width="860"></p>
+
 # Session Observer — a Claude Code plugin
 
 [![CI](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml/badge.svg)](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml)
