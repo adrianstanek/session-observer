@@ -139,6 +139,10 @@ keeps running in the background across restarts, so stop it too (commands under
 [Uninstall](#uninstall)); the next session starts the new one. If the page says it could not
 load its files, this is why.
 
+To check which version is running, look next to the title in the dashboard header: it shows the
+running server's version (also in `/api/health`). If it is older than the one you installed, the old
+server is still running; stop it as above.
+
 ### Uninstall
 
 ```
