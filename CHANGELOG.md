@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/radekwojpl2/session-observer/compare/v0.6.0...v0.6.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* harden the local server against DNS rebinding and cross-site requests ([f47a855](https://github.com/radekwojpl2/session-observer/commit/f47a855cd126925ed1d84158264dd0202f9d7fb8))
+* harden the local server against DNS rebinding and cross-site requests ([529c683](https://github.com/radekwojpl2/session-observer/commit/529c683100c51e3ce07351543917847abe44903d))
+* refuse other machines unless OBSERVER_TOKEN is set ([52254ef](https://github.com/radekwojpl2/session-observer/commit/52254ef2cde1e722a26c4e834455c165b5aca87d))
+
 ## [0.6.0](https://github.com/radekwojpl2/session-observer/compare/v0.5.0...v0.6.0) (2026-11-18)
 
 
