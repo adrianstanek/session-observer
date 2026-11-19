@@ -57,7 +57,7 @@ function evOpenHtml(e, t) {
     case 'SessionStart': return evCard(e, evHead('context', 'Session started', esc(d.source || ''), d.model && `<span class="muted">${esc(d.model)}</span>`) + evKv(d, new Set([...EV_COMMON, 'source', 'model'])));
     case 'SessionEnd': return evCard(e, evHead('context', 'Session ended', esc(d.reason || '')) + evKv(d, new Set([...EV_COMMON, 'reason'])));
     case 'PostToolBatch': return evCard(e, evHead('other', 'Tool batch finished', `${(d.tool_calls || []).length} calls`) + (d.tool_calls || []).map(c => { const st = toolStation(c.tool_name, c.tool_input); return `<div class="tu"><span class="n" style="color:var(--s-${st})">${toolIcon(c.tool_name, c.tool_input, st)}${esc(toolLabel(c.tool_name))}</span><span class="a">${esc(toolArg(c))}</span><span></span></div>`; }).join(''));
-    case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${d.index ?? ''}`) + evText(d.delta));
+    case 'MessageDisplay': return evCard(e, evHead('model', 'Message shown', d.final ? 'final' : `part ${esc(d.index ?? '')}`) + evText(d.delta));
     case 'ConfigChange': return evCard(e, evHead('context', 'Config changed', esc(spaced(d.source))) + evKv({ file: d.file_path }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'file_path'])));
     case 'DirectoryAdded': return evCard(e, evHead('files', 'Directory added', d.source && esc('via ' + spaced(d.source))) + evKv({ directory: d.directory }, new Set()) + evKv(d, new Set([...EV_COMMON, 'source', 'directory'])));
     case 'WorktreeCreate': return evCard(e, evHead('files', 'Worktree created', d.name && esc(d.name)) + evKv(d, new Set([...EV_COMMON, 'name'])));

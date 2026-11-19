@@ -64,8 +64,9 @@ async function main() {
     data: truncate(payload),
   };
 
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.appendFileSync(LOG_FILE, JSON.stringify(event) + '\n');
+  // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
+  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+  fs.appendFileSync(LOG_FILE, JSON.stringify(event) + '\n', { mode: 0o600 });
 
   if (event.event === 'SessionStart') await ensureServer();
 }
