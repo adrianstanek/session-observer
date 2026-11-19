@@ -43,6 +43,19 @@ function hostOk(host) {
 function originOk(origin) {
   try { const u = new URL(origin); return u.protocol === 'http:' && hostOk(u.host); } catch { return false; }
 }
+// Another machine (possible only when OBSERVER_HOST is not loopback) can send any Host it likes, so the Host check
+// doesn't stop it: a peer that isn't this machine needs OBSERVER_TOKEN, and is refused while no token is set.
+// The token comes as "Authorization: Bearer <token>" or as the cookie that opening /?token=<token> once sets.
+const TOKEN = String(process.env.OBSERVER_TOKEN || '');
+const loopbackPeer = req => /^(?:::ffff:)?127\.|^::1$/.test(req.socket.remoteAddress || '');
+const digest = s => crypto.createHash('sha256').update(String(s)).digest();
+const tokenOk = t => !!TOKEN && t != null && crypto.timingSafeEqual(digest(t), digest(TOKEN)); // constant time
+function requestToken(req) {
+  const auth = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+  if (auth) return auth[1];
+  const c = /(?:^|;\s*)so_token=([^;]+)/.exec(req.headers.cookie || '');
+  try { return c ? decodeURIComponent(c[1]) : null; } catch { return null; }
+}
 // sent with every response: no MIME sniffing, no framing (clickjacking), no referrer, no cross-site embedding
 const BASE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
@@ -675,8 +688,19 @@ const server = http.createServer((req, res) => {
   const origin = req.headers.origin;
   if (origin !== undefined && !originOk(origin)) return json(res, 403, { error: 'forbidden origin' });
   if (req.method !== 'GET' && req.method !== 'HEAD' && !origin) return json(res, 403, { error: 'origin required' });
+  // a browser marks a request another site's page makes; a link from another site (a navigation) may still open the page
+  if (req.headers['sec-fetch-site'] === 'cross-site' && req.headers['sec-fetch-mode'] !== 'navigate') return json(res, 403, { error: 'cross-site request' });
   // a fixed base: the Host header is never parsed as part of the URL (a malformed one used to crash the server)
   let url; try { url = new URL(req.url, 'http://localhost'); } catch { return json(res, 400, { error: 'bad request' }); }
+  if (!loopbackPeer(req)) {
+    if (!TOKEN) return json(res, 403, { error: 'access from another machine needs OBSERVER_TOKEN' });
+    const given = url.searchParams.get('token');
+    if (given != null && tokenOk(given)) { // trade the URL token for a cookie, and drop it from the address bar
+      res.writeHead(302, { Location: '/', 'Set-Cookie': `so_token=${encodeURIComponent(TOKEN)}; HttpOnly; SameSite=Strict; Path=/` });
+      return res.end();
+    }
+    if (!tokenOk(requestToken(req))) return json(res, 401, { error: 'token required' });
+  }
   if (url.pathname === '/' || url.pathname === '/index.html') {
     let html; try { html = fs.readFileSync(DASHBOARD, 'utf8'); } catch { return json(res, 500, { error: 'dashboard missing' }); }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': pageCsp(html) });
@@ -746,6 +770,10 @@ server.on('error', err => {
   console.error(err); process.exit(1);
 });
 server.listen(PORT, HOST, () => {
-  console.log(`Session Observer → http://${WILDCARD.has(HOST) ? 'localhost' : HOST}:${PORT}`);
-  if (!LOOPBACK.has(HOST.toLowerCase())) console.warn(`Warning: listening on ${HOST}. The dashboard has no login, so anyone who can reach this address can read your sessions.`);
+  console.log(`Session Observer → http://localhost:${PORT}`);
+  if (!LOOPBACK.has(HOST.toLowerCase())) {
+    console.warn(`Listening on ${WILDCARD.has(HOST) ? `every network interface (${HOST || '0.0.0.0'})` : HOST}:${PORT}, not only this machine.`);
+    console.warn(TOKEN ? 'Other machines need OBSERVER_TOKEN; the token travels over plain HTTP, so use a trusted network.'
+      : 'Other machines are refused until OBSERVER_TOKEN is set.');
+  }
 });

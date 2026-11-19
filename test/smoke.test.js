@@ -250,6 +250,51 @@ test('responses carry security headers; the page a CSP allowing its inline scrip
   assert.ok(csp.includes(`'sha256-${hash}'`), 'inline script hash in script-src');
 });
 
+test('a cross-site fetch is refused; a link from another site still opens the page', async () => {
+  // raw requests: fetch sets Sec-Fetch-Mode itself
+  const host = `127.0.0.1:${PORT}`;
+  assert.equal((await rawGet('/api/sessions', host, { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'cors' })).status, 403);
+  assert.equal((await rawGet('/', host, { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'navigate' })).status, 200);
+});
+
+// another machine: a server on every interface, reached through this machine's own network address (not loopback)
+const LAN_IP = Object.values(os.networkInterfaces()).flat().find(a => a && a.family === 'IPv4' && !a.internal)?.address;
+async function remoteServer(extraEnv) {
+  const port = await freePort();
+  const proc = spawn(process.execPath, [SERVER], { env: { ...env(), OBSERVER_PORT: String(port), OBSERVER_HOST: '0.0.0.0', ...extraEnv }, stdio: 'ignore' });
+  await waitFor(async () => (await fetch(`http://127.0.0.1:${port}/api/health`)).ok);
+  // the forged Host passes the Host check, so only the peer check stands in the way
+  const call = (p, headers = {}) => new Promise((resolve, reject) => {
+    const r = require('node:http').request({ host: LAN_IP, port, path: p, headers: { Host: `localhost:${port}`, ...headers } }, res => {
+      let body = ''; res.on('data', c => body += c); res.on('end', () => resolve({ status: res.statusCode, body, headers: res.headers }));
+    });
+    r.on('error', reject); r.end();
+  });
+  return { port, proc, call };
+}
+
+test('another machine is refused without OBSERVER_TOKEN, even with a forged Host', { skip: !LAN_IP && 'no network address' }, async () => {
+  const { port, proc, call } = await remoteServer({});
+  try {
+    assert.equal((await call('/api/events?session=all')).status, 403);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/api/sessions`)).status, 200, 'this machine needs no token');
+  } finally { proc.kill(); }
+});
+
+test('another machine gets in with OBSERVER_TOKEN, by header or by the cookie /?token= sets', { skip: !LAN_IP && 'no network address' }, async () => {
+  const { proc, call } = await remoteServer({ OBSERVER_TOKEN: 's3cret-token' });
+  try {
+    assert.equal((await call('/api/sessions')).status, 401, 'no token');
+    assert.equal((await call('/api/sessions', { Authorization: 'Bearer wrong' })).status, 401, 'wrong token');
+    assert.equal((await call('/api/sessions', { Authorization: 'Bearer s3cret-token' })).status, 200);
+    const login = await call('/?token=s3cret-token');
+    assert.equal(login.status, 302);
+    const cookie = String(login.headers['set-cookie']).split(';')[0];
+    assert.match(String(login.headers['set-cookie']), /HttpOnly; SameSite=Strict/);
+    assert.equal((await call('/api/sessions', { Cookie: cookie })).status, 200);
+  } finally { proc.kill(); }
+});
+
 test('clear wipes the log and sessions', async () => {
   const r = await fetch(base + '/api/clear', { method: 'POST', headers: { Origin: base } });
   assert.equal(r.status, 200);
