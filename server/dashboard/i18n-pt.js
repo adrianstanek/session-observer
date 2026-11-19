@@ -56,6 +56,7 @@ TEXT.pt = (() => {
       modelSwitch: 'Troca de modelo', modelSwitched: 'Modelo trocado', file: 'Arquivo', changed: 'alterado', config: 'Configuração',
       directory: 'Diretório', added: 'adicionado', via: 'via', worktree: 'Worktree', removed: 'removido', setup: 'Preparação',
       teammate: 'Colega de equipe', idle: 'ocioso',
+      startedSession: 'iniciada', createdWorktree: 'criado', changedConfig: 'alterada',
     },
 
     sess: { ended: 'encerrada', working: 'trabalhando', live: 'ativa', inactive: 'inativa' },
@@ -64,7 +65,7 @@ TEXT.pt = (() => {
 
     tile: {
       sessions: 'Sessões', turns: 'Turnos', toolCalls: 'Chamadas de ferramentas', modelSteps: 'Passos do modelo', problems: 'Problemas',
-      failedOrDenied: 'falharam ou negadas', outputTokens: 'Tokens de saída', subagents: 'Subagentes', duration: 'Duração',
+      failedOrDenied: 'com falha ou negadas', outputTokens: 'Tokens de saída', subagents: 'Subagentes', duration: 'Duração',
       context: 'Contexto', tokens: 'Tokens',
     },
     allLead: r => `Todas as sessões do período: ${r}. Escolha uma sessão à esquerda para ver só o trabalho dela.`,
@@ -113,8 +114,8 @@ TEXT.pt = (() => {
       agent: 'agente', async: 'assíncrono', tasks: 'tarefas', crons: 'crons', transcript: 'transcrição', directory: 'diretório', path: 'caminho',
       from: 'de', to: 'para', requested: 'solicitado', contextTokens: 'tokens de contexto', cacheWarm: 'cache aquecido', cost: 'custo',
     },
-    linesOf: (a, b, n) => `${a}–${b} de ${n}`, interruptedByUser: 'interrompido pelo usuário', interrupted: 'interrompido',
-    applied: 'aplicado', appliedChanged: 'aplicado e depois alterado pelo usuário', noAnswers: 'sem respostas',
+    linesOf: (a, b, n) => `${a}–${b} de ${n}`, interruptedByUser: 'interrompido manualmente', interrupted: 'interrompido',
+    applied: 'aplicado', appliedChanged: 'aplicado e depois alterado manualmente', noAnswers: 'sem respostas',
     note: {
       idle_prompt: 'aguardando sua resposta', permission_prompt: 'precisa da sua permissão', auth_success: 'login feito', auth_storage_failure: 'não foi possível salvar o login',
       elicitation_dialog: 'um servidor MCP pede dados', elicitation_url_dialog: 'um servidor MCP quer que você abra um link', elicitation_complete: 'dados para o MCP prontos', elicitation_response: 'dados para o MCP respondidos',

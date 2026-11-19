@@ -69,8 +69,8 @@ function routeModel(t, lim) {
       case 'PostModelSwitch': mainStop(ev, 'model', TX.st.model, '→ ' + String(d.to_model || '?').replace(/^claude-/, '')); break;
       // session start, config changes and memory loads are stops too (the first turn opens with the ones before its prompt);
       // the sub is kept short, since the route cuts it at 12 characters — the tooltip has the full description
-      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || TX.ev.started); break;
-      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || TX.ev.changed); break;
+      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || TX.ev.startedSession); break;
+      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || TX.ev.changedConfig); break;
       case 'PreCompact': case 'InstructionsLoaded': { const [label, sub] = describe(ev); mainStop(ev, 'context', label, base(sub)); break; }
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }

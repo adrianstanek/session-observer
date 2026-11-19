@@ -77,7 +77,7 @@ function describe(ev) {
     case 'SubagentStop': return [TX.subagent, `${X.finished} ${[d.agent_type, short(d.last_assistant_message, 120)].filter(Boolean).join(' — ')}`];
     case 'TaskCreated': return [TX.cat.task, X.created + ' ' + (d.subject || d.task?.subject || d.description || '')];
     case 'TaskCompleted': return [TX.cat.task, X.completed + ' ' + (d.subject || d.task?.subject || '')];
-    case 'SessionStart': return [X.session, [X.started, d.source, d.model?.id || d.model].filter(Boolean).join(' · ')];
+    case 'SessionStart': return [X.session, [X.startedSession, d.source, d.model?.id || d.model].filter(Boolean).join(' · ')];
     case 'SessionEnd': return [X.session, X.ended + ' ' + (d.reason || '')];
     case 'PreCompact': return [TX.cat.compact, X.compacting + ' · ' + (d.trigger || '')];
     case 'PostCompact': return [TX.cat.compact, X.compacted + ' · ' + (d.trigger || '')];
@@ -87,9 +87,9 @@ function describe(ev) {
     case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? X.modelSwitch : X.modelSwitched, `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
     case 'CwdChanged': return ['cwd', d.old_cwd || d.new_cwd ? `${d.old_cwd || '?'} → ${d.new_cwd || '?'}` : d.cwd];
     case 'FileChanged': return [X.file, `${d.event || X.changed} ${d.file_path || d.path || ''}`];
-    case 'ConfigChange': return [X.config, `${X.changed} ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
+    case 'ConfigChange': return [X.config, `${X.changedConfig} ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
     case 'DirectoryAdded': return [X.directory, `${X.added} ${d.directory || ''}${d.source ? ` · ${X.via} ` + spaced(d.source) : ''}`];
-    case 'WorktreeCreate': return [X.worktree, X.created + ' ' + (d.name || '')];
+    case 'WorktreeCreate': return [X.worktree, X.createdWorktree + ' ' + (d.name || '')];
     case 'WorktreeRemove': return [X.worktree, X.removed + ' ' + (d.worktree_path || '')];
     case 'Setup': return [X.setup, d.trigger || ''];
     case 'TeammateIdle': return [X.teammate, `${X.idle} ${[d.teammate_name, d.team_name && `(${d.team_name})`].filter(Boolean).join(' ')}`];

@@ -34,7 +34,7 @@ TEXT.pl = (() => {
     freeze: 'Zatrzymaj', unfreeze: n => `Wznów${n ? ` (nowe: ${n})` : ''}`,
     theme: v => `Motyw: ${v}`,
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
-    range: 'Zakres', range1h: 'ostatnia 1 h', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',
+    range: 'Zakres', range1h: 'ostatnia godzina', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',
     search: 'Szukaj', searchPh: 'prompty, odpowiedzi, polecenia, ścieżki, błędy…',
     group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy',
     onlyProblems: 'tylko problemy', resetFilters: 'Wyczyść filtry', view: 'Widok',
@@ -58,6 +58,7 @@ TEXT.pl = (() => {
       modelSwitch: 'Zmiana modelu', modelSwitched: 'Model zmieniony', file: 'Plik', changed: 'zmieniono', config: 'Konfiguracja',
       directory: 'Katalog', added: 'dodano', via: 'przez', worktree: 'Worktree', removed: 'usunięto', setup: 'Konfiguracja',
       teammate: 'Członek zespołu', idle: 'bezczynny',
+      startedSession: 'start', createdWorktree: 'utworzono', changedConfig: 'zmieniono',
     },
 
     sess: { ended: 'zakończona', working: 'pracuje', live: 'aktywna', inactive: 'nieaktywna' },
@@ -115,8 +116,8 @@ TEXT.pl = (() => {
       agent: 'agent', async: 'asynchronicznie', tasks: 'zadania', crons: 'crony', transcript: 'transkrypt', directory: 'katalog', path: 'ścieżka',
       from: 'z', to: 'do', requested: 'żądany', contextTokens: 'tokeny kontekstu', cacheWarm: 'cache ciepły', cost: 'koszt',
     },
-    linesOf: (a, b, n) => `${a}–${b} z ${n}`, interruptedByUser: 'przerwane przez użytkownika', interrupted: 'przerwane',
-    applied: 'zastosowano', appliedChanged: 'zastosowano, potem zmienione przez użytkownika', noAnswers: 'brak odpowiedzi',
+    linesOf: (a, b, n) => `${a}–${b} z ${n}`, interruptedByUser: 'przerwane ręcznie', interrupted: 'przerwane',
+    applied: 'zastosowano', appliedChanged: 'zastosowano, potem zmieniono ręcznie', noAnswers: 'brak odpowiedzi',
     note: {
       idle_prompt: 'czeka na Twoją odpowiedź', permission_prompt: 'potrzebuje Twojego pozwolenia', auth_success: 'zalogowano', auth_storage_failure: 'nie udało się zapisać logowania',
       elicitation_dialog: 'serwer MCP prosi o dane', elicitation_url_dialog: 'serwer MCP prosi o otwarcie linku', elicitation_complete: 'dane dla MCP gotowe', elicitation_response: 'udzielono odpowiedzi MCP',
@@ -130,8 +131,8 @@ TEXT.pl = (() => {
     cacheRead: 'odczyt z cache', cacheWrite: 'zapis do cache', uncached: 'wejście bez cache', outputLc: 'wyjście',
 
     approxTokens: x => `≈${x} tokenów`, claude: 'Claude', taskAndResults: 'Zadanie i wyniki', showInDetails: 'Pokaż tę wiadomość w Szczegółach',
-    compacted: 'Skompaktowano', atTokens: x => `przy ${x} tokenów`,
-    replacedBelow: 'wszystko poniżej zastąpiło podsumowanie powyżej', replacedAbove: 'wszystko powyżej zastąpiło podsumowanie poniżej',
+    compacted: 'Skompaktowano', atTokens: x => `przy ${x} tokenach`,
+    replacedBelow: 'wszystko poniżej zostało zastąpione podsumowaniem powyżej', replacedAbove: 'wszystko powyżej zostało zastąpione podsumowaniem poniżej',
     compactionSummary: 'Podsumowanie kompaktowania', thinking: 'myślenie', injected: 'wstrzyknięte', attachment: 'załącznik',
     notSentModel: 'nie wysłane do modelu', pinnedChange: 'zmiana listy przypiętej na górze', sentAsText: 'wysłane jako tekst utworzony z tych danych',
     sentModel: 'wysłane do modelu', notSent: 'nie wysłane', result: 'wynik', toolResult: 'wynik narzędzia',

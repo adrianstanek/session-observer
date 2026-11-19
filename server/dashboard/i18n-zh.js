@@ -5,7 +5,7 @@ TEXT.zh = (() => {
   return {
     dec: '.',
     count: (n, w) => `${n} ${w}`,
-    u: { ms: '毫秒', s: '秒', m: '分', h: '小时', d: '天' }, // no space before a unit, as Chinese writes them
+    u: { ms: '毫秒', s: '秒', m: '分钟', h: '小时', d: '天' }, // no space before a unit, as Chinese writes them
     ago: x => `${x}前`,
     w: {
       tool: w('个工具'), toolCall: w('次工具调用'), call: w('次调用'), step: w('步'), modelStep: w('个模型步骤'),
@@ -25,7 +25,7 @@ TEXT.zh = (() => {
     verTitle: '正在运行的服务器版本。插件更新后它会继续运行，直到重启为止，所以这里的版本号较旧就说明服务器是旧的。',
     connTitle: '与本地服务器的实时连接', connecting: '连接中…', live: '实时', disconnected: '已断开',
     lastUpdate: t => ` · 最近更新 ${t}`,
-    busyTitle: '当前正处于某一轮中的会话', working: n => `${n} 个工作中`,
+    busyTitle: '当前正处于某一轮中的会话', working: n => `${n} 个进行中`,
     freezeTitle: '冻结画面；新事件会先缓存，恢复时再应用',
     freeze: '冻结', unfreeze: n => `恢复${n ? `（${n} 条新事件）` : ''}`,
     theme: v => `主题：${v}`,
@@ -54,6 +54,7 @@ TEXT.zh = (() => {
       modelSwitch: '切换模型', modelSwitched: '已切换模型', file: '文件', changed: '已更改', config: '配置',
       directory: '目录', added: '已添加', via: '通过', worktree: '工作树', removed: '已移除', setup: '初始化',
       teammate: '队友', idle: '空闲',
+      startedSession: '已开始', createdWorktree: '已创建', changedConfig: '已更改',
     },
 
     sess: { ended: '已结束', working: '工作中', live: '活跃', inactive: '不活跃' },
@@ -65,7 +66,7 @@ TEXT.zh = (() => {
       failedOrDenied: '失败或被拒绝', outputTokens: '输出 token', subagents: '子代理', duration: '时长',
       context: '上下文', tokens: 'Token',
     },
-    allLead: r => `${r}内的所有会话。在左侧选择一个会话，只看它的工作。`,
+    allLead: r => `时间范围“${r}”内的所有会话。在左侧选择一个会话，只看它的工作。`,
     sessionNotFound: '未找到会话。', endedX: r => `已结束：${r}`, inTools: d => `工具耗时 ${d}`, tokSub: o => `输入 · 输出 ${o}`,
     filtered: '已筛选', turns: '轮次', noTurnsMatch: '没有匹配的轮次。', sessionStartParen: '（会话开始）',
     turnChartAria: '每一轮的时长', lastNShown: n => `（显示最近 ${n} 轮）`,

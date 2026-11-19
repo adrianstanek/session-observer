@@ -60,6 +60,7 @@ TEXT.en = (() => {
       modelSwitch: 'Model switch', modelSwitched: 'Model switched', file: 'File', changed: 'changed', config: 'Config',
       directory: 'Directory', added: 'added', via: 'via', worktree: 'Worktree', removed: 'removed', setup: 'Setup',
       teammate: 'Teammate', idle: 'idle',
+      startedSession: 'started', createdWorktree: 'created', changedConfig: 'changed', // Session, Worktree and Config get their own words: in some languages the past participle agrees with the noun
     },
 
     // sessions panel
