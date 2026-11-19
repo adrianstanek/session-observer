@@ -1,5 +1,10 @@
 'use strict';
 // Session Observer dashboard — constants (icons, tool groups, event categories) and small helpers.
+// ---------------------------------------------------------------- language
+// the text table every view reads (i18n.js and the i18n-<code>.js tables load before this file)
+const LANG = pickLang(), TX = textFor(LANG);
+// times in the chosen language, in the browser's regional variant of it when it has one (en-GB: 24 h, en-US: AM/PM)
+const TIME_LOCALE = (typeof navigator !== 'undefined' && (navigator.languages || []).find(l => String(l).toLowerCase().startsWith(LANG))) || LANG;
 // ---------------------------------------------------------------- constants
 const ICONS = {
   you: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
@@ -17,16 +22,11 @@ const ICONS = {
   core: '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>',
   turn: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/>',
 };
-const STATIONS = [
-  ['you', 'You'], ['model', 'Model'], ['files', 'Files'], ['shell', 'Shell'], ['git', 'Git'], ['mcp', 'MCP'],
-  ['network', 'Network'], ['browser', 'Browser'], ['agents', 'Agents'], ['skills', 'Skills'], ['context', 'Context'], ['other', 'Other'],
-].map(([id, label]) => ({ id, label }));
+const STATIONS = ['you', 'model', 'files', 'shell', 'git', 'mcp', 'network', 'browser', 'agents', 'skills', 'context', 'other']
+  .map(id => ({ id, label: TX.st[id] }));
 const ST = Object.fromEntries(STATIONS.map(s => [s.id, s]));
-const CATS = {
-  model: 'Model', prompt: 'Prompt', tool: 'Tool', skill: 'Skill', question: 'Question', subagent: 'Subagent',
-  task: 'Task', mcp: 'MCP', permission: 'Permission', error: 'Error', notification: 'Notice',
-  compact: 'Compact', context: 'Context', lifecycle: 'Lifecycle', env: 'Env',
-};
+const CATS = Object.fromEntries(['model', 'prompt', 'tool', 'skill', 'question', 'subagent', 'task', 'mcp', 'permission', 'error', 'notification',
+  'compact', 'context', 'lifecycle', 'env'].map(k => [k, TX.cat[k]]));
 const CAT_COLOR = { model: 'model', prompt: 'you', tool: 'files', skill: 'skills', question: 'you', subagent: 'agents', task: 'other', mcp: 'mcp', permission: 'git', error: 'err', notification: 'agents', compact: 'context', context: 'context', lifecycle: 'other', env: 'other' };
 // hidden from the Details list: MessageDisplay repeats the model's text, PostToolBatch repeats the tool rows
 const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch']);
@@ -37,10 +37,13 @@ const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'KillShell', 'K
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const short = (s, n = 160) => { s = String(s ?? '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
-const fmtTime = ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-const fmtDur = ms => ms == null || isNaN(ms) ? '' : ms < 1000 ? `${Math.round(ms)}ms` : ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m ${String(Math.round(ms % 60000 / 1000)).padStart(2, '0')}s` : `${Math.floor(ms / 3600000)}h ${String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0')}m`;
-const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) return `${Math.max(0, Math.round(ms / 1000))}s ago`; if (ms < 3600000) return `${Math.floor(ms / 60000)}m ago`; if (ms < 86400000) return `${Math.floor(ms / 3600000)}h ${Math.floor(ms % 3600000 / 60000)}m ago`; return `${Math.floor(ms / 86400000)}d ago`; };
-const fmtN = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n ?? 0);
+const dec = s => TX.dec === '.' ? String(s) : String(s).replace('.', TX.dec); // a decimal number in the language's own notation
+const nw = (n, k) => TX.count(n, TX.w[k](n)); // a count and its noun: nw(3, 'tool') → "3 tools" (the language sets the order)
+const fmtTime = ts => new Date(ts).toLocaleTimeString(TIME_LOCALE, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const U = TX.u;
+const fmtDur = ms => ms == null || isNaN(ms) ? '' : ms < 1000 ? `${Math.round(ms)}${U.ms}` : ms < 60000 ? `${dec((ms / 1000).toFixed(1))}${U.s}` : ms < 3600000 ? `${Math.floor(ms / 60000)}${U.m} ${String(Math.round(ms % 60000 / 1000)).padStart(2, '0')}${U.s}` : `${Math.floor(ms / 3600000)}${U.h} ${String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0')}${U.m}`;
+const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) return TX.ago(`${Math.max(0, Math.round(ms / 1000))}${U.s}`); if (ms < 3600000) return TX.ago(`${Math.floor(ms / 60000)}${U.m}`); if (ms < 86400000) return TX.ago(`${Math.floor(ms / 3600000)}${U.h} ${Math.floor(ms % 3600000 / 60000)}${U.m}`); return TX.ago(`${Math.floor(ms / 86400000)}${U.d}`); };
+const fmtN = n => n >= 1e6 ? dec((n / 1e6).toFixed(2)) + 'M' : n >= 1e3 ? dec((n / 1e3).toFixed(1)) + 'k' : String(n ?? 0);
 const clean = s => String(s ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
 const base = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || p || '';
 const spaced = s => String(s || '').replace(/_/g, ' '); // hook enum values (user_settings, add_dir…) as words

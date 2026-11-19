@@ -6,12 +6,22 @@
 //   route — the current turn as a metro line: every model step and tool call is a stop
 //   chat  — the conversation as a messenger: prompts, the agent's replies, tool calls as chips
 //   context — one session's whole conversation in full, read from its transcript
-const LAYOUTS = [['overview', 'Overview'], ['route', 'Route'], ['chat', 'Chat'], ['context', 'Context']];
+const LAYOUTS = ['overview', 'route', 'chat', 'context'].map(k => [k, TX.views[k]]);
 const ROW = Object.fromEntries(STATIONS.map((s, i) => [s.id, i]));
 let altDirty = true, lastAltT = 0, lastAltRaw = '', ctxTurnShown = null;
 const evEnd = () => state.cursor == null ? state.events.length : Math.min(state.replayIdx, state.events.length);
-const agoMs = ms => ms < 60000 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 3600000 ? `${Math.floor(ms / 60000)}m` : ms < 86400000 ? `${Math.floor(ms / 3600000)}h` : `${Math.floor(ms / 86400000)}d`;
-const trunc = (s, n) => { s = String(s ?? ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+const agoMs = ms => ms < 60000 ? `${Math.max(0, Math.round(ms / 1000))}${U.s}` : ms < 3600000 ? `${Math.floor(ms / 60000)}${U.m}` : ms < 86400000 ? `${Math.floor(ms / 3600000)}${U.h}` : `${Math.floor(ms / 86400000)}${U.d}`;
+// cut to n columns; East Asian wide characters (CJK, kana, hangul, fullwidth forms) take two, as they do on screen
+const WIDE = /[ᄀ-ᅟ⺀-〾ぁ-㏿㐀-䶿一-鿿ꥠ-꥿가-힣豈-﫿︰-﹏＀-｠￠-￦]/;
+const colsOf = ch => WIDE.test(ch) ? 2 : 1;
+const trunc = (s, n) => {
+  s = String(s ?? '');
+  let w = 0; for (const ch of s) w += colsOf(ch);
+  if (w <= n) return s;
+  let out = ''; w = 0;
+  for (const ch of s) { const c = colsOf(ch); if (w + c > n - 1) break; out += ch; w += c; }
+  return out + '…';
+};
 const evTip = ev => esc(describe(ev).map(x => short(x, 160)).join(' · '));
 const svgIcon = (id, x, y, sc) => `<g class="ico" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc})">${ICONS[id] || ICONS.other}</g>`;
 
@@ -89,17 +99,17 @@ function groupCards() {
   for (const r of M.running.values()) { const o = (runBy[r.st] ||= { n: 0, start: r.start }); o.n++; o.start = Math.min(o.start, r.start); }
   if (M.agents.size && !runBy.agents) runBy.agents = { n: M.agents.size, start: Math.min(...[...M.agents.values()].map(a => a.start)) };
   const used = STATIONS.filter(s => M.counts[s.id] || runBy[s.id]).sort((a, b) => (M.counts[b.id] || 0) - (M.counts[a.id] || 0));
-  if (!used.length) return vcard('Activity by group', '', '<div class="none">No activity yet.</div>');
+  if (!used.length) return vcard(TX.activityByGroup, '', `<div class="none">${TX.noActivity}</div>`);
   let h = '<div class="sgrid">';
   for (const s of used) {
     const n = M.counts[s.id] || 0, run = runBy[s.id], e = errs[s.id] || 0, L = last[s.id];
     const what = L ? esc(short(describe(L)[1] || describe(L)[0], 80)) : '';
-    const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${agoMs(sn - tms(L))} ago · ${what}` : '';
+    const foot = run ? `● ${run.n > 1 ? '×' + run.n + ' ' : ''}${fmtDur(sn - run.start)} · ${what}` : L ? `${esc(TX.ago(agoMs(sn - tms(L))))} · ${what}` : '';
     const cls = ['used', run && 'hot', state.station === s.id && 'sel', state.station && state.station !== s.id && 'dim'].filter(Boolean).join(' ');
-    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" ${tipAttr(`${s.label}: ${n}${e ? ` · ✕ ${e} problems` : ''}\n${L ? 'last: ' + short(describe(L).join(' '), 200) : ''}\nbars: last 15 min · click to filter to ${s.label}`)}>
+    h += `<div class="bcard ${cls}" data-st="${s.id}" style="--c:var(--s-${s.id});--d:__D__" ${tipAttr(`${s.label}: ${n}${e ? ` · ✕ ${nw(e, 'problem')}` : ''}\n${L ? TX.lastX(short(describe(L).join(' '), 200)) : ''}\n${TX.barsHint(s.label)}`)}>
       <div class="bh2">${icon(s.id)}<span class="nm">${s.label}</span>${e ? `<span class="x">✕${e}</span>` : ''}<span class="n">${n}</span></div>
       ${spark(bins[s.id] || new Array(BINS).fill(0), max)}<div class="ft ${run ? 'run' : ''}">${foot}</div></div>`;
   }
   const idle = STATIONS.length - used.length;
-  return vcard('Activity by group', `${used.length} active${idle ? ` · ${idle} idle hidden` : ''} · bars = last 15 min · click to filter`, h + '</div>');
+  return vcard(TX.activityByGroup, esc(TX.groupSub(used.length, idle)), h + '</div>');
 }

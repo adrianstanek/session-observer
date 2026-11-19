@@ -64,12 +64,13 @@ function bashHtml(cmd) {
 // a tool's input, shaped per tool
 function toolInputHtml(name, i) {
   i = i || {};
+  const K = TX.kv;
   switch (name) {
     case 'Bash': return (i.command ? `<pre class="code">${bashHtml(i.command)}</pre>` : '') + (i.description ? `<div class="muted">${esc(i.description)}</div>` : '');
-    case 'Edit': return evKv({ file: i.file_path, 'replace all': i.replace_all || null }, new Set()) + diffHtml(i.old_string, i.new_string);
-    case 'MultiEdit': return evKv({ file: i.file_path }, new Set()) + (i.edits || []).map(x => diffHtml(x.old_string, x.new_string)).join('');
-    case 'Write': { const l = langOf(i.file_path), j = l === 'json' && (() => { try { return JSON.parse(i.content); } catch { return undefined; } })(); return evKv({ file: i.file_path }, new Set()) + (i.content == null ? '' : `<pre class="code">${j !== undefined && j !== false ? jsonHtml(j) : codeHtml(String(i.content).slice(0, 20000), l)}</pre>`); }
-    case 'Agent': case 'Task': return evKv({ description: i.description, type: i.subagent_type, model: i.model }, new Set()) + evSec('Prompt', evText(i.prompt));
+    case 'Edit': return evKv({ [K.file]: i.file_path, [K.replaceAll]: i.replace_all || null }, new Set()) + diffHtml(i.old_string, i.new_string);
+    case 'MultiEdit': return evKv({ [K.file]: i.file_path }, new Set()) + (i.edits || []).map(x => diffHtml(x.old_string, x.new_string)).join('');
+    case 'Write': { const l = langOf(i.file_path), j = l === 'json' && (() => { try { return JSON.parse(i.content); } catch { return undefined; } })(); return evKv({ [K.file]: i.file_path }, new Set()) + (i.content == null ? '' : `<pre class="code">${j !== undefined && j !== false ? jsonHtml(j) : codeHtml(String(i.content).slice(0, 20000), l)}</pre>`); }
+    case 'Agent': case 'Task': return evKv({ [K.description]: i.description, [K.type]: i.subagent_type, [K.model]: i.model }, new Set()) + evSec(esc(TX.prompt), evText(i.prompt));
     case 'AskUserQuestion': return (i.questions || []).map(q => `<div class="q2"><b>${esc(q.question)}</b>${(q.options || []).map(o => `<div class="opt">• ${esc(o.label)}${o.description ? ` <span class="muted">— ${esc(o.description)}</span>` : ''}</div>`).join('')}</div>`).join('');
     default: return evKv(i, new Set());
   }
@@ -80,16 +81,16 @@ function diffHtml(a, b) {
 }
 // a tool's result, shaped per tool
 function toolOutputHtml(name, post) {
-  const d = post.data || {}, r = d.tool_response;
-  if (post.event === 'PostToolUseFailure') return evOut(d.error, 'err') + (d.is_interrupt ? '<div class="muted">interrupted by the user</div>' : '');
-  if (r == null) return '<div class="muted">no output</div>';
+  const d = post.data || {}, r = d.tool_response, K = TX.kv, none = `<div class="muted">${esc(TX.noOutput)}</div>`;
+  if (post.event === 'PostToolUseFailure') return evOut(d.error, 'err') + (d.is_interrupt ? `<div class="muted">${esc(TX.interruptedByUser)}</div>` : '');
+  if (r == null) return none;
   if (typeof r === 'string') return evOut(r);
   switch (name) {
-    case 'Bash': return (r.stdout || r.stderr ? evOut(r.stdout) + evOut(r.stderr, 'err') : '<div class="muted">no output</div>') + (r.interrupted ? '<div class="err">interrupted</div>' : '');
-    case 'Read': { const f = r.file || {}; return evKv({ file: f.filePath, lines: f.numLines != null ? `${f.startLine ?? 1}–${(f.startLine ?? 1) + f.numLines - 1} of ${f.totalLines ?? '?'}` : null, type: r.type }, new Set()) + evCode(f.content && String(f.content).slice(0, 1500) + (String(f.content).length > 1500 ? '\n…' : '')); }
-    case 'Edit': case 'MultiEdit': case 'Write': return `<div>${r.userModified ? 'applied, then changed by the user' : 'applied'} · <span class="muted">${esc(r.filePath || '')}</span></div>`;
-    case 'Agent': case 'Task': return evKv({ status: r.status, agent: r.agentId, model: r.resolvedModel, async: r.isAsync }, new Set()) + evText(Array.isArray(r.content) ? r.content.map(c => c.text || '').join('\n') : r.result);
-    case 'AskUserQuestion': return evKv(r.answers, new Set()) || '<div class="muted">no answers</div>';
+    case 'Bash': return (r.stdout || r.stderr ? evOut(r.stdout) + evOut(r.stderr, 'err') : none) + (r.interrupted ? `<div class="err">${esc(TX.interrupted)}</div>` : '');
+    case 'Read': { const f = r.file || {}; return evKv({ [K.file]: f.filePath, [K.lines]: f.numLines != null ? TX.linesOf(f.startLine ?? 1, (f.startLine ?? 1) + f.numLines - 1, f.totalLines ?? '?') : null, [K.type]: r.type }, new Set()) + evCode(f.content && String(f.content).slice(0, 1500) + (String(f.content).length > 1500 ? '\n…' : '')); }
+    case 'Edit': case 'MultiEdit': case 'Write': return `<div>${esc(r.userModified ? TX.appliedChanged : TX.applied)} · <span class="muted">${esc(r.filePath || '')}</span></div>`;
+    case 'Agent': case 'Task': return evKv({ [K.status]: r.status, [K.agent]: r.agentId, [K.model]: r.resolvedModel, [K.async]: r.isAsync }, new Set()) + evText(Array.isArray(r.content) ? r.content.map(c => c.text || '').join('\n') : r.result);
+    case 'AskUserQuestion': return evKv(r.answers, new Set()) || `<div class="muted">${esc(TX.noAnswers)}</div>`;
     default: return evKv(r, new Set(['originalFile', 'structuredPatch']));
   }
 }

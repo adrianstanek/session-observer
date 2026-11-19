@@ -55,44 +55,44 @@ function toolLabel(tool) {
 }
 // [short label, detail text]
 function describe(ev) {
-  const d = ev.data || {}, tool = d.tool_name;
+  const d = ev.data || {}, tool = d.tool_name, X = TX.ev;
   switch (ev.event) {
-    case 'ModelStep': return [d.subagent ? 'Subagent' : 'Model', d.tools && d.tools.length ? 'calls ' + d.tools.map(toolLabel).join(', ') : `${d.stop_reason === 'end_turn' ? 'replied' : 'thought'}${d.tokens?.output ? ' · ' + fmtN(d.tokens.output) + ' output tokens' : ''}`];
-    case 'ModelText': return [d.subagent ? 'Subagent' : 'Model', (d.kind === 'thinking' ? 'thinking: ' : '') + d.text];
-    case 'UserPromptSubmit': return ['You', d.prompt];
-    case 'UserPromptExpansion': return ['Expanded', d.prompt || d.expanded_prompt];
+    case 'ModelStep': return [d.subagent ? TX.subagent : TX.st.model, d.tools && d.tools.length ? X.calls(d.tools.map(toolLabel).join(', ')) : `${d.stop_reason === 'end_turn' ? X.replied : X.thought}${d.tokens?.output ? ' · ' + TX.outTokens(fmtN(d.tokens.output)) : ''}`];
+    case 'ModelText': return [d.subagent ? TX.subagent : TX.st.model, (d.kind === 'thinking' ? X.thinking + ': ' : '') + d.text];
+    case 'UserPromptSubmit': return [TX.st.you, d.prompt];
+    case 'UserPromptExpansion': return [X.expanded, d.prompt || d.expanded_prompt];
     case 'PreToolUse': case 'PostToolUse': {
       let extra = toolArg(d);
-      if (ev.event === 'PostToolUse' && tool === 'AskUserQuestion') { const r = d.tool_response; extra = 'answered: ' + short(typeof r === 'string' ? r : JSON.stringify(r?.answers ?? r), 200); }
+      if (ev.event === 'PostToolUse' && tool === 'AskUserQuestion') { const r = d.tool_response; extra = X.answered + ': ' + short(typeof r === 'string' ? r : JSON.stringify(r?.answers ?? r), 200); }
       return [toolLabel(tool), extra];
     }
-    case 'PostToolUseFailure': return [toolLabel(tool), `failed: ${short(d.error || d.tool_response?.error || toolArg(d), 200)}`];
-    case 'PermissionRequest': return ['Permission', `asked · ${tool || ''} ${short(toolArg(d), 120)}`];
-    case 'PermissionDenied': return ['Denied', `${tool || ''} ${d.reason || ''}`];
-    case 'Notification': return ['Notice', d.message || d.notification_type];
-    case 'MessageDisplay': return ['Message', d.message || d.text];
-    case 'Stop': return ['Turn', d.last_assistant_message || 'done'];
-    case 'StopFailure': return ['Turn failed', d.error || d.reason];
-    case 'SubagentStart': return ['Subagent', `started ${d.agent_type || d.agent_id || ''}`];
-    case 'SubagentStop': return ['Subagent', `finished ${[d.agent_type, short(d.last_assistant_message, 120)].filter(Boolean).join(' — ')}`];
-    case 'TaskCreated': return ['Task', 'created ' + (d.subject || d.task?.subject || d.description || '')];
-    case 'TaskCompleted': return ['Task', 'completed ' + (d.subject || d.task?.subject || '')];
-    case 'SessionStart': return ['Session', ['started', d.source, d.model?.id || d.model].filter(Boolean).join(' · ')];
-    case 'SessionEnd': return ['Session', 'ended ' + (d.reason || '')];
-    case 'PreCompact': return ['Compact', 'compacting · ' + (d.trigger || '')];
-    case 'PostCompact': return ['Compact', 'compacted · ' + (d.trigger || '')];
-    case 'InstructionsLoaded': return ['Memory', d.file_path || d.path || (d.files || []).join(', ')];
-    case 'Elicitation': return ['MCP asks', d.message || d.server_name];
-    case 'ElicitationResult': return ['You', 'answered MCP: ' + (d.action || JSON.stringify(d.content || ''))];
-    case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? 'Model switch' : 'Model switched', `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
+    case 'PostToolUseFailure': return [toolLabel(tool), `${X.failed}: ${short(d.error || d.tool_response?.error || toolArg(d), 200)}`];
+    case 'PermissionRequest': return [X.permission, `${X.asked} · ${tool || ''} ${short(toolArg(d), 120)}`];
+    case 'PermissionDenied': return [X.denied, `${tool || ''} ${d.reason || ''}`];
+    case 'Notification': return [TX.cat.notification, d.message || d.notification_type];
+    case 'MessageDisplay': return [X.message, d.message || d.text];
+    case 'Stop': return [X.turn, d.last_assistant_message || X.done];
+    case 'StopFailure': return [X.turnFailed, d.error || d.reason];
+    case 'SubagentStart': return [TX.subagent, `${X.started} ${d.agent_type || d.agent_id || ''}`];
+    case 'SubagentStop': return [TX.subagent, `${X.finished} ${[d.agent_type, short(d.last_assistant_message, 120)].filter(Boolean).join(' — ')}`];
+    case 'TaskCreated': return [TX.cat.task, X.created + ' ' + (d.subject || d.task?.subject || d.description || '')];
+    case 'TaskCompleted': return [TX.cat.task, X.completed + ' ' + (d.subject || d.task?.subject || '')];
+    case 'SessionStart': return [X.session, [X.started, d.source, d.model?.id || d.model].filter(Boolean).join(' · ')];
+    case 'SessionEnd': return [X.session, X.ended + ' ' + (d.reason || '')];
+    case 'PreCompact': return [TX.cat.compact, X.compacting + ' · ' + (d.trigger || '')];
+    case 'PostCompact': return [TX.cat.compact, X.compacted + ' · ' + (d.trigger || '')];
+    case 'InstructionsLoaded': return [X.memory, d.file_path || d.path || (d.files || []).join(', ')];
+    case 'Elicitation': return [X.mcpAsks, d.message || d.server_name];
+    case 'ElicitationResult': return [TX.st.you, X.answeredMcp + ': ' + (d.action || JSON.stringify(d.content || ''))];
+    case 'PreModelSwitch': case 'PostModelSwitch': return [ev.event === 'PreModelSwitch' ? X.modelSwitch : X.modelSwitched, `${d.from_model || '?'} → ${d.to_model || '?'}${d.source ? ' · ' + d.source : ''}`];
     case 'CwdChanged': return ['cwd', d.old_cwd || d.new_cwd ? `${d.old_cwd || '?'} → ${d.new_cwd || '?'}` : d.cwd];
-    case 'FileChanged': return ['File', `${d.event || 'changed'} ${d.file_path || d.path || ''}`];
-    case 'ConfigChange': return ['Config', `changed ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
-    case 'DirectoryAdded': return ['Directory', `added ${d.directory || ''}${d.source ? ' · via ' + spaced(d.source) : ''}`];
-    case 'WorktreeCreate': return ['Worktree', 'created ' + (d.name || '')];
-    case 'WorktreeRemove': return ['Worktree', 'removed ' + (d.worktree_path || '')];
-    case 'Setup': return ['Setup', d.trigger || ''];
-    case 'TeammateIdle': return ['Teammate', `idle ${[d.teammate_name, d.team_name && `(${d.team_name})`].filter(Boolean).join(' ')}`];
+    case 'FileChanged': return [X.file, `${d.event || X.changed} ${d.file_path || d.path || ''}`];
+    case 'ConfigChange': return [X.config, `${X.changed} ${spaced(d.source || 'settings')}${d.file_path ? ' · ' + d.file_path : ''}`];
+    case 'DirectoryAdded': return [X.directory, `${X.added} ${d.directory || ''}${d.source ? ` · ${X.via} ` + spaced(d.source) : ''}`];
+    case 'WorktreeCreate': return [X.worktree, X.created + ' ' + (d.name || '')];
+    case 'WorktreeRemove': return [X.worktree, X.removed + ' ' + (d.worktree_path || '')];
+    case 'Setup': return [X.setup, d.trigger || ''];
+    case 'TeammateIdle': return [X.teammate, `${X.idle} ${[d.teammate_name, d.team_name && `(${d.team_name})`].filter(Boolean).join(' ')}`];
     default: return [ev.event, ''];
   }
 }

@@ -1,5 +1,5 @@
 // Language / tool detection for the dashboard's badges (server/dashboard/tech.js). The dashboard's scripts are
-// plain browser scripts, so this evaluates tech.js after core.js, the one file it takes helpers from.
+// plain browser scripts, so this evaluates tech.js after core.js (and the English text table core.js reads).
 // Zero dependencies — run with `node --test test/tech.test.js`.
 'use strict';
 const { test } = require('node:test');
@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const src = f => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', f), 'utf8');
-const T = new Function(src('core.js') + '\n' + src('tech.js') + '\nreturn { TECH, TECH_SHAPE, TECH_EXT, TECH_CMD, TECH_FILE, fileTech, nameTech, shellSegments, progWord, techsOf, techOf, techMark, techIcon, techIcons };')();
+const T = new Function(src('i18n.js') + '\n' + src('i18n-en.js') + '\n' + src('core.js') + '\n' + src('tech.js') + '\nreturn { TECH, TECH_SHAPE, TECH_EXT, TECH_CMD, TECH_FILE, fileTech, nameTech, shellSegments, progWord, techsOf, techOf, techMark, techIcon, techIcons };')();
 
 const sh = (command, tool = 'Bash') => T.techOf(tool, { command });
 const file = (file_path, tool = 'Edit') => T.techOf(tool, { file_path });

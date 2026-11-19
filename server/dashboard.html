@@ -10,51 +10,63 @@
 </head>
 <body>
 <header class="topbar">
-  <h1><svg class="logo" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c2d4d"/><stop offset="1" stop-color="#0e0f11"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#logoGrad)"/><path d="M7 32C14 20 22 15 32 15s18 5 25 17c-7 12-15 17-25 17S14 44 7 32z" fill="none" stroke="#e6e7ea" stroke-width="3.5" stroke-linejoin="round"/><circle cx="32" cy="32" r="10" fill="none" stroke="#2d3036" stroke-width="4.5"/><circle cx="32" cy="32" r="10" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="40 62.8" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="4" fill="#fb923c"/></svg>Session Observer<span class="ver" id="ver" title="Version of the running server. It keeps running after a plugin update until it is restarted, so an older number here means an old server."></span></h1>
-  <span class="pill" title="Live connection to the local server"><span class="dot" id="conn"></span><span id="connTxt">connecting…</span></span>
+  <h1><svg class="logo" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c2d4d"/><stop offset="1" stop-color="#0e0f11"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#logoGrad)"/><path d="M7 32C14 20 22 15 32 15s18 5 25 17c-7 12-15 17-25 17S14 44 7 32z" fill="none" stroke="#e6e7ea" stroke-width="3.5" stroke-linejoin="round"/><circle cx="32" cy="32" r="10" fill="none" stroke="#2d3036" stroke-width="4.5"/><circle cx="32" cy="32" r="10" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="40 62.8" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="4" fill="#fb923c"/></svg>Session Observer<span class="ver" id="ver" data-t-title="verTitle" title="Version of the running server. It keeps running after a plugin update until it is restarted, so an older number here means an old server."></span></h1>
+  <span class="pill" data-t-title="connTitle" title="Live connection to the local server"><span class="dot" id="conn"></span><span id="connTxt" data-t="connecting">connecting…</span></span>
   <span class="grow"></span>
-  <span class="pill" id="hdrBusy" title="Sessions currently in the middle of a turn"></span>
-  <button id="pause" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
+  <span class="pill" id="hdrBusy" data-t-title="busyTitle" title="Sessions currently in the middle of a turn"></span>
+  <button id="pause" data-t-title="freezeTitle" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
   <button id="theme">Theme: auto</button>
-  <button id="clearLog" title="Delete the local event log">Clear log</button>
+  <select id="lang" data-t-title="language" data-t-aria="language" title="Language" aria-label="Language"></select>
+  <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
 </header>
 
 <section class="panel filters">
-  <label>Range
+  <label><span data-t="range">Range</span>
     <select id="range">
-      <option value="3600000">last 1 h</option>
-      <option value="21600000">last 6 h</option>
-      <option value="86400000">last 24 h</option>
-      <option value="604800000">last 7 d</option>
-      <option value="0">everything</option>
+      <option value="3600000" data-t="range1h">last 1 h</option>
+      <option value="21600000" data-t="range6h">last 6 h</option>
+      <option value="86400000" data-t="range24h">last 24 h</option>
+      <option value="604800000" data-t="range7d">last 7 d</option>
+      <option value="0" data-t="rangeAll">everything</option>
     </select>
   </label>
-  <label class="search">Search<input type="search" id="q" placeholder="prompts, replies, commands, paths, errors…"></label>
-  <label title="Which part of the map: Files, Shell, Git, MCP…">Tool group<select id="station"></select></label>
-  <label class="check"><input type="checkbox" id="problems"> only problems</label>
-  <button id="clearFilters" style="margin-bottom:1px">Reset filters</button>
+  <label class="search"><span data-t="search">Search</span><input type="search" id="q" data-t-ph="searchPh" placeholder="prompts, replies, commands, paths, errors…"></label>
+  <label data-t-title="groupTitle" title="Which part of the map: Files, Shell, Git, MCP…"><span data-t="group">Tool group</span><select id="station"></select></label>
+  <label class="check"><input type="checkbox" id="problems"> <span data-t="onlyProblems">only problems</span></label>
+  <button id="clearFilters" style="margin-bottom:1px" data-t="resetFilters">Reset filters</button>
 </section>
 
 <section class="panels" id="panels">
   <aside class="panel" id="sessions"></aside>
   <main class="panel stage" id="center">
-    <div class="layouts" id="layouts" role="tablist" aria-label="View"></div>
+    <div class="layouts" id="layouts" role="tablist" aria-label="View" data-t-aria="view"></div>
     <div class="map-wrap"><div id="mid"></div><div id="alt"></div></div>
     <div class="cats" id="cats"></div>
     <div class="replay">
-      <button id="play">▶ Replay</button>
+      <button id="play" data-t="replayBtn">▶ Replay</button>
       <div id="track"><div class="rail"></div><div id="ticks"></div><div class="fill" id="fill"></div><div class="thumb" id="thumb"></div></div>
       <div id="rlabel"></div>
-      <select id="speed" title="Replay speed">
+      <select id="speed" title="Replay speed" data-t-title="speedTitle">
         <option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option>
       </select>
-      <button id="live" class="on">Live</button>
+      <button id="live" class="on" data-t="liveBtn">Live</button>
     </div>
   </main>
   <aside class="panel" id="detail"></aside>
 </section>
 
 <!-- Plain scripts sharing one global scope (no modules, no build). Order matters: a file uses names from the ones above it. -->
+<script src="dashboard/i18n.js"></script>
+<script src="dashboard/i18n-en.js"></script>
+<script src="dashboard/i18n-pl.js"></script>
+<script src="dashboard/i18n-es.js"></script>
+<script src="dashboard/i18n-it.js"></script>
+<script src="dashboard/i18n-de.js"></script>
+<script src="dashboard/i18n-pt.js"></script>
+<script src="dashboard/i18n-fr.js"></script>
+<script src="dashboard/i18n-ja.js"></script>
+<script src="dashboard/i18n-zh.js"></script>
+<script src="dashboard/i18n-ko.js"></script>
 <script src="dashboard/core.js"></script>
 <script src="dashboard/tech.js"></script>
 <script src="dashboard/model.js"></script>
