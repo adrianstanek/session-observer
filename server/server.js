@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
 const HOST = process.env.OBSERVER_HOST || '127.0.0.1'; // local only by default
@@ -21,6 +22,60 @@ const ASSETS = path.join(__dirname, 'dashboard'); // the page's stylesheet and s
 const ASSET_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 // this server's version, shown in the dashboard header: the server outlives plugin updates until it is restarted
 const VERSION = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '.claude-plugin', 'plugin.json'), 'utf8')).version || null; } catch { return null; } })();
+
+// ---------- request guard ----------
+// The dashboard shows prompts, file contents and command output, so only pages served by this server may use it.
+// Host: a web page that points its own domain at 127.0.0.1 (DNS rebinding) sends that domain as Host, and is refused.
+// Origin: a page on another site can still send a simple POST without a preflight; a request with a foreign Origin is
+// refused, and a POST must carry this server's own Origin.
+// Loopback names are always allowed; OBSERVER_HOST (when it names one address) and OBSERVER_ALLOWED_HOSTS add more.
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1']);
+const WILDCARD = new Set(['0.0.0.0', '::', '']);
+const ALLOWED_NAMES = new Set([
+  ...LOOPBACK,
+  ...(WILDCARD.has(HOST) ? [] : [HOST.toLowerCase()]),
+  ...String(process.env.OBSERVER_ALLOWED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean),
+]);
+function hostOk(host) {
+  const m = /^(?:\[([0-9a-f:.]+)\]|([^:[\]]+))(?::(\d+))?$/i.exec(String(host || ''));
+  if (!m) return false;
+  const name = (m[1] || m[2]).toLowerCase(), port = m[3] ? Number(m[3]) : 80;
+  return ALLOWED_NAMES.has(name) && port === PORT;
+}
+function originOk(origin) {
+  try { const u = new URL(origin); return u.protocol === 'http:' && hostOk(u.host); } catch { return false; }
+}
+// Another machine (possible only when OBSERVER_HOST is not loopback) can send any Host it likes, so the Host check
+// doesn't stop it: a peer that isn't this machine needs OBSERVER_TOKEN, and is refused while no token is set.
+// The token comes as "Authorization: Bearer <token>" or as the cookie that opening /?token=<token> once sets.
+const TOKEN = String(process.env.OBSERVER_TOKEN || '');
+const loopbackPeer = req => /^(?:::ffff:)?127\.|^::1$/.test(req.socket.remoteAddress || '');
+const digest = s => crypto.createHash('sha256').update(String(s)).digest();
+const tokenOk = t => !!TOKEN && t != null && crypto.timingSafeEqual(digest(t), digest(TOKEN)); // constant time
+function requestToken(req) {
+  const auth = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+  if (auth) return auth[1];
+  const c = /(?:^|;\s*)so_token=([^;]+)/.exec(req.headers.cookie || '');
+  try { return c ? decodeURIComponent(c[1]) : null; } catch { return null; }
+}
+// sent with every response: no MIME sniffing, no framing (clickjacking), no referrer, no cross-site embedding
+const BASE_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'no-referrer',
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+};
+// The page's Content-Security-Policy: scripts only from this server, plus the page's own inline scripts by hash.
+// The HTML parser turns CRLF into LF before the browser hashes a script, so the hash is taken over LF text.
+function pageCsp(html) {
+  const hashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+    .map(m => `'sha256-${crypto.createHash('sha256').update(m[1].replace(/\r\n?/g, '\n'), 'utf8').digest('base64')}'`);
+  return [
+    "default-src 'none'", `script-src 'self' ${hashes.join(' ')}`.trim(), "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:", "connect-src 'self'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
+  ].join('; ');
+}
 
 // ---------- classification ----------
 const QUESTION_TOOLS = new Set(['AskUserQuestion']);
@@ -630,10 +685,28 @@ function allEvents(since) {
 }
 
 const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  for (const [k, v] of Object.entries(BASE_HEADERS)) res.setHeader(k, v);
+  if (!hostOk(req.headers.host)) return json(res, 403, { error: 'forbidden host' });
+  const origin = req.headers.origin;
+  if (origin !== undefined && !originOk(origin)) return json(res, 403, { error: 'forbidden origin' });
+  if (req.method !== 'GET' && req.method !== 'HEAD' && !origin) return json(res, 403, { error: 'origin required' });
+  // a browser marks a request another site's page makes; a link from another site (a navigation) may still open the page
+  if (req.headers['sec-fetch-site'] === 'cross-site' && req.headers['sec-fetch-mode'] !== 'navigate') return json(res, 403, { error: 'cross-site request' });
+  // a fixed base: the Host header is never parsed as part of the URL (a malformed one used to crash the server)
+  let url; try { url = new URL(req.url, 'http://localhost'); } catch { return json(res, 400, { error: 'bad request' }); }
+  if (!loopbackPeer(req)) {
+    if (!TOKEN) return json(res, 403, { error: 'access from another machine needs OBSERVER_TOKEN' });
+    const given = url.searchParams.get('token');
+    if (given != null && tokenOk(given)) { // trade the URL token for a cookie, and drop it from the address bar
+      res.writeHead(302, { Location: '/', 'Set-Cookie': `so_token=${encodeURIComponent(TOKEN)}; HttpOnly; SameSite=Strict; Path=/` });
+      return res.end();
+    }
+    if (!tokenOk(requestToken(req))) return json(res, 401, { error: 'token required' });
+  }
   if (url.pathname === '/' || url.pathname === '/index.html') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-    return fs.createReadStream(DASHBOARD).pipe(res);
+    let html; try { html = fs.readFileSync(DASHBOARD, 'utf8'); } catch { return json(res, 500, { error: 'dashboard missing' }); }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': pageCsp(html) });
+    return res.end(html);
   }
   // the page's own files. Only a bare file name with a known extension matches, so a request can't leave the folder.
   const asset = /^[/]dashboard[/]([A-Za-z0-9_-]+)([.]css|[.]js)$/.exec(url.pathname);
@@ -681,7 +754,10 @@ const server = http.createServer((req, res) => {
 });
 
 let initialLoadDone = false;
-fs.mkdirSync(DATA_DIR, { recursive: true });
+// the log holds prompts, file contents and command output: readable by its owner only (no effect on Windows ACLs)
+fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+try { fs.chmodSync(DATA_DIR, 0o700); } catch { /* ignore */ }
+try { fs.chmodSync(LOG_FILE, 0o600); } catch { /* not there yet */ }
 readNew();
 for (const t of transcriptTimers.values()) clearTimeout(t);
 transcriptTimers.clear();
@@ -696,4 +772,11 @@ server.on('error', err => {
   if (err.code === 'EADDRINUSE') process.exit(0); // another instance already serves the dashboard
   console.error(err); process.exit(1);
 });
-server.listen(PORT, HOST, () => console.log(`Session Observer → http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));
+server.listen(PORT, HOST, () => {
+  console.log(`Session Observer → http://localhost:${PORT}`);
+  if (!LOOPBACK.has(HOST.toLowerCase())) {
+    console.warn(`Listening on ${WILDCARD.has(HOST) ? `every network interface (${HOST || '0.0.0.0'})` : HOST}:${PORT}, not only this machine.`);
+    console.warn(TOKEN ? 'Other machines need OBSERVER_TOKEN; the token travels over plain HTTP, so use a trusted network.'
+      : 'Other machines are refused until OBSERVER_TOKEN is set.');
+  }
+});
