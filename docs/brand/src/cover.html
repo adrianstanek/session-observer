@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cover: screenshot</title>
+<style>
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI Variable Display", "Segoe UI", Inter, sans-serif; color: #e6e7ea;
+    background:
+      radial-gradient(900px 500px at 0% 0%, #1c2d4d 0%, transparent 60%),
+      radial-gradient(700px 500px at 100% 100%, #2a1f45 0%, transparent 60%),
+      #0e0f11;
+    position: relative;
+  }
+  body::before { content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+    background-size: 32px 32px; mask-image: linear-gradient(90deg, #000 0%, transparent 70%); }
+  .left { position: absolute; left: 72px; top: 0; bottom: 0; width: 470px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand img { width: 64px; height: 64px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; color: #b9bec7; }
+  .live i { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
+  h1 { margin: 0; font-size: 64px; line-height: 1.02; letter-spacing: -.025em; font-weight: 700; }
+  p { margin: 0; font-size: 25px; line-height: 1.35; color: #b9bec7; }
+  p b { color: #e6e7ea; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid #2d3036; border-radius: 999px; background: #17181bcc; font-size: 15px; color: #b9bec7; }
+  .chip i { width: 9px; height: 9px; border-radius: 2px; }
+  .shot { position: absolute; left: 590px; top: 70px; width: 820px; height: 500px; border-radius: 14px; overflow: hidden;
+    border: 1px solid #3a3e46; box-shadow: 0 40px 80px #000a, 0 0 0 6px #ffffff06;
+    transform: perspective(1800px) rotateY(-13deg) rotateX(3deg); transform-origin: left center; }
+  .shot img { position: absolute; width: 1240px; left: -250px; top: -100px; }
+</style></head>
+<body>
+  <div class="left">
+    <div class="brand"><img src="icon-eye.svg" alt=""><span class="live"><i></i>live · local · zero deps</span></div>
+    <h1>Session<br>Observer</h1>
+    <p>See <b>everything Claude Code does</b> in a session, live, on one local dashboard.</p>
+    <div class="chips">
+      <span class="chip"><i style="background:#2dd4bf"></i>Prompts</span>
+      <span class="chip"><i style="background:#a78bfa"></i>Model steps</span>
+      <span class="chip"><i style="background:#60a5fa"></i>Tools</span>
+      <span class="chip"><i style="background:#fbbf24"></i>Subagents</span>
+      <span class="chip"><i style="background:#fb923c"></i>MCP</span>
+      <span class="chip"><i style="background:#22d3ee"></i>Context</span>
+    </div>
+  </div>
+  <!-- the README Route screenshot (demo data), copied from PR 15 -->
+  <div class="shot"><img src="route.jpg" alt=""></div>
+</body></html>

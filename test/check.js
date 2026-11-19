@@ -40,7 +40,8 @@ const html = fs.readFileSync(path.join(ROOT, 'server', 'dashboard.html'), 'utf8'
   try { new Function(m[1]); } catch (e) { fail(`server/dashboard.html: inline script #${i + 1} does not parse (${e.message})`); }
 });
 
-const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]);
+// data: URIs (the inline tab icon) are not files
+const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]).filter(r => !r.startsWith('data:'));
 for (const r of refs) if (!fs.existsSync(path.join(ROOT, 'server', r))) fail(`server/dashboard.html: ${r} does not exist`);
 for (const f of fs.readdirSync(path.join(ROOT, 'server', 'dashboard'))) {
   if (!refs.includes('dashboard/' + f)) fail(`server/dashboard/${f}: not loaded by server/dashboard.html`);
