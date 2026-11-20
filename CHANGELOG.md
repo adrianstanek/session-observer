@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/radekwojpl2/session-observer/compare/v0.6.1...v0.7.0) (2026-11-20)
+
+
+### Features
+
+* dashboard in ten languages ([7f6346d](https://github.com/radekwojpl2/session-observer/commit/7f6346df95019564dcf9d3e3f5f37f89b53a676d))
+* dashboard in ten languages ([f9f0456](https://github.com/radekwojpl2/session-observer/commit/f9f04567d356aa4aa8511b794c3c21da1b89654f))
+
+
+### Bug Fixes
+
+* **i18n:** correct grammar and keep text about the user gender-neutral ([b2cea2f](https://github.com/radekwojpl2/session-observer/commit/b2cea2fa87037f632d3eaf7cadfb741a082b5f0f))
+
 ## [0.6.1](https://github.com/radekwojpl2/session-observer/compare/v0.6.0...v0.6.1) (2026-11-19)
 
 
