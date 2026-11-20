@@ -1,0 +1,227 @@
+// Model steps and token usage, read from each session's transcript.
+//
+// Hooks don't see individual model calls, so each assistant API response in the transcript (and in the subagent
+// transcripts) becomes a synthetic "ModelStep" event, and every block of text or thinking it wrote a "ModelText".
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const { CONTEXT_WINDOW } = require('./config');
+const { FileTail } = require('./file-tail');
+const { ingest, sessionSummary } = require('./sessions');
+const { broadcast } = require('./live-updates');
+const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('./token-usage');
+
+const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
+const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
+const READ_DELAY_MS = 700;            // a burst of hook events triggers one read
+
+const transcriptTails = new Map();    // transcript file → FileTail
+const seenMessageIds = new Map();     // session id → Set(message id)
+const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
+const scheduledReads = new Map();     // session id → timer
+
+// takes an event into its session and, unless it came from the transcript itself, reads the transcript soon after
+function ingestEvent(event) {
+  const session = ingest(event);
+  if (event.event !== 'ModelStep' && session.transcript_path) scheduleTranscriptRead(session);
+  return session;
+}
+
+function scheduleTranscriptRead(session, delay = READ_DELAY_MS) {
+  if (scheduledReads.has(session.id)) return;
+  scheduledReads.set(session.id, setTimeout(() => {
+    scheduledReads.delete(session.id);
+    try { readTranscripts(session); } catch { /* ignore */ }
+  }, delay));
+}
+
+function cancelScheduledReads() {
+  for (const timer of scheduledReads.values()) clearTimeout(timer);
+  scheduledReads.clear();
+}
+
+// the folder a transcript keeps its subagents' transcripts in: <transcript>/subagents/
+const subagentDirOf = transcriptPath =>
+  path.join(path.dirname(transcriptPath), path.basename(transcriptPath, '.jsonl'), 'subagents');
+
+function transcriptFilesOf(session) {
+  const mainTranscript = session.transcript_path;
+  const files = [{ file: mainTranscript, isSubagent: false }];
+  const subagentDir = subagentDirOf(mainTranscript);
+  try {
+    for (const name of fs.readdirSync(subagentDir)) {
+      if (name.endsWith('.jsonl')) files.push({ file: path.join(subagentDir, name), isSubagent: true });
+    }
+  } catch { /* no subagents */ }
+  return files;
+}
+
+function tailOf(file) {
+  let tail = transcriptTails.get(file);
+  if (!tail) {
+    tail = new FileTail(file);
+    transcriptTails.set(file, tail);
+  }
+  return tail;
+}
+
+function seenIdsOf(sessionId) {
+  let seen = seenMessageIds.get(sessionId);
+  if (!seen) {
+    seen = new Set();
+    seenMessageIds.set(sessionId, seen);
+  }
+  return seen;
+}
+
+const contentBlocks = message => (Array.isArray(message.content) ? message.content : []);
+
+// the tool calls in one transcript line of a response: name, and the tool_use id the hooks report as tool_use_id
+const toolCallsOf = message => contentBlocks(message)
+  .filter(block => block && block.type === 'tool_use')
+  .map(block => ({ name: block.name, id: block.id || null }));
+
+const isSubagentRow = (row, isSubagentFile) => isSubagentFile || !!row.isSidechain;
+
+// what the model wrote: one ModelText per finished text / thinking block (thinking is often stored empty)
+function modelTextEvents(session, row, message, isSubagentFile) {
+  const events = [];
+  for (const block of contentBlocks(message)) {
+    const raw = block && (block.type === 'text' ? block.text : block.type === 'thinking' ? block.thinking : null);
+    const text = raw ? String(raw).trim() : '';
+    if (!text) continue;
+    events.push({
+      ts: row.timestamp || new Date().toISOString(), event: 'ModelText', session_id: session.id, synthetic: true,
+      data: {
+        kind: block.type,
+        text: text.length > MODEL_TEXT_MAX ? text.slice(0, MODEL_TEXT_MAX) + '…' : text,
+        msg_id: message.id || null,
+        subagent: isSubagentRow(row, isSubagentFile),
+        agent_id: row.agentId || null,
+      },
+    });
+  }
+  return events;
+}
+
+function modelStepEvent(session, row, message, toolCalls, isSubagentFile) {
+  const usage = message.usage;
+  return {
+    ts: row.timestamp || new Date().toISOString(),
+    event: 'ModelStep',
+    session_id: session.id,
+    synthetic: true,
+    data: {
+      model: message.model, stop_reason: message.stop_reason, subagent: isSubagentRow(row, isSubagentFile),
+      agent_id: row.agentId || null, msg_id: message.id || null,
+      tools: toolCalls.map(call => call.name), tool_ids: toolCalls.map(call => call.id),
+      tokens: {
+        input: usage.input_tokens || 0, output: usage.output_tokens || 0,
+        cache_read: usage.cache_read_input_tokens || 0, cache_write: usage.cache_creation_input_tokens || 0,
+        context: contextTokensOf(usage),
+      },
+    },
+  };
+}
+
+function addUsage(session, message) {
+  const usage = message.usage, totals = session.usage;
+  totals.input += usage.input_tokens || 0;
+  totals.output += usage.output_tokens || 0;
+  totals.cache_read += usage.cache_read_input_tokens || 0;
+  totals.cache_write += usage.cache_creation_input_tokens || 0;
+  totals.turns++;
+  if (message.model) totals.models[message.model] = (totals.models[message.model] || 0) + 1;
+}
+
+// how full the main agent's context window is after this response
+function contextWindowUse(session, row, message) {
+  const tokens = contextTokensOf(message.usage);
+  const window = hasOneMillionWindow(message.model || session.model) || tokens > CONTEXT_WINDOW ? ONE_MILLION_WINDOW : CONTEXT_WINDOW;
+  return { tokens, window, pct: Math.min(1, tokens / window), ts: row.timestamp };
+}
+
+function rememberStep(messageId, step) {
+  stepByMessageId.set(messageId, step);
+  if (stepByMessageId.size > REMEMBERED_STEPS_MAX) stepByMessageId.delete(stepByMessageId.keys().next().value);
+}
+
+// a later line of a response we already have: tool calls usually arrive here, so add them to its ModelStep and send
+// that step again (same seq: the dashboard updates it in place)
+function addLateToolCalls(messageId, toolCalls, fresh) {
+  const step = stepByMessageId.get(messageId);
+  if (!step) return;
+  const knownIds = step.data.tool_ids;
+  const newCalls = toolCalls.filter(call => !knownIds.includes(call.id));
+  if (!newCalls.length) return;
+  for (const call of newCalls) {
+    step.data.tools.push(call.name);
+    knownIds.push(call.id);
+  }
+  fresh.push(step);
+}
+
+function ingestAll(events, fresh) {
+  for (const event of events) {
+    ingestEvent(event);
+    fresh.push(event);
+  }
+}
+
+// One API response spans several lines (one per content block): its first line becomes the ModelStep, and every
+// non-empty text / thinking block, on whichever line it comes, also becomes a ModelText.
+function readTranscriptRow(session, row, isSubagentFile, seen, fresh) {
+  const message = row.message;
+  if (!message || message.role !== 'assistant' || !message.usage) return;
+  const messageId = message.id || row.uuid;
+  // only responses from the logged part of the session: after "Clear log" the log restarts at the next hook event,
+  // and the transcript's earlier history must not come back without its prompts and tools
+  if (session.started && row.timestamp && row.timestamp < session.started) {
+    if (messageId) seen.add(messageId);
+    return;
+  }
+  const texts = modelTextEvents(session, row, message, isSubagentFile);
+  const toolCalls = toolCallsOf(message);
+  if (messageId && seen.has(messageId)) {
+    addLateToolCalls(messageId, toolCalls, fresh);
+    ingestAll(texts, fresh);
+    return;
+  }
+  if (messageId) seen.add(messageId);
+
+  addUsage(session, message);
+  if (!isSubagentRow(row, isSubagentFile)) session.context = contextWindowUse(session, row, message);
+  const step = modelStepEvent(session, row, message, toolCalls, isSubagentFile);
+  const sessionModel = session.model; // a subagent's step must not change the session's model
+  ingestEvent(step);
+  if (messageId) rememberStep(messageId, step);
+  if (isSubagentFile) session.model = sessionModel;
+  fresh.push(step);
+  ingestAll(texts, fresh);
+}
+
+function readTranscripts(session) {
+  if (!session.transcript_path) return;
+  const seen = seenIdsOf(session.id);
+  const fresh = []; // events to push to the open pages
+  for (const { file, isSubagent } of transcriptFilesOf(session)) {
+    for (const line of tailOf(file).readNewLines()) {
+      if (!line) continue;
+      let row;
+      try { row = JSON.parse(line); } catch { continue; }
+      readTranscriptRow(session, row, isSubagent, seen, fresh);
+    }
+  }
+  for (const event of fresh) broadcast('event', event);
+  broadcast('session', sessionSummary(session));
+}
+
+function resetTranscriptState() {
+  seenMessageIds.clear();
+  stepByMessageId.clear();
+  transcriptTails.clear();
+}
+
+module.exports = {
+  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, subagentDirOf,
+};
