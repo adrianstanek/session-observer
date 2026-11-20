@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/radekwojpl2/session-observer/compare/v0.7.0...v0.7.1) (2026-11-20)
+
+
+### Code Changes
+
+* readable names, smaller files and functions ([65317a8](https://github.com/radekwojpl2/session-observer/commit/65317a8fa5217e8940744b4eb6540244b36ada5b))
+
 ## [0.7.0](https://github.com/radekwojpl2/session-observer/compare/v0.6.1...v0.7.0) (2026-11-20)
 
 
