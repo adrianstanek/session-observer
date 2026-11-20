@@ -7,7 +7,7 @@
 // Loopback names are always allowed; OBSERVER_HOST (when it names one address) and OBSERVER_ALLOWED_HOSTS add more.
 'use strict';
 const crypto = require('crypto');
-const { PORT, HOST, TOKEN, EXTRA_ALLOWED_HOSTS } = require('./config');
+const { PORT, HOST, TOKEN, EXTRA_ALLOWED_HOSTS } = require('../../building-blocks/config');
 
 const LOOPBACK_NAMES = new Set(['localhost', '127.0.0.1', '::1']);
 const WILDCARD_ADDRESSES = new Set(['0.0.0.0', '::', '']);

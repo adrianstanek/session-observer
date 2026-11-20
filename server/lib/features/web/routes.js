@@ -2,15 +2,16 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { PORT, LOG_FILE, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('./config');
+const { PORT, LOG_FILE, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
 const guard = require('./request-guard');
-const { sessions, sessionSummary, eventsOfAllSessions } = require('./sessions');
-const { sessionContext } = require('./context/session-context');
-const { addClient, broadcast } = require('./live-updates');
+const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/sessions');
+const { sessionContext } = require('../context/session-context');
+const { addClient, broadcast } = require('../../building-blocks/live-updates');
 
 const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
-// only a bare file name with a known extension matches, so a request can't leave the folder
-const ASSET_PATH = /^[/]dashboard[/]([A-Za-z0-9_-]+)([.]css|[.]js)$/;
+// a file in the dashboard folder or its subfolders: every part of the path is a plain name (letters, digits, - and _,
+// never a dot), and the file has a known extension, so a request can't leave the folder
+const ASSET_PATH = /^[/]dashboard[/]((?:[A-Za-z0-9_-]+[/])*[A-Za-z0-9_-]+)([.]css|[.]js)$/;
 
 function sendJson(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -62,8 +63,8 @@ function serveDashboardPage(response) {
   response.end(html);
 }
 
-function serveDashboardAsset(response, [, name, extension]) {
-  fs.readFile(path.join(DASHBOARD_ASSETS_DIR, name + extension), (error, body) => {
+function serveDashboardAsset(response, [, relativePath, extension]) {
+  fs.readFile(path.join(DASHBOARD_ASSETS_DIR, ...relativePath.split('/')) + extension, (error, body) => {
     if (error) return sendError(response, 404, 'not found');
     response.writeHead(200, { 'Content-Type': ASSET_CONTENT_TYPES[extension], 'Cache-Control': 'no-store' });
     response.end(body);

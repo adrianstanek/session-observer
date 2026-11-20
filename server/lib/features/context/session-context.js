@@ -10,7 +10,7 @@ const { readTranscriptRows } = require('./transcript-rows');
 const { systemPromptOf, firstRequestShape } = require('./system-prompt');
 const { sentMessagesOf } = require('./sent-messages');
 const { conversationItems, measuredSize, reportedContextWindow } = require('./conversation-items');
-const { subagentDirOf } = require('../transcript-steps');
+const { subagentDirOf } = require('../sessions/transcript-steps');
 
 const SUBAGENT_TRANSCRIPT = /^agent-([\w-]+)\.jsonl$/;
 

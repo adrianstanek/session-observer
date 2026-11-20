@@ -1,7 +1,7 @@
 // A transcript read in full (the Context view needs every row, not only new ones), and text clipping for the page.
 'use strict';
 const fs = require('fs');
-const { CONTEXT_FIELD_MAX } = require('../config');
+const { CONTEXT_FIELD_MAX } = require('../../building-blocks/config');
 
 const CACHED_FILES_MAX = 50;
 const rowsCache = new Map(); // file → { mtimeMs, size, rows }

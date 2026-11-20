@@ -2,17 +2,17 @@
 // session-observer dashboard server. Zero dependencies.
 // Tails ~/.claude/session-observer/events.jsonl, keeps sessions in memory, reads model steps and token usage from
 // each session's transcript, serves the dashboard and pushes live updates over Server-Sent Events.
-// The parts live in server/lib; this file loads the log and starts listening.
+// The parts live in server/lib (building-blocks/ and features/); this file loads the log and starts listening.
 'use strict';
 const http = require('http');
 const fs = require('fs');
-const { PORT, HOST, DATA_DIR, LOG_FILE, TOKEN } = require('./lib/config');
-const { LOOPBACK_NAMES, WILDCARD_ADDRESSES } = require('./lib/request-guard');
-const { FileTail } = require('./lib/file-tail');
-const { sessions, sessionSummary } = require('./lib/sessions');
-const { broadcast, pingClients, startBroadcasting } = require('./lib/live-updates');
-const transcripts = require('./lib/transcript-steps');
-const { createRequestHandler } = require('./lib/routes');
+const { PORT, HOST, DATA_DIR, LOG_FILE, TOKEN } = require('./lib/building-blocks/config');
+const { LOOPBACK_NAMES, WILDCARD_ADDRESSES } = require('./lib/features/web/request-guard');
+const { FileTail } = require('./lib/building-blocks/file-tail');
+const { sessions, sessionSummary } = require('./lib/features/sessions/sessions');
+const { broadcast, pingClients, startBroadcasting } = require('./lib/building-blocks/live-updates');
+const transcripts = require('./lib/features/sessions/transcript-steps');
+const { createRequestHandler } = require('./lib/features/web/routes');
 
 const LOG_POLL_MS = 400;
 const PING_MS = 15000;

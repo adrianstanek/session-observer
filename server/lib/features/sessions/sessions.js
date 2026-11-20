@@ -1,6 +1,6 @@
 // The sessions held in memory: each one's events and running totals, updated as events arrive.
 'use strict';
-const { MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS } = require('./config');
+const { MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS } = require('../../building-blocks/config');
 const { categoryOf, SUBAGENT_TOOLS } = require('./event-categories');
 
 const sessions = new Map(); // session id → session

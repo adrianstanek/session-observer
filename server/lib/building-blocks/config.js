@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const SERVER_DIR = path.join(__dirname, '..');
+const SERVER_DIR = path.join(__dirname, '..', '..');
 
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
 const HOST = process.env.OBSERVER_HOST || '127.0.0.1'; // local only by default

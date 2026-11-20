@@ -3,7 +3,7 @@
 'use strict';
 const { clipText, clipDeep, contentText, textLength } = require('./transcript-rows');
 const { attachmentRole, attachmentItem } = require('./attachments');
-const { contextTokensOf } = require('../token-usage');
+const { contextTokensOf } = require('../../building-blocks/token-usage');
 
 const contentBlocks = message => (Array.isArray(message.content) ? message.content : []);
 

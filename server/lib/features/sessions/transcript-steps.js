@@ -5,11 +5,11 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { CONTEXT_WINDOW } = require('./config');
-const { FileTail } = require('./file-tail');
+const { CONTEXT_WINDOW } = require('../../building-blocks/config');
+const { FileTail } = require('../../building-blocks/file-tail');
 const { ingest, sessionSummary } = require('./sessions');
-const { broadcast } = require('./live-updates');
-const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('./token-usage');
+const { broadcast } = require('../../building-blocks/live-updates');
+const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
 
 const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
