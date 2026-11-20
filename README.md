@@ -310,8 +310,24 @@ claude plugin validate .           # plugin + marketplace manifests
 CI (`.github/workflows/ci.yml`) runs all of them on every push and PR, on Node 18–24 (Linux)
 and Node 22 on macOS and Windows.
 
+The server is `server/server.js` (it loads the log and starts listening) plus the modules in
+`server/lib/`:
+
+| File | What is in it |
+|---|---|
+| `config.js` | settings from the environment, file paths, the plugin version |
+| `request-guard.js` | allowed Host / Origin, the token for other machines, security headers, the page's CSP |
+| `file-tail.js` | reads the lines a growing file gained since the last read |
+| `event-categories.js` | each event's category |
+| `sessions.js` | sessions in memory: their events and running totals |
+| `transcript-steps.js` | model steps, model text and token usage from the transcripts |
+| `token-usage.js` | context tokens from an API response's usage |
+| `live-updates.js` | Server-Sent Events to the open pages |
+| `routes.js` | request checks, the page and its files, the JSON API |
+| `context/` | `/api/context`: a transcript read in full, its system prompt and listings, attachments, the "as sent" messages |
+
 The dashboard is `server/dashboard.html` (markup only) plus the files in `server/dashboard/`,
-which `server.js` serves as they are. There is still no build step: the scripts are plain
+which the server serves as they are. There is still no build step: the scripts are plain
 browser scripts that share one global scope and load in the order the page lists them, so a
 file can use anything from the files above it. `node test/check.js` fails if the page and the
 folder don't list the same files, or if a script doesn't start with `'use strict';`.
@@ -319,19 +335,30 @@ folder don't list the same files, or if a script doesn't start with `'use strict
 | File | What is in it |
 |---|---|
 | `dashboard.css` | all styles, light and dark |
-| `core.js` | icons, tool groups, event categories, small helpers |
+| `i18n.js`, `i18n-<code>.js` | the language list and helpers, and one text table per language |
+| `core.js` | the chosen language, icons, tool groups, event categories, DOM and storage helpers |
+| `format.js` | escaping, shortening, numbers, times and durations |
 | `tech.js` | language / tool badges: detection and drawing |
-| `model.js` | what events mean: groups and labels, filters, turns, replayable state |
-| `stage.js` | switching Overview / Route / Chat / Context, activity-by-group cards |
+| `events.js` | what an event means: its tool group, badges, label and description |
+| `state.js` | the page state: scope, selection, filters, replay |
+| `turns.js` | events split into turns |
+| `activity.js` | running totals up to the replay cursor |
+| `views.js` | switching Overview / Route / Chat / Context, drawing the view |
 | `chat.js` | Chat view |
-| `route.js` | Route view |
-| `panels.js` | event rows, replay bar, sessions panel |
-| `overview.js` | Overview: tiles, charts, lists |
-| `detail-parts.js` | Details building blocks: sections, colour key, JSON, card parts |
-| `code.js` | syntax colouring, tool input and output |
-| `details.js` | Details panel: tool, event and model-step cards |
-| `context.js` | Context view: one session's whole conversation, from `/api/context` |
-| `app.js` | header, render scheduling, loading and live updates, controls, start-up |
+| `route-model.js`, `route-draw.js`, `route-frame.js` | Route view: stops and lanes, the SVG, the header and turn navigator |
+| `hover.js` | highlights between the views and Details |
+| `event-rows.js` | event rows and the event-type chips |
+| `replay.js` | the replay bar |
+| `sessions-panel.js` | the sessions panel and its hover card |
+| `overview.js`, `overview-charts.js`, `overview-lists.js` | Overview: tiles; turn, context and tool-group charts; file / command / subagent / problem lists |
+| `json-view.js` | JSON and tool output, coloured |
+| `detail-parts.js` | Details building blocks: sections, colour key, card parts |
+| `code-highlight.js` | syntax colouring for shell, Python and JavaScript |
+| `tool-io.js` | a tool's input and output, shaped per tool |
+| `details.js`, `details-panel.js` | Details: the cards per event, and the panel with the turn's event list |
+| `context-*.js` | Context view: data from `/api/context`, cards, the pinned prompt and listings, usage, messages, the view, Copy as Markdown |
+| `controls.js` | header buttons, filters, replay controls, clicks, hovers and keys |
+| `app.js` | header, render scheduling, loading and live updates, start-up |
 
 ### Releasing
 
