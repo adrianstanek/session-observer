@@ -191,17 +191,6 @@ function turnEndContextTokens(turn, limit) {
   return tokens;
 }
 
-const DEFAULT_CONTEXT_WINDOW = 200000;
-const ONE_MILLION_WINDOW = 1000000;
-
-// A context size for a badge: tokens, the change from before, the window and how full it is. The change's colour:
-// shrank (compaction) = down, a big jump (≥ 10% of the window) = big, otherwise up.
-function contextSize(tokens, change, window, changeText) {
-  const tone = change == null ? '' : change < 0 ? 'down' : change >= window * 0.1 ? 'big' : 'up';
-  return { tokens, change, window, fraction: Math.min(1, tokens / window), tone, changeText };
-}
-const signedTokens = change => `${change >= 0 ? '+' : '−'}${formatCompactNumber(Math.abs(change))}`;
-
 // context at the end of this turn, its change from the end of the turn before, and how full the window is
 function turnContextInfo(sessionTurns, turn, limit) {
   const tokens = turnEndContextTokens(turn, limit);
@@ -211,29 +200,4 @@ function turnContextInfo(sessionTurns, turn, limit) {
   const window = tokens > DEFAULT_CONTEXT_WINDOW ? ONE_MILLION_WINDOW : (state.sessions.get(turn.sessionId)?.context?.window || DEFAULT_CONTEXT_WINDOW);
   const change = previous == null ? null : tokens - previous;
   return contextSize(tokens, change, window, change == null ? '' : signedTokens(change));
-}
-
-const percentOf = size => Math.round(size.fraction * 100);
-const contextBadgeTooltip = size => TEXT.ctxEndTip(TEXT.ofPct(formatCompactNumber(size.tokens), formatCompactNumber(size.window), percentOf(size)))
-  + (size.change == null ? '' : '\n' + TEXT.ctxChangeTip(size.changeText, size.change < 0));
-
-// the context badge as HTML (route header, Context view)
-function contextBadgeHtml(size) {
-  if (!size) return '';
-  const change = size.changeText ? `<span class="cd ${size.tone}">${size.changeText}</span>` : '';
-  return `<span class="ctxb" title="${escapeHtml(contextBadgeTooltip(size))}"><span class="cbar"><i style="width:${(size.fraction * 100).toFixed(1)}%"></i></span>`
-    + `<b>${formatCompactNumber(size.tokens)}</b><span class="muted">${percentOf(size)}%</span>${change}</span>`;
-}
-
-// the context badge in SVG, right-aligned at rightX on a turn divider (baseline y)
-function contextBadgeSvg(size, rightX, y) {
-  if (!size) return '';
-  const charWidth = 7.2, barWidth = 46;
-  const changeWidth = size.changeText ? size.changeText.length * charWidth + 16 : 0;
-  const valueText = `${formatCompactNumber(size.tokens)} · ${percentOf(size)}%`, valueWidth = valueText.length * charWidth + 12;
-  const width = 10 + barWidth + 8 + valueWidth + changeWidth, left = rightX - width;
-  return `<g class="ctxs"><title>${escapeHtml(contextBadgeTooltip(size))}</title><rect class="cbg" x="${left}" y="${y - 15}" width="${width}" height="22" rx="11"/>`
-    + `<rect class="ctrk" x="${left + 10}" y="${y - 7}" width="${barWidth}" height="6" rx="3"/><rect class="cfil" x="${left + 10}" y="${y - 7}" width="${(barWidth * size.fraction).toFixed(1)}" height="6" rx="3"/>`
-    + `<text class="cv" x="${left + 10 + barWidth + 8}" y="${y}">${escapeHtml(valueText)}</text>`
-    + (size.changeText ? `<text class="cd ${size.tone}" x="${rightX - 10}" y="${y}" text-anchor="end">${escapeHtml(size.changeText)}</text>` : '') + '</g>';
 }

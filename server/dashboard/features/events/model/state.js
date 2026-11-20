@@ -38,6 +38,8 @@ const anyFilterActive = () => !!(state.group || state.category || state.onlyProb
 // now, or the replayed time
 const displayTime = () => state.replayCursor ?? Date.now();
 const replayLimit = () => state.replayCursor ?? Infinity;
+// how many of the loaded events are shown: all of them live, those up to the replay cursor while replaying
+const shownEventCount = () => (state.replayCursor == null ? state.events.length : Math.min(state.replayIndex, state.events.length));
 const findTurn = key => allTurns.find(turn => turn.key === key);
 const selectedTurn = () => (state.selectedTurnKey ? findTurn(state.selectedTurnKey) : null);
 

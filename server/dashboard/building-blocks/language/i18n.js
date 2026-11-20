@@ -1,8 +1,8 @@
 'use strict';
-// Session Observer dashboard — languages: the text tables (one file per language, i18n-<code>.js) register into
-// TRANSLATIONS, and core.js picks one as TEXT. Text with values in it is a function, so each language writes the whole
-// phrase itself. A new language: one more i18n-<code>.js, one more line in LANGUAGE_NAMES, and the file listed in
-// dashboard.html.
+// Session Observer dashboard — languages: the text tables (one file per language, translations/<code>.js) register
+// into TRANSLATIONS, and selected-language.js picks one as TEXT. Text with values in it is a function, so each language
+// writes the whole phrase itself. A new language: one more translations/<code>.js, one more line in LANGUAGE_NAMES,
+// and the file listed in dashboard.html.
 const TRANSLATIONS = {};
 // the language menu, in this order: each language by its own name
 const LANGUAGE_NAMES = {

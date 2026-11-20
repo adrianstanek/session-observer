@@ -108,3 +108,10 @@ function selectAdjacentTurn(direction) {
   const next = index < 0 ? (direction > 0 ? 0 : turns.length - 1) : Math.max(0, Math.min(turns.length - 1, index + direction));
   selectTurn(turns[next].key);
 }
+
+// the turn a clicked event row / chip / stop belongs to, opened at that event
+function selectTurnOfSeq(seq) {
+  const turn = turnBySeq.get(seq);
+  if (turn) selectTurn(turn.key, seq);
+  return !!turn;
+}

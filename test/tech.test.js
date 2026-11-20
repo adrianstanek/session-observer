@@ -1,5 +1,6 @@
-// Language / tool detection for the dashboard's badges (server/dashboard/tech.js). The dashboard's scripts are
-// plain browser scripts, so this evaluates tech.js after core.js and format.js (and the English text table core.js reads).
+// Language / tool detection for the dashboard's badges (building-blocks/tech-badges.js, and features/events/model/tool-techs.js
+// for a whole tool call). The dashboard's scripts are plain browser scripts, so this evaluates them in the page's order
+// with the building blocks they read (the English text table, formatting, tool groups).
 // Zero dependencies — run with `node --test test/tech.test.js`.
 'use strict';
 const { test } = require('node:test');
@@ -8,7 +9,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const source = file => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', file), 'utf8');
-const SCRIPTS = ['i18n.js', 'i18n-en.js', 'core.js', 'format.js', 'tech.js'];
+const SCRIPTS = [
+  'building-blocks/language/i18n.js', 'building-blocks/language/translations/en.js', 'building-blocks/language/selected-language.js',
+  'building-blocks/format.js', 'building-blocks/tech-badges.js', 'features/events/model/tool-groups.js', 'features/events/model/tool-techs.js',
+];
 const EXPORTS = 'TECH_BADGES, BADGE_SHAPES, TECH_BY_EXTENSION, TECH_BY_PROGRAM, TECH_BY_FILE_NAME, techOfFile, techOfProgram, splitShellCommands, '
   + 'programOfCommand, techsOfToolCall, firstTechOfToolCall, techBadgeMark, techBadgeIcon, techBadgeIcons';
 const dashboard = new Function(SCRIPTS.map(source).join('\n') + `\nreturn { ${EXPORTS} };`)();

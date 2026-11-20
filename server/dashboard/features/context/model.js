@@ -57,7 +57,7 @@ const isDeferredToolLoaded = (context, tool) => tool.loaded || !!context.tools?.
 // "mcp__server__tool" → [server, tool]
 const splitMcpToolName = name => { const match = /^mcp__(.+?)__(.+)$/.exec(name); return match ? [match[1], match[2]] : null; };
 
-// a context size for a badge (see contextSize in route-model.js)
+// a context size for a badge (see contextSize in features/events/model/context-window.js)
 function contextSizeInfo(tokens, change) {
   const data = contextView.data;
   const window = data?.window || (tokens > DEFAULT_CONTEXT_WINDOW ? ONE_MILLION_WINDOW : (data?.context?.window || DEFAULT_CONTEXT_WINDOW));
@@ -165,3 +165,5 @@ function focusContextMessage(seqs, ts) {
   void target.offsetWidth; // restart the flash animation
   target.classList.add('flash');
 }
+
+let lastContextClickAt = 0; // a click inside the Context view picks a turn where you already are: don't jump to it

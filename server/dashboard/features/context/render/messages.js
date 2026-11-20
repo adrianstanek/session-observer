@@ -4,8 +4,6 @@
 // between (prompts, tool results, reminders and other attachments). Messages are newest first unless the order is
 // switched; blocks keep their own order.
 const ASSISTANT_ITEM_KINDS = new Set(['step', 'thinking', 'text', 'call']);
-let lastContextClickAt = 0; // a click inside the Context view picks a turn where you already are: don't jump to it
-
 // ---- the blocks of a message
 function attachmentBlockHtml(item, id, hasSteps) {
   // bookkeeping only when asked for; the lists pinned on top only when they change later in the session
@@ -192,14 +190,3 @@ function setContextTurnCollapsed(section, collapsed) {
   }
 }
 
-// The arrow only folds the turn: stop the click before it reaches the header's "show in Details". (Registered before
-// the view's other click handlers, so it runs first.)
-viewBox().addEventListener('click', event => {
-  const toggle = event.target.closest('[data-cxtt]');
-  if (!toggle) return;
-  event.stopImmediatePropagation();
-  const section = toggle.closest('.cxturn');
-  setContextTurnCollapsed(section, !section.classList.contains('shut'));
-  contextView.renderKey = ''; // the cached HTML no longer matches
-});
-viewBox().addEventListener('click', () => { if (state.view === 'context') lastContextClickAt = Date.now(); }, true);

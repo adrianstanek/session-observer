@@ -96,6 +96,3 @@ function hoverSession(sessionId) {
   renderSessionHoverCard();
 }
 
-elementById('sessions').addEventListener('mouseover', event => hoverSession(event.target.closest('.sess-list .card')?.dataset.id ?? null));
-elementById('sessions').addEventListener('mouseleave', () => hoverSession(null));
-elementById('sessions').addEventListener('scroll', () => { if (hoveredSessionId) hoverSession(null); });

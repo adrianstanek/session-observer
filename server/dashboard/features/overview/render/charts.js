@@ -1,7 +1,7 @@
 'use strict';
 // Session Observer dashboard — Overview charts: turn durations, context window use, and activity by tool group.
 const CHART_TURNS_MAX = 150;
-let contextChartGeometry = null; // the context chart's points and scale, for the crosshair (controls.js)
+let contextChartGeometry = null; // the context chart's points and scale, for the crosshair (overview/controls.js)
 
 const chartSvg = (key, width, height, label, body, extraClass = '') =>
   `<svg class="vchart${extraClass}" data-k="${key}" data-w="${width}" viewBox="0 0 ${width} ${height}" height="${height}" role="img" aria-label="${escapeHtml(label)}">${body}</svg>`;

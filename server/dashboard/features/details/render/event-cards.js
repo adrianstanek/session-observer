@@ -83,7 +83,7 @@ function modelSwitchCardHtml(event) {
 
 function defaultCardHtml(event) {
   const [label, detail] = describeEvent(event);
-  return eventCardHtml(event, cardHeaderHtml(toolGroupOfEvent(event) || 'other', label || event.event, detail && escapeHtml(shorten(detail, 160))) + fieldTableHtml(event.data || {}));
+  return eventCardHtml(event, cardHeaderHtml(toolGroupOfEvent(event) || 'other', label || event.event, detail && escapeHtml(shorten(detail, 160))) + fieldTableHtml(event.data || {}, COMMON_HOOK_FIELDS));
 }
 
 // card builders by event; each gets (event, turn, data, fields)

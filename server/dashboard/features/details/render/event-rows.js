@@ -21,18 +21,3 @@ function eventRowHtml(event, running, options = {}) {
     <span class="who" style="color:${color}">${eventIconHtml(event, group, 2)}<span>${escapeHtml(label)}</span></span><span class="what">${project}${escapeHtml(shorten(detail, 300))}</span>${duration}</div>`;
 }
 
-const categoryColor = category => (CATEGORY_COLOR[category] === 'err' ? 'var(--err)' : `var(--s-${CATEGORY_COLOR[category]})`);
-
-// a chip per event category in the loaded events, with its count and problems; a click filters to it
-function renderCategoryChips() {
-  const counts = {}, problems = {};
-  for (const event of state.events) {
-    counts[event.category] = (counts[event.category] || 0) + 1;
-    if (isProblemEvent(event)) problems[event.category] = (problems[event.category] || 0) + 1;
-  }
-  const chips = Object.entries(CATEGORY_LABELS).filter(([category]) => counts[category]).map(([category, label]) => {
-    const problemCount = problems[category] && category !== 'error' ? ` <span class="x">✕${problems[category]}</span>` : '';
-    return `<span class="chip click ${state.category === category ? 'sel' : ''}" data-cat="${category}"><i style="background:${categoryColor(category)}"></i>${label} <b>${counts[category]}</b>${problemCount}</span>`;
-  });
-  elementById('cats').innerHTML = `<span class="ttl">${iconSvg('core')} ${escapeHtml(TEXT.eventTypes)}</span>` + chips.join('');
-}

@@ -6,23 +6,9 @@
 //   context  — one session's whole conversation in full, read from its transcript
 const VIEWS = ['overview', 'route', 'chat', 'context'].map(id => ({ id, label: TEXT.views[id] }));
 const VIEW_REDRAW_MS = 250;
-// CSS animations restart when their element is re-rendered: this placeholder becomes a negative delay that keeps
-// them in phase across renders
-const ANIMATION_PHASE = '__D__';
-const ANIMATION_PERIOD_MS = 1400;
-const withAnimationPhase = (html, now) => html.replaceAll(ANIMATION_PHASE, `-${Math.round(now % ANIMATION_PERIOD_MS)}ms`);
-
 let lastViewDrawAt = 0;
 let lastViewHtml = '';
 let contextTurnShown = null; // the selected turn the Context view last scrolled to
-
-// how many of the loaded events are shown: all of them live, those up to the replay cursor while replaying
-const shownEventCount = () => (state.replayCursor == null ? state.events.length : Math.min(state.replayIndex, state.events.length));
-
-// an icon placed inside an SVG drawing
-const svgIconGroup = (id, x, y, scale) => `<g class="ico" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${scale})">${ICONS[id] || ICONS.other}</g>`;
-
-const viewBox = () => elementById('alt');
 
 function setView(id) {
   if (!VIEWS.some(view => view.id === id)) id = 'overview';

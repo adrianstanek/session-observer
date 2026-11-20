@@ -8,7 +8,7 @@ const statTileHtml = (label, value, note, isBad) =>
 // a card of the Overview: a title, a note beside it, and its body
 const overviewCardHtml = (title, note, body, isWide) =>
   `<div class="vcard ${isWide ? 'wide' : ''}"><div class="vh">${title}<span>${note || ''}</span></div>${body}</div>`;
-// text for the floating tooltip (controls.js shows it)
+// text for the floating tooltip (overview/controls.js shows it)
 const tooltipAttribute = text => `data-tip="${escapeHtml(text)}"`;
 
 function overviewChartsHtml(session, filterNote) {
