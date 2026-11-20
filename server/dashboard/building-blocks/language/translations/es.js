@@ -81,7 +81,7 @@ TRANSLATIONS.es = (() => {
     commands: 'Comandos', noCommands: 'No hay comandos de shell.', topN: n => `top ${n}`, latestX: x => `último: ${x}`,
     subagents: 'Subagentes', startedAt: t => `iniciado ${t}`, problems: 'Problemas', latestFirst: 'más recientes primero',
 
-    noConversation: 'Aún no hay conversación', openTurn: 'Abrir este turno', agentWorking: name => `${name} está trabajando…`, contextNotForCodex: 'La vista Contexto lee transcripciones de Claude Code, así que aún no está disponible para sesiones de Codex.',
+    noConversation: 'Aún no hay conversación', openTurn: 'Abrir este turno', agentWorking: name => `${name} está trabajando…`, codexContextNote: 'Leído del propio archivo de sesión de Codex, cuyo formato no está documentado y puede cambiar, así que pueden faltar partes. Codex guarda el razonamiento cifrado: cuenta en los totales, pero su texto no se muestra.',
 
     eventTypes: 'Tipos de evento',
 

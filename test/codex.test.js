@@ -1,6 +1,6 @@
 // Codex support: Codex hook events go through the same hook and server as Claude Code's and come out as Codex
 // sessions; model requests become model steps; setup-codex.js adds and removes the hooks in a Codex hooks file; and
-// the dashboard reads Codex's tool names.
+// the dashboard reads Codex's tool names; the Context view reads Codex's session file.
 // Zero dependencies — run with `node --test test/codex.test.js`.
 'use strict';
 const { test, before, after } = require('node:test');
@@ -113,9 +113,62 @@ test("a Codex model request becomes a model step with the request's tokens", asy
   assert.equal(session.context.window, 272000);
 });
 
-test('the Context view is refused for a Codex session', async () => {
-  const response = await fetch(`http://127.0.0.1:${port}/api/context?session=${SESSION}`);
-  assert.equal(response.status, 409);
+// ---- the Context view, from Codex's session file (the "rollout" transcript_path points to)
+const kinds = (...list) => ({ internal_chat_message_metadata_passthrough: { content_item_kinds: list } });
+const message = (role, texts, ...list) => ({ type: 'message', role, content: texts.map(text => ({ type: role === 'assistant' ? 'output_text' : 'input_text', text })), ...kinds(...list) });
+const SKILLS = '<skills_instructions>\n## Skills\n### Available skills\n- review: Review a diff (file: r0/review/SKILL.md)\n- docs: Write docs (file: r0/docs/SKILL.md)\n</skills_instructions>';
+const SKILLS_UPDATE = '<skills_instructions>\n## Host skills update\n### Added or updated skills:\n- deploy: Ship it (file: r0/deploy/SKILL.md)\n</skills_instructions>';
+const DEFERRED = '<tools>\nDeferred tool namespaces:\n- mcp__docs: Search the docs\n</tools>';
+const ROLLOUT = [
+  { type: 'session_meta', payload: { base_instructions: { text: 'You are Codex.' } } },
+  { type: 'event_msg', payload: { type: 'task_started', model_context_window: 258400 } },
+  { type: 'turn_context', payload: { model: 'gpt-5-codex' } },
+  { type: 'response_item', payload: { type: 'additional_tools', tools: [
+    { type: 'namespace', name: 'functions', tools: [{ type: 'function', name: 'shell', description: 'Run a command', parameters: { type: 'object' } }] },
+    { type: 'namespace', name: 'mcp__docs', tools: [{ type: 'function', name: 'search', description: 'Search', parameters: {} }] },
+  ] } },
+  { type: 'response_item', payload: message('developer', ['You are Codex.'], 'model.base_instructions') },
+  { type: 'response_item', payload: message('developer', ['<permissions instructions>sandboxed</permissions instructions>', SKILLS, DEFERRED],
+    'permissions.instructions', 'host_skills.instructions', 'tools.deferred_namespaces') },
+  { type: 'response_item', payload: message('user', ['# AGENTS.md instructions for /work/app\n\n<INSTRUCTIONS>Use tabs.</INSTRUCTIONS>']) },
+  { type: 'response_item', payload: message('user', ['<environment_context><cwd>/work/app</cwd></environment_context>'], 'environments.environment_context') },
+  { type: 'response_item', payload: message('user', ['fix the bug\n'], 'user.text') },
+  { type: 'response_item', payload: { type: 'reasoning', summary: [], encrypted_content: 'xyz' } },
+  { type: 'response_item', payload: message('assistant', ['Looking.'], 'unknown') },
+  { type: 'response_item', payload: { type: 'function_call', call_id: 'c1', name: 'shell', arguments: '{"command":"ls"}' } },
+  { type: 'token_usage_record', payload: { usage: { input_tokens: 12000, cached_input_tokens: 10000, output_tokens: 300 } } },
+  { type: 'response_item', payload: { type: 'function_call_output', call_id: 'c1', output: 'src' } },
+  { type: 'response_item', payload: message('developer', [SKILLS_UPDATE], 'host_skills.instructions') },
+  { type: 'some_future_row', payload: { anything: true } },
+  'not json',
+].map(row => (typeof row === 'string' ? row : JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z', ...row }))).join('\n');
+
+test("the Context view reads a Codex session from Codex's session file", async () => {
+  fs.writeFileSync(path.join(DATA_DIR, 'rollout.jsonl'), ROLLOUT);
+  const context = await getJson(`/api/context?session=${SESSION}`);
+  assert.equal(context.agent, 'codex');
+  assert.equal(context.system, 'You are Codex.');
+  assert.equal(context.window, 258400);
+  assert.deepEqual(context.tools.map(tool => tool.name), ['shell', 'mcp__docs__search'], 'MCP tools keep the mcp__server__tool form');
+  assert.deepEqual(context.instructions.map(file => file.path), ['permissions instructions', '/work/app/AGENTS.md']);
+  assert.deepEqual(context.skills.map(skill => skill.name), ['review', 'docs', 'deploy'], 'an update adds to the list');
+  assert.equal(context.skills[0].description, 'Review a diff', "the SKILL.md's path is left out");
+  assert.deepEqual(context.deferred.tools, [{ name: 'mcp__docs', loaded: false }]);
+
+  const conversation = context.items.filter(item => item.role !== 'pinned').map(item => item.kind);
+  assert.deepEqual(conversation, ['attachment', 'user', 'step', 'text', 'call', 'result'],
+    'the model step goes before its reply; encrypted reasoning and unknown rows are left out');
+  const step = context.items.find(item => item.kind === 'step');
+  assert.deepEqual([step.ctx, step.out, step.model], [12000, 300, 'gpt-5-codex'], 'input_tokens already includes the cached part');
+  assert.deepEqual(context.items.find(item => item.kind === 'call').input, { command: 'ls' });
+  assert.equal(context.items.find(item => item.kind === 'result').id, 'c1');
+  assert.equal(context.measured.firstCtx, 12000);
+});
+
+test('the Context view says when the Codex session file is missing', async () => {
+  fs.rmSync(path.join(DATA_DIR, 'rollout.jsonl'), { force: true });
+  const context = await getJson(`/api/context?session=${SESSION}`);
+  assert.match(context.error, /not found/);
 });
 
 // ---- setup-codex.js

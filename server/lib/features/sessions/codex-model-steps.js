@@ -52,4 +52,4 @@ function addCodexUsage(session, step) {
   session.context = { tokens: tokens.context, window, pct: Math.min(1, tokens.context / window), ts: step.ts };
 }
 
-module.exports = { CODEX, isCodexModelRequest, toCodexModelStep, addCodexUsage };
+module.exports = { CODEX, isCodexModelRequest, toCodexModelStep, addCodexUsage, tokensOf };

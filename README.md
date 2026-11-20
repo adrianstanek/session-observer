@@ -221,7 +221,10 @@ What differs from Claude Code:
   (`OBSERVER_CODEX_CONTEXT_WINDOW`).
 - **Tools:** `apply_patch` counts as a file edit (the files are read from the patch), `exec_command` / `shell` as
   shell commands and `spawn_agent` as a subagent.
-- **The Context view** reads Claude Code's transcript format, so it isn't available for Codex sessions.
+- **The Context view** reads Codex's own session file (`~/.codex/sessions/…/rollout-*.jsonl`, which every Codex hook
+  event points to): the system prompt, tool definitions, instructions (AGENTS.md included), skills, deferred tools and
+  the whole conversation. That file's format isn't documented, so what the reader doesn't recognize is left out, and
+  reasoning, which Codex stores encrypted, shows only as tokens.
 
 ## Use
 

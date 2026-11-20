@@ -10,6 +10,8 @@ const agentKey = agent => (agent in AGENT_NAMES ? agent : DEFAULT_AGENT);
 const agentName = agent => AGENT_NAMES[agentKey(agent)];
 const agentOfSession = sessionId => state.sessions.get(sessionId)?.agent || DEFAULT_AGENT;
 const agentOfEvent = event => event.agent || agentOfSession(event.session_id);
+// a class naming the agent an event comes from ("agent-codex"), for what is labelled or colored by agent
+const agentClass = event => 'agent-' + agentKey(agentOfEvent(event));
 // the agent filter: an empty choice shows every agent
 const isAgentShown = agent => !state.agent || agent === state.agent;
 // only once sessions from more than one agent are loaded do the agent badges and the agent filter show

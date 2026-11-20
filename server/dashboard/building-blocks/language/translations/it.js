@@ -81,7 +81,7 @@ TRANSLATIONS.it = (() => {
     commands: 'Comandi', noCommands: 'Nessun comando shell.', topN: n => `top ${n}`, latestX: x => `ultimo: ${x}`,
     subagents: 'Subagenti', startedAt: t => `avviato ${t}`, problems: 'Problemi', latestFirst: 'più recenti prima',
 
-    noConversation: 'Ancora nessuna conversazione', openTurn: 'Apri questo turno', agentWorking: name => `${name} è al lavoro…`, contextNotForCodex: 'La vista Contesto legge le trascrizioni di Claude Code, quindi non è ancora disponibile per le sessioni di Codex.',
+    noConversation: 'Ancora nessuna conversazione', openTurn: 'Apri questo turno', agentWorking: name => `${name} è al lavoro…`, codexContextNote: 'Letto dal file di sessione di Codex, il cui formato non è documentato e può cambiare, quindi alcune parti possono mancare. Codex salva il ragionamento cifrato: conta nei totali, ma il testo non viene mostrato.',
 
     eventTypes: 'Tipi di evento',
 

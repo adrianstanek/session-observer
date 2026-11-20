@@ -79,7 +79,7 @@ TRANSLATIONS.ko = (() => {
     commands: '명령', noCommands: '셸 명령이 없습니다.', topN: n => `상위 ${n}`, latestX: x => `최근: ${x}`,
     subagents: '서브에이전트', startedAt: t => `${t} 시작`, problems: '문제', latestFirst: '최신순',
 
-    noConversation: '아직 대화가 없습니다', openTurn: '이 턴 열기', agentWorking: name => `${name}가 작업 중…`, contextNotForCodex: '컨텍스트 보기는 Claude Code 트랜스크립트를 읽으므로 Codex 세션에서는 아직 사용할 수 없습니다.',
+    noConversation: '아직 대화가 없습니다', openTurn: '이 턴 열기', agentWorking: name => `${name}가 작업 중…`, codexContextNote: 'Codex 자체 세션 파일에서 읽었습니다. 형식이 문서화되지 않았고 바뀔 수 있어 일부가 빠질 수 있습니다. Codex는 추론을 암호화해 저장하므로 합계에는 포함되지만 내용은 표시되지 않습니다.',
 
     eventTypes: '이벤트 종류',
 

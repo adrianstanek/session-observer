@@ -88,7 +88,7 @@ TRANSLATIONS.en = (() => {
     subagents: 'Subagents', startedAt: t => `started ${t}`, problems: 'Problems', latestFirst: 'latest first',
 
     // chat
-    noConversation: 'No conversation yet', openTurn: 'Open this turn', agentWorking: name => `${name} is working…`, contextNotForCodex: 'The Context view reads Claude Code transcripts, so it is not available for Codex sessions yet.',
+    noConversation: 'No conversation yet', openTurn: 'Open this turn', agentWorking: name => `${name} is working…`, codexContextNote: 'Read from Codex\'s own session file, whose format is not documented and can change, so some parts may be missing. Codex stores reasoning encrypted: it counts in the totals, but its text is not shown.',
 
     // replay bar and event types
     eventTypes: 'Event types',

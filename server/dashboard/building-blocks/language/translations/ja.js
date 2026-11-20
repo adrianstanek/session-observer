@@ -79,7 +79,7 @@ TRANSLATIONS.ja = (() => {
     commands: 'コマンド', noCommands: 'シェルコマンドはありません。', topN: n => `上位 ${n}`, latestX: x => `最新: ${x}`,
     subagents: 'サブエージェント', startedAt: t => `${t} に開始`, problems: '問題', latestFirst: '新しい順',
 
-    noConversation: 'まだ会話はありません', openTurn: 'このターンを開く', agentWorking: name => `${name} が作業中…`, contextNotForCodex: 'コンテキストビューは Claude Code のトランスクリプトを読み込むため、Codex のセッションではまだ使えません。',
+    noConversation: 'まだ会話はありません', openTurn: 'このターンを開く', agentWorking: name => `${name} が作業中…`, codexContextNote: 'Codex 自身のセッションファイルから読み込んでいます。形式は公開されておらず変わる可能性があるため、一部が欠けることがあります。Codex は推論を暗号化して保存するため、合計には含まれますが本文は表示されません。',
 
     eventTypes: 'イベントの種類',
 

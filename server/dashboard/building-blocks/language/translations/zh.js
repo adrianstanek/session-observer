@@ -79,7 +79,7 @@ TRANSLATIONS.zh = (() => {
     commands: '命令', noCommands: '没有 Shell 命令。', topN: n => `前 ${n} 个`, latestX: x => `最近：${x}`,
     subagents: '子代理', startedAt: t => `开始于 ${t}`, problems: '问题', latestFirst: '最新在前',
 
-    noConversation: '还没有对话', openTurn: '打开这一轮', agentWorking: name => `${name} 正在工作…`, contextNotForCodex: '上下文视图读取的是 Claude Code 的记录，因此暂不支持 Codex 会话。',
+    noConversation: '还没有对话', openTurn: '打开这一轮', agentWorking: name => `${name} 正在工作…`, codexContextNote: '读取自 Codex 自己的会话文件。其格式没有公开文档且可能变化，因此部分内容可能缺失。Codex 以加密形式保存推理：它计入总量，但不显示其文本。',
 
     eventTypes: '事件类型',
 

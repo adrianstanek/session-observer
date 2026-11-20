@@ -83,7 +83,7 @@ TRANSLATIONS.pl = (() => {
     commands: 'Polecenia', noCommands: 'Brak poleceń powłoki.', topN: n => `top ${n}`, latestX: x => `ostatnie: ${x}`,
     subagents: 'Subagenci', startedAt: t => `start ${t}`, problems: 'Problemy', latestFirst: 'najnowsze najpierw',
 
-    noConversation: 'Brak rozmowy', openTurn: 'Otwórz tę turę', agentWorking: name => `${name} pracuje…`, contextNotForCodex: 'Widok Kontekst czyta transkrypty Claude Code, więc dla sesji Codex nie jest jeszcze dostępny.',
+    noConversation: 'Brak rozmowy', openTurn: 'Otwórz tę turę', agentWorking: name => `${name} pracuje…`, codexContextNote: 'Odczytane z pliku sesji Codexa. Jego format nie jest udokumentowany i może się zmienić, więc części może brakować. Codex zapisuje rozumowanie w postaci zaszyfrowanej: liczy się do sum, ale jego tekst nie jest pokazywany.',
 
     eventTypes: 'Typy zdarzeń',
 

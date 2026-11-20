@@ -81,7 +81,7 @@ TRANSLATIONS.de = (() => {
     commands: 'Befehle', noCommands: 'Keine Shell-Befehle.', topN: n => `Top ${n}`, latestX: x => `zuletzt: ${x}`,
     subagents: 'Subagenten', startedAt: t => `gestartet ${t}`, problems: 'Probleme', latestFirst: 'neueste zuerst',
 
-    noConversation: 'Noch keine Unterhaltung', openTurn: 'Diese Runde öffnen', agentWorking: name => `${name} arbeitet…`, contextNotForCodex: 'Die Kontext-Ansicht liest Transkripte von Claude Code und ist für Codex-Sitzungen daher noch nicht verfügbar.',
+    noConversation: 'Noch keine Unterhaltung', openTurn: 'Diese Runde öffnen', agentWorking: name => `${name} arbeitet…`, codexContextNote: 'Aus der eigenen Sitzungsdatei von Codex gelesen. Ihr Format ist nicht dokumentiert und kann sich ändern, daher können Teile fehlen. Codex speichert das Reasoning verschlüsselt: Es zählt zu den Summen, sein Text wird aber nicht angezeigt.',
 
     eventTypes: 'Ereignistypen',
 
