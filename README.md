@@ -241,7 +241,15 @@ Markdown.
 
 ![Dashboard layout: 1 filters, 2 sessions, 3 views, 4 route, 5 event types and replay, 6 details](docs/layout.jpg)
 
-The session list shows each session's title and a dot for its state (working, live or ended). Hover a
+**Home** is the first view. On top, **Needs you** lists every session waiting on you: a permission to approve
+(with the command or file it is for), a question (`AskUserQuestion`, or Codex's `request_user_input`), or an MCP
+server asking for input, and how long it has waited. Below, every session in the range is a tree: project folder →
+session → its subagents, the most urgent first, each with its agent (Claude Code or Codex) and its state: needs you,
+working (with the tool it is running), your turn, inactive or ended. Click a row to open that session. While
+something waits on you, the header shows **Needs you: N** and the browser tab title starts with the count, so you
+see it from another tab.
+
+The session list shows each session's title and a dot for its state (needs you, working, live or ended). Hover a
 session for the rest: when it was last active, its turns, tool calls and output tokens, the tool it ran
 last, and its folder, model, failures and context use.
 

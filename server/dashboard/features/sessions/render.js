@@ -1,14 +1,14 @@
 'use strict';
 // Session Observer dashboard — the sessions panel: All activity, and each session in the range with a hover card.
-const LIVE_SESSION_MS = 30 * 60000; // a session with an event this recent counts as live
-
-// [state word, dot class]
-function sessionStatus(session) {
-  if (session.ended) return [TEXT.sessionState.ended, 'dot'];
-  if (session.busy) return [TEXT.sessionState.working, 'dot busy'];
-  if (Date.now() - Date.parse(session.last) < LIVE_SESSION_MS) return [TEXT.sessionState.live, 'dot on'];
-  return [TEXT.sessionState.inactive, 'dot'];
-}
+// [state word, dot class] for each activity (session-activity.js)
+const SESSION_STATUS = {
+  needsYou: () => [TEXT.sessionState.needsYou, 'dot need'],
+  working: () => [TEXT.sessionState.working, 'dot busy'],
+  yourTurn: () => [TEXT.sessionState.live, 'dot on'],
+  inactive: () => [TEXT.sessionState.inactive, 'dot'],
+  ended: () => [TEXT.sessionState.ended, 'dot'],
+};
+const sessionStatus = session => SESSION_STATUS[sessionActivity(session)]();
 
 const sessionName = session => stripTags(session.title) || baseName(session.cwd) || session.id.slice(0, 8);
 

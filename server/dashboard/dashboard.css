@@ -535,3 +535,43 @@ details.cx.grp .chip.err { color: var(--err); border-color: color-mix(in srgb, v
   #sessions { max-height: 50vh; }
   .frow { grid-template-columns: 14px 70px minmax(0, 1fr); } .frow .who span { display: none; }
 }
+
+/* Home: what waits on you, then every agent as a tree (project → session → subagents) */
+.dot.need { background: var(--warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent); animation: blink 1.2s infinite; }
+.hdr-need { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 1px 8px; border: 1px solid var(--warn); border-radius: 10px; color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); font: inherit; font-weight: 600; cursor: pointer; }
+.home { height: 100%; overflow: auto; padding: 4px 4px 16px; display: flex; flex-direction: column; gap: 14px; }
+.home .hsec h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; }
+.home .hsec h3 svg { width: 14px; height: 14px; }
+.hcount { padding: 0 7px; border-radius: 9px; background: var(--warn); color: var(--panel); font-size: 11.5px; }
+.hneeds { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.hneeds.on { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 7%, var(--panel)); }
+.hneed { display: block; width: 100%; text-align: left; font: inherit; color: inherit; margin-top: 8px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); border-left: 3px solid var(--warn); border-radius: 6px; background: var(--panel); cursor: pointer; }
+.hneed:hover { border-color: var(--warn); }
+.hwait { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.hwait svg { width: 13px; height: 13px; color: var(--warn); }
+.hwait-text { flex-basis: 100%; padding: 4px 8px; border-radius: 4px; background: var(--panel-2); font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+.home .hrow { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.home .hname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.home .hpath { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; min-width: 0; }
+.home .grow { flex: 1; }
+.home .agent-tag { margin-left: 0; }
+.htree, .htree ul { list-style: none; margin: 0; padding: 0; }
+.htree > .hproj + .hproj { margin-top: 12px; }
+.hproj > .hrow { font-size: 13px; padding: 2px 0 4px; }
+.hproj > .hrow svg { width: 14px; height: 14px; color: var(--s-files); flex: none; }
+.hproj > ul, .hsess > ul { margin-left: 7px; padding-left: 14px; border-left: 1px solid var(--line); }
+.hsess, .hsub { position: relative; }
+.hsess::before, .hsub::before { content: ''; position: absolute; left: -14px; top: 15px; width: 10px; border-top: 1px solid var(--line); }
+.hsess > .hrow { padding: 5px 8px; margin: 2px 0; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+.hsess > .hrow:hover { background: var(--panel-2); }
+.hsess.sel > .hrow { border-color: var(--accent); }
+.hsess.act-needsYou > .hrow { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); }
+.hsess.act-ended > .hrow, .hsess.act-inactive > .hrow { opacity: .65; }
+.hstate { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.act-needsYou .hstate { color: var(--warn); font-weight: 600; }
+.act-working .hstate { color: var(--ok); }
+.hlast { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.hsub { display: flex; align-items: center; gap: 6px; padding: 3px 8px; font-size: 12px; min-width: 0; }
+.hsub::before { top: 12px; }
+.hsub svg { width: 12px; height: 12px; color: var(--s-agents); flex: none; }
+.hsub > .muted:not(:last-child) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }

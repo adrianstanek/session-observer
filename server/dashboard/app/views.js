@@ -1,17 +1,18 @@
 'use strict';
 // Session Observer dashboard — the middle stage: switching between the views, and drawing the one shown.
+//   home     — every agent as a tree (project → session → subagents), and what waits on you
 //   overview — stat tiles, charts and lists (#mid, drawn by renderOverview)
 //   route    — the current turn as a metro line: every model step and tool call is a stop
 //   chat     — the conversation as a messenger: prompts, the agent's replies, tool calls as chips
 //   context  — one session's whole conversation in full, read from its transcript
-const VIEWS = ['overview', 'route', 'chat', 'context'].map(id => ({ id, label: TEXT.views[id] }));
+const VIEWS = ['home', 'overview', 'route', 'chat', 'context'].map(id => ({ id, label: TEXT.views[id] }));
 const VIEW_REDRAW_MS = 250;
 let lastViewDrawAt = 0;
 let lastViewHtml = '';
 let contextTurnShown = null; // the selected turn the Context view last scrolled to
 
 function setView(id) {
-  if (!VIEWS.some(view => view.id === id)) id = 'overview';
+  if (!VIEWS.some(view => view.id === id)) id = 'home';
   state.view = id;
   storage.set(SETTING_KEYS.layout, id);
   document.querySelector('.stage').dataset.layout = id;
@@ -26,6 +27,7 @@ function setView(id) {
 }
 
 function viewHtml() {
+  if (state.view === 'home') return homeViewHtml();
   if (state.view === 'chat') return chatViewHtml();
   if (state.view === 'context') return contextViewHtml();
   return routeViewHtml();

@@ -21,7 +21,7 @@ TRANSLATIONS.en = (() => {
       task: 'Task', mcp: 'MCP', permission: 'Permission', error: 'Error', notification: 'Notice',
       compact: 'Compact', context: 'Context', lifecycle: 'Lifecycle', env: 'Env',
     },
-    views: { overview: 'Overview', route: 'Route', chat: 'Chat', context: 'Context' },
+    views: { home: 'Home', overview: 'Overview', route: 'Route', chat: 'Chat', context: 'Context' },
     themes: { auto: 'auto', dark: 'dark', light: 'light' },
 
     // header and filters (the page's own text)
@@ -64,7 +64,13 @@ TRANSLATIONS.en = (() => {
     },
 
     // sessions panel
-    sessionState: { ended: 'ended', working: 'working', live: 'live', inactive: 'inactive' },
+    sessionState: { needsYou: 'needs you', yourTurn: 'your turn', ended: 'ended', working: 'working', live: 'live', inactive: 'inactive' },
+    needYouN: n => `Needs you: ${n}`,
+    home: {
+      needsYou: 'Needs you', allClear: 'Nothing needs you right now.',
+      permission: t => (t ? `Permission to use ${t}` : 'Permission needed'), question: 'Question for you', mcp: s => `${s || 'An MCP server'} asks for input`,
+      inSubagent: t => `in subagent ${t}`, noSessions: 'No sessions in this range.', done: 'done', more: n => `+${n} more`, open: 'Open this session',
+    },
     allActivity: 'All activity', everySession: 'every session combined', sessions: 'Sessions', lastLbl: 'last:',
     ctxWindow: 'context window', ctxShort: 'ctx', noSessions: 'No sessions in this range.',
 

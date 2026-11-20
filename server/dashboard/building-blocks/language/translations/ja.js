@@ -18,7 +18,7 @@ TRANSLATIONS.ja = (() => {
       task: 'タスク', mcp: 'MCP', permission: '権限', error: 'エラー', notification: 'お知らせ',
       compact: '圧縮', context: 'コンテキスト', lifecycle: 'ライフサイクル', env: '環境',
     },
-    views: { overview: '概要', route: 'ルート', chat: 'チャット', context: 'コンテキスト' },
+    views: { home: 'ホーム', overview: '概要', route: 'ルート', chat: 'チャット', context: 'コンテキスト' },
     themes: { auto: '自動', dark: 'ダーク', light: 'ライト' },
 
     language: '言語', langAuto: '自動',
@@ -57,7 +57,13 @@ TRANSLATIONS.ja = (() => {
       startedSession: '開始', createdWorktree: '作成', changedConfig: '変更',
     },
 
-    sessionState: { ended: '終了', working: '作業中', live: 'アクティブ', inactive: '非アクティブ' },
+    sessionState: { needsYou: '対応待ち', yourTurn: 'あなたの番', ended: '終了', working: '作業中', live: 'アクティブ', inactive: '非アクティブ' },
+    needYouN: n => `対応待ち ${n}`,
+    home: {
+      needsYou: '対応待ち', allClear: '今は対応待ちのものはありません。',
+      permission: t => (t ? `${t} の使用許可` : '許可が必要'), question: 'あなたへの質問', mcp: s => `${s || 'MCP サーバー'} が入力を求めています`,
+      inSubagent: t => `サブエージェント ${t} 内`, noSessions: 'この期間のセッションはありません。', done: '完了', more: n => `ほか ${n} 件`, open: 'このセッションを開く',
+    },
     allActivity: 'すべてのアクティビティ', everySession: '全セッションの合計', sessions: 'セッション', lastLbl: '直近:',
     ctxWindow: 'コンテキストウィンドウ', ctxShort: 'ctx', noSessions: 'この期間のセッションはありません。',
 

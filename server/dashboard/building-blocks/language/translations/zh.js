@@ -18,7 +18,7 @@ TRANSLATIONS.zh = (() => {
       task: '任务', mcp: 'MCP', permission: '权限', error: '错误', notification: '通知',
       compact: '压缩', context: '上下文', lifecycle: '生命周期', env: '环境',
     },
-    views: { overview: '概览', route: '路线', chat: '对话', context: '上下文' },
+    views: { home: '主页', overview: '概览', route: '路线', chat: '对话', context: '上下文' },
     themes: { auto: '自动', dark: '深色', light: '浅色' },
 
     language: '语言', langAuto: '自动',
@@ -57,7 +57,13 @@ TRANSLATIONS.zh = (() => {
       startedSession: '已开始', createdWorktree: '已创建', changedConfig: '已更改',
     },
 
-    sessionState: { ended: '已结束', working: '工作中', live: '活跃', inactive: '不活跃' },
+    sessionState: { needsYou: '等你处理', yourTurn: '轮到你', ended: '已结束', working: '工作中', live: '活跃', inactive: '不活跃' },
+    needYouN: n => `${n} 个等你处理`,
+    home: {
+      needsYou: '等你处理', allClear: '目前没有需要你处理的事项。',
+      permission: t => (t ? `请求使用 ${t} 的权限` : '需要权限'), question: '给你的问题', mcp: s => `${s || 'MCP 服务器'} 请求输入`,
+      inSubagent: t => `在子代理 ${t} 中`, noSessions: '此时间范围内没有会话。', done: '已完成', more: n => `另有 ${n} 个`, open: '打开此会话',
+    },
     allActivity: '全部活动', everySession: '所有会话合计', sessions: '会话', lastLbl: '最近：',
     ctxWindow: '上下文窗口', ctxShort: '上下文', noSessions: '此时间范围内没有会话。',
 

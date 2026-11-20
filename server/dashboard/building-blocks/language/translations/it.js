@@ -20,7 +20,7 @@ TRANSLATIONS.it = (() => {
       task: 'Attività', mcp: 'MCP', permission: 'Permesso', error: 'Errore', notification: 'Avviso',
       compact: 'Compattazione', context: 'Contesto', lifecycle: 'Ciclo di vita', env: 'Ambiente',
     },
-    views: { overview: 'Panoramica', route: 'Percorso', chat: 'Chat', context: 'Contesto' },
+    views: { home: 'Home', overview: 'Panoramica', route: 'Percorso', chat: 'Chat', context: 'Contesto' },
     themes: { auto: 'auto', dark: 'scuro', light: 'chiaro' },
 
     language: 'Lingua', langAuto: 'Auto',
@@ -59,7 +59,13 @@ TRANSLATIONS.it = (() => {
       startedSession: 'avviata', createdWorktree: 'creato', changedConfig: 'modificata',
     },
 
-    sessionState: { ended: 'terminata', working: 'al lavoro', live: 'attiva', inactive: 'inattiva' },
+    sessionState: { needsYou: 'ti aspetta', yourTurn: 'tocca a te', ended: 'terminata', working: 'al lavoro', live: 'attiva', inactive: 'inattiva' },
+    needYouN: n => `Ti aspettano: ${n}`,
+    home: {
+      needsYou: 'Ti aspetta', allClear: 'Al momento niente ti aspetta.',
+      permission: t => (t ? `Permesso di usare ${t}` : 'Serve un permesso'), question: 'Domanda per te', mcp: s => `${s || 'Un server MCP'} chiede un input`,
+      inSubagent: t => `nel subagente ${t}`, noSessions: 'Nessuna sessione in questo intervallo.', done: 'finito', more: n => `+${n} altri`, open: 'Apri questa sessione',
+    },
     allActivity: 'Tutta l\'attività', everySession: 'tutte le sessioni insieme', sessions: 'Sessioni', lastLbl: 'ultimo:',
     ctxWindow: 'finestra di contesto', ctxShort: 'ctx', noSessions: 'Nessuna sessione in questo periodo.',
 

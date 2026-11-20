@@ -18,7 +18,7 @@ TRANSLATIONS.ko = (() => {
       task: '작업', mcp: 'MCP', permission: '권한', error: '오류', notification: '알림',
       compact: '압축', context: '컨텍스트', lifecycle: '수명 주기', env: '환경',
     },
-    views: { overview: '개요', route: '경로', chat: '채팅', context: '컨텍스트' },
+    views: { home: '홈', overview: '개요', route: '경로', chat: '채팅', context: '컨텍스트' },
     themes: { auto: '자동', dark: '다크', light: '라이트' },
 
     language: '언어', langAuto: '자동',
@@ -57,7 +57,13 @@ TRANSLATIONS.ko = (() => {
       startedSession: '시작', createdWorktree: '생성됨', changedConfig: '변경됨',
     },
 
-    sessionState: { ended: '종료됨', working: '작업 중', live: '활성', inactive: '비활성' },
+    sessionState: { needsYou: '내 응답 필요', yourTurn: '내 차례', ended: '종료됨', working: '작업 중', live: '활성', inactive: '비활성' },
+    needYouN: n => `응답 필요 ${n}`,
+    home: {
+      needsYou: '내 응답 필요', allClear: '지금 응답이 필요한 항목이 없습니다.',
+      permission: t => (t ? `${t} 사용 권한` : '권한 필요'), question: '나에게 온 질문', mcp: s => `${s || 'MCP 서버'}가 입력을 요청함`,
+      inSubagent: t => `서브에이전트 ${t}`, noSessions: '이 기간에는 세션이 없습니다.', done: '완료', more: n => `+${n}개 더`, open: '이 세션 열기',
+    },
     allActivity: '전체 활동', everySession: '모든 세션 합계', sessions: '세션', lastLbl: '최근:',
     ctxWindow: '컨텍스트 창', ctxShort: 'ctx', noSessions: '이 기간에는 세션이 없습니다.',
 

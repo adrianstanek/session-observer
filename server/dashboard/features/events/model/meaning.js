@@ -108,6 +108,7 @@ const DESCRIBE_EVENT = {
   MessageDisplay: data => [TEXT.event.message, data.message || data.text],
   Stop: data => [TEXT.event.turn, data.last_assistant_message || TEXT.event.done],
   StopFailure: data => [TEXT.event.turnFailed, data.error || data.reason],
+  Interrupt: () => [TEXT.event.turn, TEXT.interruptedByUser],
   SubagentStart: data => [TEXT.subagent, `${TEXT.event.started} ${data.agent_type || data.agent_id || ''}`],
   SubagentStop: data => [TEXT.subagent, `${TEXT.event.finished} ${[data.agent_type, shorten(data.last_assistant_message, 120)].filter(Boolean).join(' — ')}`],
   TaskCreated: data => [TEXT.categories.task, TEXT.event.created + ' ' + (data.subject || data.task?.subject || data.description || '')],
