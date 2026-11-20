@@ -6,10 +6,11 @@ const { categoryOf, SUBAGENT_TOOLS } = require('./event-categories');
 const TITLE_MAX = 140; // characters of the first prompt kept as the session's title
 const sessions = new Map(); // session id → session
 let lastSeq = 0;
+const DEFAULT_AGENT = 'claude'; // events logged before the hook named its agent came from Claude Code
 
 function newSession(id) {
   return {
-    id, cwd: null, started: null, last: null, ended: false, endReason: null,
+    id, agent: DEFAULT_AGENT, cwd: null, started: null, last: null, ended: false, endReason: null,
     model: null, permission_mode: null, transcript_path: null, source: null,
     title: null, turns: 0, busy: false, subagents: 0, lastTool: null,
     counts: {}, tools: {}, skills: {}, mcp: {}, agents: {},
@@ -52,7 +53,8 @@ function updateSessionFields(session, event, data) {
   // a subagent's events carry the main transcript too: it is taken only while the session has none
   if (data.transcript_path && (!data.agent_transcript_path || !session.transcript_path)) session.transcript_path = data.transcript_path;
   if (data.permission_mode) session.permission_mode = data.permission_mode;
-  if (data.model) session.model = typeof data.model === 'string' ? data.model : (data.model.id || data.model.display_name || session.model);
+  // a subagent's model request names the subagent's model, not the session's
+  if (data.model && data.agent_id == null) session.model = typeof data.model === 'string' ? data.model : (data.model.id || data.model.display_name || session.model);
   if (data.to_model) session.model = data.to_model;
 }
 
@@ -110,6 +112,9 @@ function ingest(event) {
   event.category = categoryOf(event);
   const data = event.data || {};
   const session = sessionFor(event.session_id);
+  // every event says which agent it is from: the hook's own, or its session's (for events made from a transcript)
+  if (event.agent) session.agent = event.agent;
+  else event.agent = session.agent;
 
   updateSessionFields(session, event, data);
   increment(session.counts, event.category);

@@ -36,7 +36,7 @@ TRANSLATIONS.pl = (() => {
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
     range: 'Zakres', range1h: 'ostatnia godzina', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',
     search: 'Szukaj', searchPh: 'prompty, odpowiedzi, polecenia, ścieżki, błędy…',
-    group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy',
+    group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy', agent: 'Agent', allAgents: 'wszyscy agenci', agentTitle: 'Pokaż sesje z Claude Code, z Codex albo z obu',
     onlyProblems: 'tylko problemy', resetFilters: 'Wyczyść filtry', view: 'Widok',
     replayBtn: '▶ Odtwórz', pauseBtn: '❚❚ Pauza', speedTitle: 'Prędkość odtwarzania', liveBtn: 'Na żywo',
     replaying: 'Odtwarzanie', paused: 'Wstrzymano',
@@ -83,7 +83,7 @@ TRANSLATIONS.pl = (() => {
     commands: 'Polecenia', noCommands: 'Brak poleceń powłoki.', topN: n => `top ${n}`, latestX: x => `ostatnie: ${x}`,
     subagents: 'Subagenci', startedAt: t => `start ${t}`, problems: 'Problemy', latestFirst: 'najnowsze najpierw',
 
-    noConversation: 'Brak rozmowy', openTurn: 'Otwórz tę turę', claudeWorking: 'Claude pracuje…',
+    noConversation: 'Brak rozmowy', openTurn: 'Otwórz tę turę', agentWorking: name => `${name} pracuje…`, contextNotForCodex: 'Widok Kontekst czyta transkrypty Claude Code, więc dla sesji Codex nie jest jeszcze dostępny.',
 
     eventTypes: 'Typy zdarzeń',
 

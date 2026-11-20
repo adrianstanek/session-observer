@@ -118,7 +118,7 @@ function addChatTurn(chat, turn, limit) {
   flushChips();
   chat.html += finalReplyBubble(stopEvent, modelSaidSomething);
   if (!stopEvent && isTurnRunning(turn) && state.replayCursor == null) {
-    chat.html += `<div class="ctyping"><span class="dot busy"></span>${escapeHtml(TEXT.claudeWorking)}</div>`;
+    chat.html += `<div class="ctyping"><span class="dot busy"></span>${escapeHtml(TEXT.agentWorking(agentName(agentOfSession(turn.sessionId))))}</div>`;
   }
   chat.html += '</div>';
   // tool chips still open are running; the rest are plain

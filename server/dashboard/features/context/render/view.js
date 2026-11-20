@@ -35,6 +35,7 @@ function contextViewHtml() {
   const sessionId = contextSessionId();
   if (!sessionId) return contextMessage(TEXT.pickSession);
   const session = state.sessions.get(sessionId);
+  if (session?.agent === CODEX) return contextMessage(TEXT.contextNotForCodex); // it reads Claude Code transcripts only
   const version = session ? `${session.eventCount}:${session.usage?.turns}:${session.last}` : '';
   const isStale = contextView.version !== version && Date.now() - contextView.fetchedAt > CONTEXT_REFETCH_MS;
   if (contextView.sessionId !== sessionId || isStale) fetchContext(sessionId, version);

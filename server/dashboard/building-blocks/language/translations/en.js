@@ -36,7 +36,7 @@ TRANSLATIONS.en = (() => {
     clearLog: 'Clear log', clearLogTitle: 'Delete the local event log', clearConfirm: 'Delete all recorded events?',
     range: 'Range', range1h: 'last 1 h', range6h: 'last 6 h', range24h: 'last 24 h', range7d: 'last 7 d', rangeAll: 'everything',
     search: 'Search', searchPh: 'prompts, replies, commands, paths, errors…',
-    group: 'Tool group', groupTitle: 'Which part of the map: Files, Shell, Git, MCP…', allGroups: 'all groups',
+    group: 'Tool group', groupTitle: 'Which part of the map: Files, Shell, Git, MCP…', allGroups: 'all groups', agent: 'Agent', allAgents: 'all agents', agentTitle: 'Show sessions from Claude Code, Codex or both',
     onlyProblems: 'only problems', resetFilters: 'Reset filters', view: 'View',
     replayBtn: '▶ Replay', pauseBtn: '❚❚ Pause', speedTitle: 'Replay speed', liveBtn: 'Live',
     replaying: 'Replaying', paused: 'Paused',
@@ -88,7 +88,7 @@ TRANSLATIONS.en = (() => {
     subagents: 'Subagents', startedAt: t => `started ${t}`, problems: 'Problems', latestFirst: 'latest first',
 
     // chat
-    noConversation: 'No conversation yet', openTurn: 'Open this turn', claudeWorking: 'Claude is working…',
+    noConversation: 'No conversation yet', openTurn: 'Open this turn', agentWorking: name => `${name} is working…`, contextNotForCodex: 'The Context view reads Claude Code transcripts, so it is not available for Codex sessions yet.',
 
     // replay bar and event types
     eventTypes: 'Event types',

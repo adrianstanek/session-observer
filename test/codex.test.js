@@ -1,0 +1,178 @@
+// Codex support: Codex hook events go through the same hook and server as Claude Code's and come out as Codex
+// sessions; model requests become model steps; setup-codex.js adds and removes the hooks in a Codex hooks file; and
+// the dashboard reads Codex's tool names.
+// Zero dependencies — run with `node --test test/codex.test.js`.
+'use strict';
+const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
+const { spawn, spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const net = require('node:net');
+
+const ROOT = path.join(__dirname, '..');
+const HOOK = path.join(ROOT, 'scripts', 'hook.js');
+const SETUP = path.join(ROOT, 'scripts', 'setup-codex.js');
+const SERVER = path.join(ROOT, 'server', 'server.js');
+const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'so-codex-'));
+const CODEX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'so-codex-home-'));
+const SESSION = 'codex-sess-1';
+let port, server;
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer().listen(0, '127.0.0.1', () => {
+      const { port: free } = probe.address();
+      probe.close(() => resolve(free));
+    });
+    probe.on('error', reject);
+  });
+}
+
+const env = () => ({ ...process.env, OBSERVER_DATA_DIR: DATA_DIR, OBSERVER_PORT: String(port), OBSERVER_AUTOSTART: '0' });
+const runHook = (eventName, payload, ...extraArgs) =>
+  spawnSync(process.execPath, [HOOK, eventName, ...extraArgs], { input: JSON.stringify(payload), env: env(), timeout: 10000 });
+const codexHook = (eventName, fields) =>
+  runHook(eventName, { hook_event_name: eventName, session_id: SESSION, cwd: '/work/app', model: 'gpt-5-codex', ...fields }, '--agent', 'codex');
+
+async function waitFor(check, ms = 8000) {
+  const end = Date.now() + ms;
+  let lastError;
+  while (Date.now() < end) {
+    if (server.exitCode != null) throw new Error(`the server exited (${server.exitCode})`);
+    try { const value = await check(); if (value) return value; } catch (error) { lastError = error; }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw lastError || new Error('timed out');
+}
+const getJson = async apiPath => (await fetch(`http://127.0.0.1:${port}${apiPath}`)).json();
+
+const PATCH = '*** Begin Patch\n*** Update File: src/app.ts\n@@\n-old\n+new\n*** Add File: src/new.ts\n+export {};\n*** End Patch';
+
+before(async () => {
+  port = await freePort();
+  codexHook('SessionStart', { source: 'startup', transcript_path: path.join(DATA_DIR, 'rollout.jsonl') });
+  codexHook('UserPromptSubmit', { turn_id: 'turn-1', prompt: 'fix the bug' });
+  codexHook('PreToolUse', { turn_id: 'turn-1', tool_name: 'apply_patch', tool_use_id: 'call-1', tool_input: { command: PATCH } });
+  codexHook('PostToolUse', { turn_id: 'turn-1', tool_name: 'apply_patch', tool_use_id: 'call-1', tool_input: { command: PATCH }, tool_response: 'Success' });
+  codexHook('PostModelRequest', {
+    turn_id: 'turn-1', status: 'completed', error: null,
+    token_usage: { input_tokens: 12000, cached_input_tokens: 10000, output_tokens: 300, reasoning_output_tokens: 120, total_tokens: 12300 },
+  });
+  codexHook('PostModelRequest', { turn_id: 'turn-1', agent_id: 'sub-1', agent_type: 'worker', model: 'gpt-5-mini', status: 'completed', token_usage: { input_tokens: 500, output_tokens: 50 } });
+  codexHook('Stop', { turn_id: 'turn-1', stop_hook_active: false, last_assistant_message: 'Fixed.' });
+  runHook('SessionStart', { hook_event_name: 'SessionStart', session_id: 'claude-sess-1', cwd: '/work/app', source: 'startup' });
+  server = spawn(process.execPath, [SERVER], { env: env(), stdio: 'ignore' });
+  await waitFor(async () => (await getJson('/api/health')).ok);
+});
+
+after(() => {
+  if (server) server.kill();
+  fs.rmSync(DATA_DIR, { recursive: true, force: true });
+  fs.rmSync(CODEX_HOME, { recursive: true, force: true });
+});
+
+test('the hook marks Codex events, and Claude Code events without --agent stay Claude', () => {
+  const log = fs.readFileSync(path.join(DATA_DIR, 'events.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  assert.ok(log.filter(event => event.session_id === SESSION).every(event => event.agent === 'codex'));
+  assert.equal(log.find(event => event.session_id === 'claude-sess-1').agent, 'claude');
+});
+
+test('Codex and Claude Code sessions are served side by side, each with its agent', async () => {
+  const sessions = await waitFor(async () => {
+    const list = await getJson('/api/sessions');
+    return list.length >= 2 ? list : null;
+  });
+  const codex = sessions.find(session => session.id === SESSION);
+  assert.equal(codex.agent, 'codex');
+  assert.equal(sessions.find(session => session.id === 'claude-sess-1').agent, 'claude');
+  assert.equal(codex.model, 'gpt-5-codex', "a subagent's model request does not change the session's model");
+  assert.equal(codex.toolCalls, 1);
+  assert.equal(codex.busy, false);
+});
+
+test("a Codex model request becomes a model step with the request's tokens", async () => {
+  const events = await getJson(`/api/events?session=${SESSION}`);
+  assert.ok(!events.some(event => event.event === 'PostModelRequest'), 'turned into ModelSteps');
+  const steps = events.filter(event => event.event === 'ModelStep');
+  assert.equal(steps.length, 2);
+  const [main, subagent] = steps;
+  assert.equal(main.agent, 'codex');
+  assert.equal(main.category, 'model');
+  assert.deepEqual(main.data.tokens, { input: 2000, output: 300, cache_read: 10000, cache_write: 0, context: 12000 });
+  assert.equal(main.data.stop_reason, 'completed');
+  assert.equal(main.data.subagent, false);
+  assert.equal(subagent.data.subagent, true);
+  assert.equal(subagent.data.agent_id, 'sub-1');
+
+  const session = (await getJson('/api/sessions')).find(candidate => candidate.id === SESSION);
+  assert.deepEqual([session.usage.input, session.usage.output, session.usage.cache_read, session.usage.turns], [2500, 350, 10000, 2]);
+  assert.equal(session.modelSteps, 2);
+  assert.equal(session.context.tokens, 12000, 'the main agent sets the context size, not the subagent');
+  assert.equal(session.context.window, 272000);
+});
+
+test('the Context view is refused for a Codex session', async () => {
+  const response = await fetch(`http://127.0.0.1:${port}/api/context?session=${SESSION}`);
+  assert.equal(response.status, 409);
+});
+
+// ---- setup-codex.js
+const HOOKS_FILE = path.join(CODEX_HOME, 'hooks.json');
+const runSetup = (...args) => spawnSync(process.execPath, [SETUP, ...args], { env: { ...process.env, CODEX_HOME }, encoding: 'utf8', timeout: 10000 });
+const readHooksFile = () => JSON.parse(fs.readFileSync(HOOKS_FILE, 'utf8'));
+const OTHER_HOOK = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo mine' }] };
+const ourHandlers = config => Object.values(config.hooks).flat().flatMap(group => group.hooks).filter(handler => handler.command.includes('--agent codex'));
+
+test('setup-codex adds the hooks next to the ones already there, once however often it runs', () => {
+  fs.writeFileSync(HOOKS_FILE, JSON.stringify({ description: 'mine', hooks: { PreToolUse: [OTHER_HOOK] } }));
+  assert.equal(runSetup().status, 0);
+  assert.equal(runSetup().status, 0);
+  const config = readHooksFile();
+  const pluginEvents = Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, '.codex-plugin', 'plugin.json'), 'utf8')).hooks.hooks);
+  assert.equal(config.description, 'mine');
+  assert.deepEqual(config.hooks.PreToolUse[0], OTHER_HOOK, 'the existing hook is kept, first');
+  assert.equal(ourHandlers(config).length, pluginEvents.length, 'one handler per event, not two');
+  for (const handler of ourHandlers(config)) {
+    assert.ok(handler.command.includes(HOOK), 'the full path to this hook.js, not ${PLUGIN_ROOT}');
+    assert.equal(handler.async, true);
+  }
+});
+
+test('setup-codex --remove takes out only its own hooks', () => {
+  assert.equal(runSetup('--remove').status, 0);
+  assert.deepEqual(readHooksFile().hooks, { PreToolUse: [OTHER_HOOK] });
+});
+
+test('setup-codex leaves a broken hooks file alone', () => {
+  fs.writeFileSync(HOOKS_FILE, '{ not json');
+  const result = runSetup();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Could not read/);
+  assert.equal(fs.readFileSync(HOOKS_FILE, 'utf8'), '{ not json');
+});
+
+// ---- the dashboard's view of Codex tools (plain browser scripts, evaluated in the page's order)
+const source = file => fs.readFileSync(path.join(ROOT, 'server', 'dashboard', file), 'utf8');
+const SCRIPTS = [
+  'building-blocks/language/i18n.js', 'building-blocks/language/translations/en.js', 'building-blocks/language/selected-language.js',
+  'building-blocks/format.js', 'building-blocks/tech-badges.js', 'features/events/model/tool-groups.js', 'features/events/model/tool-techs.js',
+  'features/events/model/meaning.js',
+];
+const dashboard = new Function(SCRIPTS.map(source).join('\n') + '\nreturn { patchedFiles, filesOfToolCall, toolGroupOf, toolArgument, firstTechOfToolCall, isSubagentCall };')();
+
+test("the dashboard reads Codex's tools: patches edit files, exec_command runs commands, spawn_agent starts a subagent", () => {
+  const input = { command: PATCH };
+  assert.deepEqual(dashboard.patchedFiles(input), ['src/app.ts', 'src/new.ts']);
+  assert.deepEqual(dashboard.patchedFiles({ command: PATCH.replace(/\n/g, '\r\n') }), ['src/app.ts', 'src/new.ts'], 'Windows line ends');
+  assert.deepEqual(dashboard.patchedFiles({ command: '*** Update File: a.js\n*** Move to: b.js' }), ['a.js', 'b.js']);
+  assert.deepEqual(dashboard.filesOfToolCall('Edit', { file_path: 'x.py' }), ['x.py']);
+  assert.equal(dashboard.toolGroupOf('apply_patch', input), 'files');
+  assert.equal(dashboard.toolArgument({ tool_name: 'apply_patch', tool_input: input }), 'src/app.ts, src/new.ts');
+  assert.equal(dashboard.firstTechOfToolCall('apply_patch', input), 'ts');
+  assert.equal(dashboard.toolGroupOf('exec_command', { command: 'git status' }), 'git');
+  assert.equal(dashboard.toolGroupOf('exec_command', { command: 'npm test' }), 'shell');
+  assert.ok(dashboard.isSubagentCall('spawn_agent'));
+  assert.equal(dashboard.toolGroupOf('spawn_agent', {}), 'agents');
+});

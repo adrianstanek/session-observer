@@ -32,7 +32,7 @@ TRANSLATIONS.ja = (() => {
     clearLog: 'ログを消去', clearLogTitle: 'ローカルのイベントログを削除', clearConfirm: '記録されたイベントをすべて削除しますか？',
     range: '期間', range1h: '直近 1 時間', range6h: '直近 6 時間', range24h: '直近 24 時間', range7d: '直近 7 日', rangeAll: 'すべて',
     search: '検索', searchPh: 'プロンプト、返答、コマンド、パス、エラー…',
-    group: 'ツールグループ', groupTitle: 'マップのどの部分か: ファイル、シェル、Git、MCP…', allGroups: 'すべてのグループ',
+    group: 'ツールグループ', groupTitle: 'マップのどの部分か: ファイル、シェル、Git、MCP…', allGroups: 'すべてのグループ', agent: 'エージェント', allAgents: 'すべてのエージェント', agentTitle: 'Claude Code、Codex、または両方のセッションを表示',
     onlyProblems: '問題のみ', resetFilters: 'フィルターをリセット', view: '表示',
     replayBtn: '▶ 再生', pauseBtn: '❚❚ 一時停止', speedTitle: '再生速度', liveBtn: 'ライブ',
     replaying: '再生中', paused: '一時停止中',
@@ -79,7 +79,7 @@ TRANSLATIONS.ja = (() => {
     commands: 'コマンド', noCommands: 'シェルコマンドはありません。', topN: n => `上位 ${n}`, latestX: x => `最新: ${x}`,
     subagents: 'サブエージェント', startedAt: t => `${t} に開始`, problems: '問題', latestFirst: '新しい順',
 
-    noConversation: 'まだ会話はありません', openTurn: 'このターンを開く', claudeWorking: 'Claude が作業中…',
+    noConversation: 'まだ会話はありません', openTurn: 'このターンを開く', agentWorking: name => `${name} が作業中…`, contextNotForCodex: 'コンテキストビューは Claude Code のトランスクリプトを読み込むため、Codex のセッションではまだ使えません。',
 
     eventTypes: 'イベントの種類',
 

@@ -32,7 +32,7 @@ TRANSLATIONS.zh = (() => {
     clearLog: '清空日志', clearLogTitle: '删除本地事件日志', clearConfirm: '删除所有已记录的事件？',
     range: '时间范围', range1h: '最近 1 小时', range6h: '最近 6 小时', range24h: '最近 24 小时', range7d: '最近 7 天', rangeAll: '全部',
     search: '搜索', searchPh: '提示词、回复、命令、路径、错误…',
-    group: '工具组', groupTitle: '地图的哪一部分：文件、Shell、Git、MCP…', allGroups: '所有组',
+    group: '工具组', groupTitle: '地图的哪一部分：文件、Shell、Git、MCP…', allGroups: '所有组', agent: '代理', allAgents: '所有代理', agentTitle: '显示来自 Claude Code、Codex 或两者的会话',
     onlyProblems: '只看问题', resetFilters: '重置筛选', view: '视图',
     replayBtn: '▶ 回放', pauseBtn: '❚❚ 暂停', speedTitle: '回放速度', liveBtn: '实时',
     replaying: '回放中', paused: '已暂停',
@@ -79,7 +79,7 @@ TRANSLATIONS.zh = (() => {
     commands: '命令', noCommands: '没有 Shell 命令。', topN: n => `前 ${n} 个`, latestX: x => `最近：${x}`,
     subagents: '子代理', startedAt: t => `开始于 ${t}`, problems: '问题', latestFirst: '最新在前',
 
-    noConversation: '还没有对话', openTurn: '打开这一轮', claudeWorking: 'Claude 正在工作…',
+    noConversation: '还没有对话', openTurn: '打开这一轮', agentWorking: name => `${name} 正在工作…`, contextNotForCodex: '上下文视图读取的是 Claude Code 的记录，因此暂不支持 Codex 会话。',
 
     eventTypes: '事件类型',
 

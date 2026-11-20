@@ -1,4 +1,4 @@
-// Model steps and token usage, read from each session's transcript.
+// Model steps and token usage, read from each Claude Code session's transcript (Codex sessions: codex-model-steps.js).
 //
 // Hooks don't see individual model calls, so each assistant API response in the transcript (and in the subagent
 // transcripts) becomes a synthetic "ModelStep" event, and every block of text or thinking it wrote a "ModelText".
@@ -10,6 +10,7 @@ const { FileTail } = require('../../building-blocks/file-tail');
 const { ingest, sessionSummary } = require('./sessions');
 const { broadcast } = require('../../building-blocks/live-updates');
 const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
+const { CODEX, isCodexModelRequest, toCodexModelStep, addCodexUsage } = require('./codex-model-steps');
 
 const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
@@ -20,10 +21,17 @@ const seenMessageIds = new Map();     // session id → Set(message id)
 const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
 const scheduledReads = new Map();     // session id → timer
 
-// takes an event into its session and, unless it came from the transcript itself, reads the transcript soon after
+// a session whose transcript this file reads: Claude Code's, not Codex's
+const readsTranscript = session => !!session.transcript_path && session.agent !== CODEX;
+
+// takes an event into its session and, unless it came from the transcript itself, reads the transcript soon after.
+// A Codex model request becomes a ModelStep right here instead.
 function ingestEvent(event) {
+  const isCodexStep = isCodexModelRequest(event);
+  if (isCodexStep) toCodexModelStep(event);
   const session = ingest(event);
-  if (event.event !== 'ModelStep' && session.transcript_path) scheduleTranscriptRead(session);
+  if (isCodexStep) addCodexUsage(session, event);
+  else if (event.event !== 'ModelStep' && readsTranscript(session)) scheduleTranscriptRead(session);
   return session;
 }
 
@@ -201,7 +209,7 @@ function readTranscriptRow(session, row, isSubagentFile, seen, fresh) {
 }
 
 function readTranscripts(session) {
-  if (!session.transcript_path) return;
+  if (!readsTranscript(session)) return;
   const seen = seenIdsOf(session.id);
   const fresh = []; // events to push to the open pages
   for (const { file, isSubagent } of transcriptFilesOf(session)) {

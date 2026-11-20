@@ -32,7 +32,7 @@ TRANSLATIONS.ko = (() => {
     clearLog: '로그 지우기', clearLogTitle: '로컬 이벤트 로그 삭제', clearConfirm: '기록된 이벤트를 모두 삭제할까요?',
     range: '기간', range1h: '최근 1시간', range6h: '최근 6시간', range24h: '최근 24시간', range7d: '최근 7일', rangeAll: '전체',
     search: '검색', searchPh: '프롬프트, 응답, 명령, 경로, 오류…',
-    group: '도구 그룹', groupTitle: '지도의 어느 부분인지: 파일, 셸, Git, MCP…', allGroups: '모든 그룹',
+    group: '도구 그룹', groupTitle: '지도의 어느 부분인지: 파일, 셸, Git, MCP…', allGroups: '모든 그룹', agent: '에이전트', allAgents: '모든 에이전트', agentTitle: 'Claude Code, Codex 또는 둘 다의 세션 표시',
     onlyProblems: '문제만', resetFilters: '필터 초기화', view: '보기',
     replayBtn: '▶ 재생', pauseBtn: '❚❚ 일시 정지', speedTitle: '재생 속도', liveBtn: '실시간',
     replaying: '재생 중', paused: '일시 정지됨',
@@ -79,7 +79,7 @@ TRANSLATIONS.ko = (() => {
     commands: '명령', noCommands: '셸 명령이 없습니다.', topN: n => `상위 ${n}`, latestX: x => `최근: ${x}`,
     subagents: '서브에이전트', startedAt: t => `${t} 시작`, problems: '문제', latestFirst: '최신순',
 
-    noConversation: '아직 대화가 없습니다', openTurn: '이 턴 열기', claudeWorking: 'Claude가 작업 중…',
+    noConversation: '아직 대화가 없습니다', openTurn: '이 턴 열기', agentWorking: name => `${name}가 작업 중…`, contextNotForCodex: '컨텍스트 보기는 Claude Code 트랜스크립트를 읽으므로 Codex 세션에서는 아직 사용할 수 없습니다.',
 
     eventTypes: '이벤트 종류',
 

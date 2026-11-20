@@ -34,7 +34,7 @@ TRANSLATIONS.fr = (() => {
     clearLog: 'Vider le journal', clearLogTitle: 'Supprimer le journal d’événements local', clearConfirm: 'Supprimer tous les événements enregistrés ?',
     range: 'Période', range1h: 'dernière heure', range6h: '6 dernières h', range24h: '24 dernières h', range7d: '7 derniers jours', rangeAll: 'tout',
     search: 'Rechercher', searchPh: 'prompts, réponses, commandes, chemins, erreurs…',
-    group: 'Groupe d’outils', groupTitle: 'Quelle partie de la carte : Fichiers, Shell, Git, MCP…', allGroups: 'tous les groupes',
+    group: 'Groupe d’outils', groupTitle: 'Quelle partie de la carte : Fichiers, Shell, Git, MCP…', allGroups: 'tous les groupes', agent: 'Agent', allAgents: 'tous les agents', agentTitle: 'Afficher les sessions de Claude Code, de Codex ou des deux',
     onlyProblems: 'problèmes seulement', resetFilters: 'Réinitialiser les filtres', view: 'Vue',
     replayBtn: '▶ Rejouer', pauseBtn: '❚❚ Pause', speedTitle: 'Vitesse de relecture', liveBtn: 'Direct',
     replaying: 'Relecture', paused: 'En pause',
@@ -81,7 +81,7 @@ TRANSLATIONS.fr = (() => {
     commands: 'Commandes', noCommands: 'Aucune commande shell.', topN: n => `top ${n}`, latestX: x => `dernier : ${x}`,
     subagents: 'Sous-agents', startedAt: t => `démarré à ${t}`, problems: 'Problèmes', latestFirst: 'les plus récents d’abord',
 
-    noConversation: 'Pas encore de conversation', openTurn: 'Ouvrir ce tour', claudeWorking: 'Claude travaille…',
+    noConversation: 'Pas encore de conversation', openTurn: 'Ouvrir ce tour', agentWorking: name => `${name} travaille…`, contextNotForCodex: 'La vue Contexte lit les transcriptions de Claude Code : elle n’est pas encore disponible pour les sessions Codex.',
 
     eventTypes: 'Types d’événements',
 

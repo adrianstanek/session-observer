@@ -34,7 +34,7 @@ TRANSLATIONS.it = (() => {
     clearLog: 'Svuota log', clearLogTitle: 'Elimina il log locale degli eventi', clearConfirm: 'Eliminare tutti gli eventi registrati?',
     range: 'Periodo', range1h: 'ultima 1 h', range6h: 'ultime 6 h', range24h: 'ultime 24 h', range7d: 'ultimi 7 giorni', rangeAll: 'tutto',
     search: 'Cerca', searchPh: 'prompt, risposte, comandi, percorsi, errori…',
-    group: 'Gruppo di strumenti', groupTitle: 'Quale parte della mappa: File, Shell, Git, MCP…', allGroups: 'tutti i gruppi',
+    group: 'Gruppo di strumenti', groupTitle: 'Quale parte della mappa: File, Shell, Git, MCP…', allGroups: 'tutti i gruppi', agent: 'Agente', allAgents: 'tutti gli agenti', agentTitle: 'Mostra le sessioni di Claude Code, di Codex o di entrambi',
     onlyProblems: 'solo problemi', resetFilters: 'Azzera filtri', view: 'Vista',
     replayBtn: '▶ Riproduci', pauseBtn: '❚❚ Pausa', speedTitle: 'Velocità di riproduzione', liveBtn: 'Diretta',
     replaying: 'Riproduzione', paused: 'In pausa',
@@ -81,7 +81,7 @@ TRANSLATIONS.it = (() => {
     commands: 'Comandi', noCommands: 'Nessun comando shell.', topN: n => `top ${n}`, latestX: x => `ultimo: ${x}`,
     subagents: 'Subagenti', startedAt: t => `avviato ${t}`, problems: 'Problemi', latestFirst: 'più recenti prima',
 
-    noConversation: 'Ancora nessuna conversazione', openTurn: 'Apri questo turno', claudeWorking: 'Claude è al lavoro…',
+    noConversation: 'Ancora nessuna conversazione', openTurn: 'Apri questo turno', agentWorking: name => `${name} è al lavoro…`, contextNotForCodex: 'La vista Contesto legge le trascrizioni di Claude Code, quindi non è ancora disponibile per le sessioni di Codex.',
 
     eventTypes: 'Tipi di evento',
 

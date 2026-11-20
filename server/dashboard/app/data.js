@@ -21,6 +21,7 @@ async function loadScope() {
     if (response.ok) events = await response.json();
   } catch { /* offline */ }
   if (load !== latestLoad) return;
+  if (state.scope === ALL_SESSIONS) events = events.filter(event => isAgentShown(agentOfEvent(event)));
   events.sort(byTimeThenSeq);
   state.events = events;
   state.frozenEvents = [];
@@ -41,7 +42,7 @@ function selectScope(id) {
   loadScope();
 }
 
-const isInScope = event => state.scope === ALL_SESSIONS || event.session_id === state.scope;
+const isInScope = event => (state.scope === ALL_SESSIONS ? isAgentShown(agentOfEvent(event)) : event.session_id === state.scope);
 
 // inserts an event in time order; true when it went at the end
 function insertEvent(event) {

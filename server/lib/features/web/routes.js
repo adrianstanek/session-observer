@@ -6,6 +6,7 @@ const { PORT, LOG_FILE, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } =
 const guard = require('./request-guard');
 const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/sessions');
 const { sessionContext } = require('../context/session-context');
+const { CODEX } = require('../sessions/codex-model-steps');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
 
 const ALL_SESSIONS = 'all'; // the session id in /api/events?session= that asks for every session's events
@@ -88,6 +89,8 @@ function serveEvents(response, url) {
 function serveContext(response, url) {
   const session = sessions.get(url.searchParams.get('session'));
   if (!session) return sendError(response, 404, 'unknown session');
+  // the Context view reads Claude Code's transcript format; Codex's is different (and not a stable interface)
+  if (session.agent === CODEX) return sendError(response, 409, 'the Context view is not available for Codex sessions');
   try {
     sendJson(response, 200, sessionContext(session));
   } catch (error) {
