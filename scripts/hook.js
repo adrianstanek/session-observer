@@ -12,38 +12,42 @@ const net = require('net');
 const DATA_DIR = process.env.OBSERVER_DATA_DIR || path.join(os.homedir(), '.claude', 'session-observer');
 const LOG_FILE = path.join(DATA_DIR, 'events.jsonl');
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
-const MAX_STR = Number(process.env.OBSERVER_MAX_FIELD || 8000); // chars kept per string field
+const MAX_STRING = Number(process.env.OBSERVER_MAX_FIELD || 8000); // chars kept per string field
+const MAX_ARRAY_ITEMS = 200;
+const MAX_DEPTH = 8;
 
+// the payload with long strings and arrays cut short, so one huge tool output can't bloat the log
 function truncate(value, depth = 0) {
   if (typeof value === 'string') {
-    return value.length > MAX_STR ? value.slice(0, MAX_STR) + `… [+${value.length - MAX_STR} chars]` : value;
+    return value.length > MAX_STRING ? value.slice(0, MAX_STRING) + `… [+${value.length - MAX_STRING} chars]` : value;
   }
-  if (depth > 8 || value === null || typeof value !== 'object') return value;
+  if (depth > MAX_DEPTH || value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) {
-    const arr = value.slice(0, 200).map(v => truncate(v, depth + 1));
-    if (value.length > 200) arr.push(`… [+${value.length - 200} items]`);
-    return arr;
+    const items = value.slice(0, MAX_ARRAY_ITEMS).map(item => truncate(item, depth + 1));
+    if (value.length > MAX_ARRAY_ITEMS) items.push(`… [+${value.length - MAX_ARRAY_ITEMS} items]`);
+    return items;
   }
-  const out = {};
-  for (const [k, v] of Object.entries(value)) out[k] = truncate(v, depth + 1);
-  return out;
+  const truncated = {};
+  for (const [key, item] of Object.entries(value)) truncated[key] = truncate(item, depth + 1);
+  return truncated;
 }
 
-function portInUse(port) {
+function isPortInUse(port) {
   return new Promise(resolve => {
-    const sock = net.connect({ port, host: '127.0.0.1' });
-    sock.setTimeout(300);
-    sock.once('connect', () => { sock.destroy(); resolve(true); });
-    sock.once('timeout', () => { sock.destroy(); resolve(false); });
-    sock.once('error', () => resolve(false));
+    const socket = net.connect({ port, host: '127.0.0.1' });
+    socket.setTimeout(300);
+    socket.once('connect', () => { socket.destroy(); resolve(true); });
+    socket.once('timeout', () => { socket.destroy(); resolve(false); });
+    socket.once('error', () => resolve(false));
   });
 }
 
+// starts the dashboard server in the background unless it already runs (or autostart is off)
 async function ensureServer() {
   if (process.env.OBSERVER_AUTOSTART === '0') return;
-  if (await portInUse(PORT)) return;
-  const server = path.join(__dirname, '..', 'server', 'server.js');
-  const child = spawn(process.execPath, [server], {
+  if (await isPortInUse(PORT)) return;
+  const serverScript = path.join(__dirname, '..', 'server', 'server.js');
+  const child = spawn(process.execPath, [serverScript], {
     detached: true,
     stdio: 'ignore',
     env: { ...process.env, OBSERVER_PORT: String(PORT), OBSERVER_DATA_DIR: DATA_DIR },
@@ -51,11 +55,16 @@ async function ensureServer() {
   child.unref();
 }
 
+async function readStdin() {
+  let input = '';
+  for await (const chunk of process.stdin) input += chunk;
+  return input;
+}
+
 async function main() {
-  let raw = '';
-  for await (const chunk of process.stdin) raw += chunk;
+  const input = await readStdin();
   let payload;
-  try { payload = JSON.parse(raw); } catch { payload = { raw }; }
+  try { payload = JSON.parse(input); } catch { payload = { raw: input }; }
 
   const event = {
     ts: new Date().toISOString(),
