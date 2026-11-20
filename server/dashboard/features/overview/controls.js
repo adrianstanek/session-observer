@@ -24,6 +24,9 @@ function initOverviewClicks() {
   };
 }
 
+// where the chart tooltip sits, in px: right of and below the pointer, or above it near the bottom of the window
+const TOOLTIP_OFFSET = { right: 14, below: 16, above: 10, windowMargin: 8 };
+
 // chart tooltips (one floating box for every [data-tip]) and the context chart's crosshair
 function initChartTooltips() {
   const tooltip = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'vtip' }));
@@ -31,8 +34,9 @@ function initChartTooltips() {
     tooltip.textContent = text;
     tooltip.style.display = 'block';
     const box = tooltip.getBoundingClientRect();
-    tooltip.style.left = Math.min(innerWidth - box.width - 8, x + 14) + 'px';
-    tooltip.style.top = (y + 16 + box.height > innerHeight ? y - box.height - 10 : y + 16) + 'px';
+    tooltip.style.left = Math.min(innerWidth - box.width - TOOLTIP_OFFSET.windowMargin, x + TOOLTIP_OFFSET.right) + 'px';
+    const belowY = y + TOOLTIP_OFFSET.below;
+    tooltip.style.top = (belowY + box.height > innerHeight ? y - box.height - TOOLTIP_OFFSET.above : belowY) + 'px';
   };
   const hideCrosshairs = () => { for (const crosshair of elementById('mid').querySelectorAll('.xhair')) crosshair.style.display = 'none'; };
 

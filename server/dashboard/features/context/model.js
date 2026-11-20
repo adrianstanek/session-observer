@@ -9,12 +9,13 @@ const contextView = {
 };
 const openContextCards = new Set();       // ids of the cards you opened ("-id": a card that starts open, closed by you)
 const collapsedContextTurns = new Set();  // ids of the turns you collapsed
-// 'all' = the whole session · 'now' = since the last compaction
-let contextRange = storage.get('so.ctxMode', 'all') === 'now' ? 'now' : 'all';
+// which messages the view shows (the values are also the saved setting and the buttons' data-cxm)
+const CONTEXT_RANGE = { wholeSession: 'all', sinceCompaction: 'now' };
+let contextRange = storage.get(SETTING_KEYS.contextRange) === CONTEXT_RANGE.sinceCompaction ? CONTEXT_RANGE.sinceCompaction : CONTEXT_RANGE.wholeSession;
 // 'new' = newest message on top · 'old' = oldest on top, as the model reads it
-let contextOrder = storage.get('so.ctxOrder', 'new');
+let contextOrder = storage.get(SETTING_KEYS.contextOrder, 'new');
 // show bookkeeping: attachments Claude Code keeps for itself and never sends
-let showBookkeeping = storage.get('so.ctxMeta', '0') === '1';
+let showBookkeeping = storage.get(SETTING_KEYS.contextBookkeeping, '0') === '1';
 let contextScroll = { sessionId: null, fromBottom: 0, atTop: true };
 
 // the session the view shows: the selected one, or the only one there is
@@ -89,7 +90,7 @@ function pairCallsAndResults(items, subagents) {
 function itemsInRange(data) {
   let items = pairCallsAndResults(data.items, data.subagents);
   const lastCompaction = items.map(item => item.kind).lastIndexOf('compact');
-  if (contextRange === 'now' && lastCompaction >= 0) items = items.slice(lastCompaction);
+  if (contextRange === CONTEXT_RANGE.sinceCompaction && lastCompaction >= 0) items = items.slice(lastCompaction);
   return { items, compacted: lastCompaction >= 0 };
 }
 

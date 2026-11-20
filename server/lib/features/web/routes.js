@@ -8,6 +8,7 @@ const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/s
 const { sessionContext } = require('../context/session-context');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
 
+const ALL_SESSIONS = 'all'; // the session id in /api/events?session= that asks for every session's events
 const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 // a file in the dashboard folder or its subfolders: every part of the path is a plain name (letters, digits, - and _,
 // never a dot), and the file has a known extension, so a request can't leave the folder
@@ -78,7 +79,7 @@ function sessionsNewestFirst() {
 function serveEvents(response, url) {
   const sessionId = url.searchParams.get('session');
   const since = url.searchParams.get('since') || null;
-  if (sessionId === 'all') return sendJson(response, 200, eventsOfAllSessions(since));
+  if (sessionId === ALL_SESSIONS) return sendJson(response, 200, eventsOfAllSessions(since));
   const session = sessions.get(sessionId);
   if (!session) return sendError(response, 404, 'unknown session');
   sendJson(response, 200, since ? session.events.filter(event => event.ts >= since) : session.events);

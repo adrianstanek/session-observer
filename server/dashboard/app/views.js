@@ -13,7 +13,7 @@ let contextTurnShown = null; // the selected turn the Context view last scrolled
 function setView(id) {
   if (!VIEWS.some(view => view.id === id)) id = 'overview';
   state.view = id;
-  storage.set('so.layout', id);
+  storage.set(SETTING_KEYS.layout, id);
   document.querySelector('.stage').dataset.layout = id;
   elementById('layouts').innerHTML = VIEWS.map(view =>
     `<button role="tab" aria-selected="${view.id === id}" data-layout="${view.id}" class="${view.id === id ? 'cur' : ''}">${view.label}</button>`).join('');

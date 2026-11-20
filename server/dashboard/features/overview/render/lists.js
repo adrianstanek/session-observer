@@ -95,7 +95,7 @@ function problemsListHtml(events) {
   if (!problems.length) return '';
   const rows = problems.slice(-6).reverse().map(event => {
     const [label, detail] = describeEvent(event);
-    return `<div class="vrow fail" data-seq="${event.seq}" ${tooltipAttribute(label + ': ' + shorten(detail, 400))}>
+    return `<div class="vrow fail" data-seq="${event.seq}" ${tooltipAttribute(label + ': ' + shorten(detail, TOOLTIP_PREVIEW_MAX))}>
     <span class="a"><b>${escapeHtml(label)}</b> ${escapeHtml(shorten(detail, 120))}</span><span class="b">${escapeHtml(formatTime(event.ts))}</span></div>`;
   });
   return overviewCardHtml(TEXT.problems, `${problems.length} · ${escapeHtml(TEXT.latestFirst)}`, listHtml(rows));

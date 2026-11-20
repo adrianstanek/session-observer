@@ -3,6 +3,8 @@
 // message is one model step and the blocks it produced (thinking, text, tool calls); a user message is what comes
 // between (prompts, tool results, reminders and other attachments). Messages are newest first unless the order is
 // switched; blocks keep their own order.
+const CARD_NOTE_MAX = 90;       // the one-line preview after a card's title
+const LONG_CARD_NOTE_MAX = 110; // the same for thinking and injected text, whose title is a single word
 const ASSISTANT_ITEM_KINDS = new Set(['step', 'thinking', 'text', 'call']);
 // ---- the blocks of a message
 function attachmentBlockHtml(item, id, hasSteps) {
@@ -11,7 +13,7 @@ function attachmentBlockHtml(item, id, hasSteps) {
   const note = item.role === 'meta' ? TEXT.notSentModel : item.role === 'pinned' ? TEXT.pinnedChange : item.rendered ? TEXT.sentAsText : TEXT.sentModel;
   const size = item.role === 'meta' ? escapeHtml(TEXT.notSent) : approxTokensLabel(textLength(item.text));
   return contextCardHtml(id, item.role === 'meta' ? 'att meta' : 'att',
-    cardHeader({ title: escapeHtml(item.label || TEXT.attachment), note: escapeHtml(shorten(item.text, 90)), size }),
+    cardHeader({ title: escapeHtml(item.label || TEXT.attachment), note: escapeHtml(shorten(item.text, CARD_NOTE_MAX)), size }),
     `<div class="muted">${escapeHtml(note)}</div>${preText(item.text)}`);
 }
 
@@ -19,7 +21,7 @@ function toolResultBlockHtml(item, id) {
   const call = item.call;
   const failed = item.error ? ` <span class="err">✕ ${escapeHtml(TEXT.failedLc)}</span>` : '';
   return contextCardHtml(id, 'tool',
-    `${toolIconHtml(call.name, call.input, toolGroupOf(call.name, call.input))}<b>${escapeHtml(TEXT.result)}</b> <span class="muted">${escapeHtml(toolDisplayName(call.name))} · ${escapeHtml(shorten(item.text, 90))}</span>${failed}<span class="grow"></span><span class="sz">${approxTokensLabel(textLength(item.text))}</span>`,
+    `${toolIconHtml(call.name, call.input, toolGroupOf(call.name, call.input))}<b>${escapeHtml(TEXT.result)}</b> <span class="muted">${escapeHtml(toolDisplayName(call.name))} · ${escapeHtml(shorten(item.text, CARD_NOTE_MAX))}</span>${failed}<span class="grow"></span><span class="sz">${approxTokensLabel(textLength(item.text))}</span>`,
     fullToolOutputHtml(item.text, item.error));
 }
 
@@ -49,12 +51,12 @@ function blockHtml(item, id, searchText, hasSteps) {
     case 'text': return `<div class="cxt">${markdownLiteHtml(item.text)}</div>`;
     case 'summary':
       return contextCardHtml(id, 'sum', `${iconSvg('context')} <b>${escapeHtml(TEXT.compactionSummary)}</b><span class="grow"></span><span class="sz">${approxTokensLabel(textLength(item.text))}</span>`, preText(item.text), true);
-    case 'thinking': return contextCardHtml(id, 'think', `<b>${escapeHtml(TEXT.thinking)}</b> <span class="muted">${escapeHtml(shorten(item.text, 110))}</span>`, preText(item.text));
+    case 'thinking': return contextCardHtml(id, 'think', `<b>${escapeHtml(TEXT.thinking)}</b> <span class="muted">${escapeHtml(shorten(item.text, LONG_CARD_NOTE_MAX))}</span>`, preText(item.text));
     case 'meta':
-      return contextCardHtml(id, 'att', cardHeader({ title: escapeHtml(TEXT.injected), note: escapeHtml(shorten(item.text, 110)), size: approxTokensLabel(textLength(item.text)) }), preText(item.text));
+      return contextCardHtml(id, 'att', cardHeader({ title: escapeHtml(TEXT.injected), note: escapeHtml(shorten(item.text, LONG_CARD_NOTE_MAX)), size: approxTokensLabel(textLength(item.text)) }), preText(item.text));
     case 'attachment': return attachmentBlockHtml(item, id, hasSteps);
     case 'result': return toolResultBlockHtml(item, id);
-    case 'orphan': return contextCardHtml(id, 'tool', `<b>${escapeHtml(TEXT.toolResult)}</b> <span class="muted">${escapeHtml(shorten(item.text, 90))}</span>`, fullToolOutputHtml(item.text, item.error));
+    case 'orphan': return contextCardHtml(id, 'tool', `<b>${escapeHtml(TEXT.toolResult)}</b> <span class="muted">${escapeHtml(shorten(item.text, CARD_NOTE_MAX))}</span>`, fullToolOutputHtml(item.text, item.error));
     case 'call': return toolCallBlockHtml(item, id, searchText);
     default: return '';
   }

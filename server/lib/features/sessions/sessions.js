@@ -3,6 +3,7 @@
 const { MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS } = require('../../building-blocks/config');
 const { categoryOf, SUBAGENT_TOOLS } = require('./event-categories');
 
+const TITLE_MAX = 140; // characters of the first prompt kept as the session's title
 const sessions = new Map(); // session id → session
 let lastSeq = 0;
 
@@ -70,7 +71,7 @@ function updateLifecycle(session, event, data) {
     case 'UserPromptSubmit':
       session.turns++;
       session.busy = true;
-      if (!session.title && data.prompt) session.title = String(data.prompt).replace(/\s+/g, ' ').trim().slice(0, 140);
+      if (!session.title && data.prompt) session.title = String(data.prompt).replace(/\s+/g, ' ').trim().slice(0, TITLE_MAX);
       break;
     case 'Stop':
     case 'StopFailure':

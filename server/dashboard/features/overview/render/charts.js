@@ -26,7 +26,7 @@ function turnChartHtml(matchingTurns, width, filterNote) {
   turns.forEach((turn, index) => {
     const duration = durationOf(turn), x = left + index * columnWidth + (columnWidth - barWidth) / 2;
     const barTop = Math.min(plotHeight - 2, yOf(duration)), running = isTurnRunning(turn), selected = state.selectedTurnKey === turn.key;
-    const tooltip = `${shorten(stripTags(turn.prompt) || TEXT.sessionStartParen, 140)}\n${formatTime(turn.start)} · ${formatDuration(duration)}${running ? ' · ' + TEXT.running : ''}\n`
+    const tooltip = `${shorten(stripTags(turn.prompt) || TEXT.sessionStartParen, TITLE_PREVIEW_MAX)}\n${formatTime(turn.start)} · ${formatDuration(duration)}${running ? ' · ' + TEXT.running : ''}\n`
       + `${countOf(turn.stepCount, 'modelStep')} · ${countOf(turn.toolCount, 'toolCall')}${turn.problemCount ? ` · ✕ ${countOf(turn.problemCount, 'problem')}` : ''}`;
     svg += `<g class="col ${selected ? 'sel' : ''}" data-key="${escapeHtml(turn.key)}" ${tooltipAttribute(tooltip)}><rect class="hit" x="${(left + index * columnWidth).toFixed(1)}" y="0" width="${columnWidth.toFixed(1)}" height="${plotHeight}"/>
       <rect class="bar ${running ? 'run' : ''} ${selected ? 'sel' : ''}" x="${x.toFixed(1)}" y="${barTop.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(plotHeight - barTop).toFixed(1)}" rx="${Math.min(3, barWidth / 2)}"/>
@@ -80,15 +80,18 @@ const SPARK_SPAN_MS = 15 * 60000;
 // the events a group's sparkline counts
 const COUNTED_IN_SPARKLINE = new Set(['PreToolUse', 'ModelStep', 'UserPromptSubmit', 'SubagentStart', 'PermissionRequest', 'InstructionsLoaded', 'PreCompact', 'TaskCreated']);
 
+// in viewBox units: one unit per bin with the bar centred in it; a bin with any events is at least minBarHeight high
+const SPARK = { height: 12, barInset: 0.15, barWidth: 0.7, minBarHeight: 1 };
+
 function sparklineSvg(bins, highest) {
   const count = bins.length;
   let bars = '';
   bins.forEach((value, index) => {
     if (!value) return;
-    const height = 1 + 11 * Math.sqrt(value / highest);
-    bars += `<rect x="${index + 0.15}" y="${(12 - height).toFixed(2)}" width=".7" height="${height.toFixed(2)}"/>`;
+    const height = SPARK.minBarHeight + (SPARK.height - SPARK.minBarHeight) * Math.sqrt(value / highest);
+    bars += `<rect x="${index + SPARK.barInset}" y="${(SPARK.height - height).toFixed(2)}" width="${SPARK.barWidth}" height="${height.toFixed(2)}"/>`;
   });
-  return `<svg class="spark" viewBox="0 0 ${count} 12" preserveAspectRatio="none"><line x1="0" y1="12" x2="${count}" y2="12"/>${bars}</svg>`;
+  return `<svg class="spark" viewBox="0 0 ${count} ${SPARK.height}" preserveAspectRatio="none"><line x1="0" y1="${SPARK.height}" x2="${count}" y2="${SPARK.height}"/>${bars}</svg>`;
 }
 
 // per group: sparkline bins of the last 15 minutes, problem counts and the latest event, up to the replay cursor

@@ -52,7 +52,7 @@ function sessionTilesHtml(session) {
 }
 
 function sessionOverviewHtml(session, filterNote) {
-  return `<h2>${escapeHtml(shorten(stripTags(session.title) || baseName(session.cwd) || session.id, 140))}</h2>
+  return `<h2>${escapeHtml(shorten(stripTags(session.title) || baseName(session.cwd) || session.id, TITLE_PREVIEW_MAX))}</h2>
       <p class="lead">${sessionLeadHtml(session)}</p>
       <div class="tiles">${sessionTilesHtml(session)}</div>
       ${overviewChartsHtml(session, filterNote)}`;

@@ -30,7 +30,7 @@ function initDetailsPanel() {
     const id = event.target.dataset?.dsec;
     if (!id) return;
     detailSectionOpen[id] = event.target.open;
-    storage.set('so.dsec', JSON.stringify(detailSectionOpen));
+    storage.set(SETTING_KEYS.detailSections, JSON.stringify(detailSectionOpen));
   }, true);
   panel.onclick = event => {
     if (event.target.closest('#closeTurn')) return closeSelectedTurn();

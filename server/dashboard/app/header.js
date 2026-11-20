@@ -33,7 +33,7 @@ function initLanguageMenu() {
 function initHeaderButtons() {
   elementById('theme').onclick = () => {
     state.theme = NEXT_THEME[state.theme] || 'auto';
-    storage.set('so.theme', state.theme);
+    storage.set(SETTING_KEYS.theme, state.theme);
     applyTheme();
   };
   elementById('pause').onclick = () => {

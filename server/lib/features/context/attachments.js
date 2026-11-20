@@ -25,19 +25,19 @@ const withoutType = attachment => Object.fromEntries(Object.entries(attachment).
 // Some attachments are stored as data and turned into text when sent; this is a readable form of that data, not the
 // exact wording (the "As sent" view has the exact text when the transcript records the request).
 const TEXT_OF_ATTACHMENT = {
-  environment: a => Object.entries(a.snapshot || {}).map(([key, value]) => `${key}: ${asText(value)}`).join('\n'),
-  session_context: a => Object.entries(a.context || {}).map(([key, value]) => `# ${key}\n${asText(value)}`).join('\n\n'),
-  date: a => `Today's date is ${a.date}.`,
-  remote_session_change: a => [
-    a.commit && `End git commit messages with:\n${a.commit}`,
-    a.pr && `End pull request descriptions with:\n${a.pr}`,
+  environment: attachment => Object.entries(attachment.snapshot || {}).map(([key, value]) => `${key}: ${asText(value)}`).join('\n'),
+  session_context: attachment => Object.entries(attachment.context || {}).map(([key, value]) => `# ${key}\n${asText(value)}`).join('\n\n'),
+  date: attachment => `Today's date is ${attachment.date}.`,
+  remote_session_change: attachment => [
+    attachment.commit && `End git commit messages with:\n${attachment.commit}`,
+    attachment.pr && `End pull request descriptions with:\n${attachment.pr}`,
   ].filter(Boolean).join('\n\n'),
-  auto_mode: a => `Auto mode is active. Settings: ${JSON.stringify(withoutType(a))}`,
-  hook_non_blocking_error: a => `${a.hookName || 'hook'} error: ${a.stderr || a.stdout || ''}`,
-  file: a => `Contents of ${a.filename || a.displayPath}:\n\n${asText(a.content?.file?.content ?? a.content ?? '')}`,
-  edited_text_file: a => `${a.filename} changed on disk since it was last read${a.snippet ? `:\n\n${a.snippet}` : ''}`,
-  compact_file_reference: a => `${a.displayPath || a.filename} was read before the compaction`,
-  task_status: a => `Background task ${a.taskId}${a.description ? ` (${a.description})` : ''}: ${a.status}`,
+  auto_mode: attachment => `Auto mode is active. Settings: ${JSON.stringify(withoutType(attachment))}`,
+  hook_non_blocking_error: attachment => `${attachment.hookName || 'hook'} error: ${attachment.stderr || attachment.stdout || ''}`,
+  file: attachment => `Contents of ${attachment.filename || attachment.displayPath}:\n\n${asText(attachment.content?.file?.content ?? attachment.content ?? '')}`,
+  edited_text_file: attachment => `${attachment.filename} changed on disk since it was last read${attachment.snippet ? `:\n\n${attachment.snippet}` : ''}`,
+  compact_file_reference: attachment => `${attachment.displayPath || attachment.filename} was read before the compaction`,
+  task_status: attachment => `Background task ${attachment.taskId}${attachment.description ? ` (${attachment.description})` : ''}: ${attachment.status}`,
 };
 
 const rendererOf = type => (Object.hasOwn(TEXT_OF_ATTACHMENT, type) ? TEXT_OF_ATTACHMENT[type] : null);

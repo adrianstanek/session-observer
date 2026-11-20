@@ -9,9 +9,11 @@ function scrollToUsageCard(target) {
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+const COPIED_NOTICE_MS = 1200; // how long the button says "copied"
+
 function copyContextAsMarkdown(button) {
   navigator.clipboard?.writeText(contextMarkdown()).then(
-    () => { button.textContent = TEXT.copied; setTimeout(() => { button.textContent = TEXT.copy; }, 1200); },
+    () => { button.textContent = TEXT.copied; setTimeout(() => { button.textContent = TEXT.copy; }, COPIED_NOTICE_MS); },
     () => { button.textContent = TEXT.copyFailed; });
 }
 
@@ -44,14 +46,14 @@ function initContextControls() {
     const rangeButton = event.target.closest('[data-cxm]');
     if (rangeButton && !rangeButton.disabled) {
       contextRange = rangeButton.dataset.cxm;
-      storage.set('so.ctxMode', contextRange);
+      storage.set(SETTING_KEYS.contextRange, contextRange);
       viewNeedsDrawing = true;
       return;
     }
     const orderButton = event.target.closest('[data-cxo]');
     if (orderButton) {
       contextOrder = orderButton.dataset.cxo;
-      storage.set('so.ctxOrder', contextOrder);
+      storage.set(SETTING_KEYS.contextOrder, contextOrder);
       viewNeedsDrawing = true;
       renderDetails();
       return;
@@ -59,7 +61,7 @@ function initContextControls() {
     const bookkeepingBox = event.target.closest('[data-cxa]');
     if (bookkeepingBox) {
       showBookkeeping = bookkeepingBox.checked;
-      storage.set('so.ctxMeta', showBookkeeping ? '1' : '0');
+      storage.set(SETTING_KEYS.contextBookkeeping, showBookkeeping ? '1' : '0');
       viewNeedsDrawing = true;
       return;
     }

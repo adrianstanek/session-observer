@@ -3,6 +3,7 @@
 // key → value table.
 const CARD_TEXT_MAX = 6000;
 const NO_FIELDS_SKIPPED = new Set();
+const FIELD_INLINE_MAX = 140; // longer text (or text with line breaks) in a field table goes into an output block
 
 const clipText = (text, max, ellipsis) => (String(text).length > max ? String(text).slice(0, max) + ellipsis : text);
 
@@ -20,7 +21,7 @@ function fieldTableHtml(fields, skipped = NO_FIELDS_SKIPPED) {
   if (!rows.length) return '';
   const valueHtml = value => {
     if (typeof value !== 'string') return `<pre class="code fj">${jsonHtml(value)}</pre>`;
-    return value.length > 140 || value.includes('\n') ? outputBlockHtml(value) : escapeHtml(value);
+    return value.length > FIELD_INLINE_MAX || value.includes('\n') ? outputBlockHtml(value) : escapeHtml(value);
   };
   return `<dl class="kv">${rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${valueHtml(value)}</dd>`).join('')}</dl>`;
 }

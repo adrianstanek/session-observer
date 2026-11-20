@@ -4,7 +4,7 @@ function initReplayControls() {
   state.replaySpeed = setSelectValue('speed', state.replaySpeed, 5);
   elementById('speed').onchange = event => {
     state.replaySpeed = Number(event.target.value);
-    storage.set('so.speed', state.replaySpeed);
+    storage.set(SETTING_KEYS.replaySpeed, state.replaySpeed);
   };
   elementById('play').onclick = () => {
     if (!state.replaying) return startReplay();

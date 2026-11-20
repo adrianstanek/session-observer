@@ -8,7 +8,16 @@ const ROUTE = {
   mainLabelSpace: 32, // main-line labels sit above their stops, out of the way of the forks leaving underneath
   edgeInset: 18,      // where a wrapped line leaves the right edge and comes back at the left
   endGap: 70,         // the end-of-turn stop's distance past the turn's last stop
+  bottomPadding: 10,  // below the last band
+  runningStub: 30,    // the dashed stub after a still-running subagent's last stop
 };
+// a turn divider: its line, the open / collapse toggle at the left, the label after it and the context badge at the right
+const DIVIDER = {
+  lineTop: 6, sideInset: 6, toggleTop: 6, toggleSize: 18, toggleRadius: 5, labelX: 32, labelBaseline: 20,
+  // the prompt in the label gets the columns left after the badge and the "Turn n · time ·" prefix
+  badgeSpace: 260, charWidth: 8, prefixColumns: 30, minPromptColumns: 20, promptColumnsWithoutBadge: 90,
+};
+const ROUTE_MIN_BOX = { width: 120, height: 160 }; // a smaller view box draws nothing
 
 // which turns are open (key → open). Turns start collapsed; the focused and the newest turn get opened and stay open
 // after that, until collapsed by hand
@@ -16,7 +25,7 @@ const routeTurnOpen = new Map();
 let routeFocusedTurnKey = null; // the turn the route was last focused on
 
 // ---- line keys for hover highlighting: every stop and link belongs to its turn's main line or to one subagent's branch
-const lineKeyOfStop = stop => `${stop.turnKey}|${stop.onBranch ? stop.onBranch.id : 'main'}`.replace(/[\s"]/g, '_');
+const lineKeyOfStop = stop => `${stop.turnKey}|${stop.onBranch ? stop.onBranch.id : MAIN_LANE}`.replace(/[\s"]/g, '_');
 const lineKeyOfLink = link => lineKeyOfStop(link.kind === 'merge' ? link.from : link.to);
 // a stop's keys: its own line, plus the branch it starts (Agent call) or brings back (⤴ stop)
 function stopLineKeys(stops) {
@@ -175,7 +184,7 @@ function placeRowsVertically(rows, stops, links) {
     gapAfterLast = ROUTE.rowGap;
   }
   for (const stop of stops) stop.y = rows[stop.row].mainY + stop.lane * ROUTE.laneHeight;
-  return y - gapAfterLast + 10;
+  return y - gapAfterLast + ROUTE.bottomPadding;
 }
 
 // A fork drops from the Agent call then runs along its lane; a merge runs along the subagent's lane then rises into
@@ -205,18 +214,20 @@ const endStopColor = stop => (stop.failed ? 'var(--err)' : stop.isPending ? 'var
 
 function turnDividerSvg(row, drawing) {
   const { focused, pinned, sessionTurns, models, limit, usableWidth, fullWidth } = drawing;
-  const turn = row.dividerTurn, number = sessionTurns.indexOf(turn) + 1, isFocused = turn.key === focused.key, y = row.dividerY + 6;
+  const turn = row.dividerTurn, number = sessionTurns.indexOf(turn) + 1, isFocused = turn.key === focused.key, y = row.dividerY + DIVIDER.lineTop;
   const model = models.get(turn.key);
   const summary = row.collapsed && model
     ? ` · ${countOf(model.stepCount, 'step')} · ${countOf(model.toolCount, 'tool')}${model.problemCount ? ` · ✕${model.problemCount}` : ''}` : '';
   const context = turnContextInfo(sessionTurns, turn, limit);
-  const promptColumns = context ? Math.max(20, Math.floor((usableWidth - 260) / 8) - 30) : 90;
+  const promptColumns = context
+    ? Math.max(DIVIDER.minPromptColumns, Math.floor((usableWidth - DIVIDER.badgeSpace) / DIVIDER.charWidth) - DIVIDER.prefixColumns)
+    : DIVIDER.promptColumnsWithoutBadge;
   const label = `${TEXT.turnN(number)} · ${formatTime(turn.start)} · ${truncateToColumns(stripTags(turn.prompt ?? TEXT.sessionStart), promptColumns)}${summary}`;
   const chevron = row.collapsed ? `M13 ${y + 11}l4 4l-4 4` : `M11 ${y + 13}l4 4l4 -4`;
   // the chevron toggles the turn open / collapsed; the rest of the divider selects the turn
-  return `<g class="tdiv ${isFocused ? 'cur' : ''}${pinned && !isFocused ? ' dim' : ''}" data-key="${escapeHtml(turn.key)}"><line x1="6" y1="${y}" x2="${fullWidth - 6}" y2="${y}"/>`
-    + `<g class="ttog" data-tog="${escapeHtml(turn.key)}" data-open="${row.collapsed ? 0 : 1}"><rect x="6" y="${y + 6}" width="18" height="18" rx="5"/><path d="${chevron}"/><title>${escapeHtml(row.collapsed ? TEXT.expandTurn : TEXT.collapseTurn)}</title></g>`
-    + `<text x="32" y="${y + 20}">${escapeHtml(label)}</text>${contextBadgeSvg(context, fullWidth - 6, y + 20)}<title>${escapeHtml(shorten(turn.prompt ?? TEXT.sessionStart, 300))}</title></g>`;
+  return `<g class="tdiv ${isFocused ? 'cur' : ''}${pinned && !isFocused ? ' dim' : ''}" data-key="${escapeHtml(turn.key)}"><line x1="${DIVIDER.sideInset}" y1="${y}" x2="${fullWidth - DIVIDER.sideInset}" y2="${y}"/>`
+    + `<g class="ttog" data-tog="${escapeHtml(turn.key)}" data-open="${row.collapsed ? 0 : 1}"><rect x="${DIVIDER.sideInset}" y="${y + DIVIDER.toggleTop}" width="${DIVIDER.toggleSize}" height="${DIVIDER.toggleSize}" rx="${DIVIDER.toggleRadius}"/><path d="${chevron}"/><title>${escapeHtml(row.collapsed ? TEXT.expandTurn : TEXT.collapseTurn)}</title></g>`
+    + `<text x="${DIVIDER.labelX}" y="${y + DIVIDER.labelBaseline}">${escapeHtml(label)}</text>${contextBadgeSvg(context, fullWidth - DIVIDER.sideInset, y + DIVIDER.labelBaseline)}<title>${escapeHtml(shorten(turn.prompt ?? TEXT.sessionStart, 300))}</title></g>`;
 }
 
 // Draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one has to cross
@@ -243,7 +254,7 @@ function runningTailsSvg(stops, tailIndexes, drawing) {
   let svg = '';
   for (const index of tailIndexes) {
     const stop = stops[index];
-    if (stop) svg += `<path class="ml br flow${drawing.dimClass(stop)}" data-ln="${lineKeyOfStop(stop)}" d="M${stop.x.toFixed(1)} ${stop.y}l${Math.min(30, drawing.rightEdge - stop.x)} 0"/>`;
+    if (stop) svg += `<path class="ml br flow${drawing.dimClass(stop)}" data-ln="${lineKeyOfStop(stop)}" d="M${stop.x.toFixed(1)} ${stop.y}l${Math.min(ROUTE.runningStub, drawing.rightEdge - stop.x)} 0"/>`;
   }
   return svg;
 }
@@ -302,7 +313,7 @@ function stopSvg(stop, drawing) {
 
 function routeViewHtml() {
   const box = viewBox(), boxWidth = box.clientWidth, boxHeight = box.clientHeight, now = displayTime();
-  if (boxWidth < 120 || boxHeight < 160) return '';
+  if (boxWidth < ROUTE_MIN_BOX.width || boxHeight < ROUTE_MIN_BOX.height) return '';
   const limit = replayLimit();
   const pinned = selectedTurn();
   const focused = routeTurn(limit);

@@ -6,12 +6,13 @@ const IDLE_GAP_LEAD_MS = 400;      // …to just before the next event
 const REPLAY_BAR_REDRAW_MS = 200;
 let lastReplayBarDraw = 0;
 
-// the time span of the loaded events [first, last] (at least a second), or null with no events
+const REPLAY_MIN_SPAN_MS = 1000;
+// the time span of the loaded events [first, last] (at least REPLAY_MIN_SPAN_MS), or null with no events
 function replayTimeRange() {
   const events = state.events;
   if (!events.length) return null;
   const first = eventTime(events[0]);
-  return [first, Math.max(eventTime(events[events.length - 1]), first + 1000)];
+  return [first, Math.max(eventTime(events[events.length - 1]), first + REPLAY_MIN_SPAN_MS)];
 }
 
 const fractionOfRange = (time, [first, last]) => (time - first) / (last - first);

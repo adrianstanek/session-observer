@@ -88,7 +88,7 @@ function defaultCardHtml(event) {
 
 // card builders by event; each gets (event, turn, data, fields)
 const EVENT_CARDS = {
-  ModelStep: (event, turn) => modelStepCardHtml(event, turn),
+  ModelStep: modelStepCardHtml,
   PreToolUse: toolCallCardHtml, PostToolUse: toolCallCardHtml, PostToolUseFailure: toolCallCardHtml,
   ModelText: (event, turn, data) => eventCardHtml(event,
     cardHeaderHtml('model', data.subagent ? TEXT.subagent : TEXT.mainAgent, escapeHtml(data.kind === 'thinking' ? TEXT.thinking : TEXT.wrote)) + cardTextHtml(data.text, data.kind === 'thinking' ? 'th' : '')),
@@ -164,7 +164,7 @@ function stepToolCallRowHtml(call) {
     : call.result ? `✓ ${escapeHtml(formatDuration(call.result.duration_ms ?? eventTime(call.result) - eventTime(call.call || call.result)))}`
     : call.call ? `<span class="busy">${escapeHtml(TEXT.runningEll)}</span>` : mutedHtml(TEXT.noHookEvent);
   const argument = toolArgument(latest?.data || {});
-  return `<div class="tu"><span class="n" style="color:var(--s-${group})">${toolIconHtml(call.name, input, group)}${escapeHtml(toolDisplayName(call.name))}</span><span class="a" title="${escapeHtml(shorten(argument, 400))}">${escapeHtml(argument || '')}</span><span class="r">${outcome}</span></div>`;
+  return `<div class="tu"><span class="n" style="color:var(--s-${group})">${toolIconHtml(call.name, input, group)}${escapeHtml(toolDisplayName(call.name))}</span><span class="a" title="${escapeHtml(shorten(argument, TOOLTIP_PREVIEW_MAX))}">${escapeHtml(argument || '')}</span><span class="r">${outcome}</span></div>`;
 }
 
 function stepToolCallsHtml(calls, data) {

@@ -8,7 +8,7 @@ const refilter = () => scheduleRender('mid', 'detail', 'sessions', 'cats', 'map'
 function initFilterControls() {
   elementById('station').innerHTML = `<option value="">${escapeHtml(TEXT.allGroups)}</option>`
     + TOOL_GROUPS.map(group => `<option value="${group.id}">${escapeHtml(group.label)}</option>`).join('');
-  state.rangeMs = setSelectValue('range', state.rangeMs, 86400000);
+  state.rangeMs = setSelectValue('range', state.rangeMs, DEFAULT_RANGE_MS);
 
   let searchTimer;
   elementById('q').oninput = event => {
@@ -27,7 +27,7 @@ function initFilterControls() {
   };
   elementById('range').onchange = event => {
     state.rangeMs = Number(event.target.value);
-    storage.set('so.range', state.rangeMs);
+    storage.set(SETTING_KEYS.range, state.rangeMs);
     loadScope();
   };
   elementById('cats').onclick = event => {

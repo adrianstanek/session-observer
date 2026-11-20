@@ -9,6 +9,10 @@ function shorten(text, maxLength = 160) {
   return line.length > maxLength ? line.slice(0, maxLength) + '…' : line;
 }
 
+// preview lengths (characters) used in more than one place
+const TITLE_PREVIEW_MAX = 140;   // a session title, or a prompt standing in for one
+const TOOLTIP_PREVIEW_MAX = 400; // the longer text a hover tooltip shows
+
 // text without HTML / XML-like tags (prompts often carry <system-reminder> and the like), on one line
 const stripTags = text => String(text ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
 // the last part of a path ("src/app.ts" → "app.ts"), for both / and \ paths

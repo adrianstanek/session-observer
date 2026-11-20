@@ -1,6 +1,7 @@
 'use strict';
 // Session Observer dashboard — the page state: what is loaded, selected, filtered, replayed and shown.
 const ALL_SESSIONS = 'all';
+const DEFAULT_RANGE_MS = 24 * 60 * 60 * 1000; // the time range shown until another one is picked
 
 const state = {
   sessions: new Map(),      // session id → summary from the server
@@ -9,7 +10,7 @@ const state = {
   selectedTurnKey: null,    // the turn the Details panel shows
   openEventSeqs: new Set(), // the event rows opened in Details
   // filters
-  rangeMs: Number(storage.get('so.range', 86400000)), // 0 = everything
+  rangeMs: Number(storage.get(SETTING_KEYS.range, DEFAULT_RANGE_MS)), // 0 = everything
   searchText: '',           // lower case
   group: '',                // a tool group id, or '' for all
   category: '',
@@ -17,7 +18,7 @@ const state = {
   // replay
   replayCursor: null,       // the replayed time (ms); null while following live
   replaying: false,
-  replaySpeed: Number(storage.get('so.speed', 5)),
+  replaySpeed: Number(storage.get(SETTING_KEYS.replaySpeed, 5)),
   replayIndex: 0,           // how many events the replay has applied
   lastReplayTick: 0,
   // live updates
@@ -25,7 +26,7 @@ const state = {
   frozenEvents: [],
   connected: false,
   lastUpdateAt: null,
-  theme: storage.get('so.theme', 'auto'),
+  theme: storage.get(SETTING_KEYS.theme, 'auto'),
   view: 'overview',
 };
 

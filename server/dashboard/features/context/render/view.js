@@ -13,7 +13,7 @@ function contextToolbarHtml(data, items, compacted) {
   const steps = data.items.filter(item => item.kind === 'step'), lastStep = steps.at(-1);
   const contextNow = lastStep ? contextSizeInfo(lastStep.ctx, steps.length > 1 ? lastStep.ctx - steps.at(-2).ctx : null) : null;
   return `<div class="cxbar">
-    <div class="seg"><button data-cxm="all" class="${contextRange === 'all' ? 'cur' : ''}">${escapeHtml(TEXT.wholeSession)}</button><button data-cxm="now" class="${contextRange === 'now' ? 'cur' : ''}" ${compacted ? '' : `disabled title="${escapeHtml(TEXT.notCompacted)}"`}>${escapeHtml(TEXT.sinceCompaction)}</button></div>
+    <div class="seg"><button data-cxm="${CONTEXT_RANGE.wholeSession}" class="${contextRange === CONTEXT_RANGE.wholeSession ? 'cur' : ''}">${escapeHtml(TEXT.wholeSession)}</button><button data-cxm="${CONTEXT_RANGE.sinceCompaction}" class="${contextRange === CONTEXT_RANGE.sinceCompaction ? 'cur' : ''}" ${compacted ? '' : `disabled title="${escapeHtml(TEXT.notCompacted)}"`}>${escapeHtml(TEXT.sinceCompaction)}</button></div>
     <div class="seg" title="${escapeHtml(TEXT.msgOrder)}"><button data-cxo="new" class="${contextOrder !== 'old' ? 'cur' : ''}">${escapeHtml(TEXT.newestFirstBtn)}</button><button data-cxo="old" class="${contextOrder === 'old' ? 'cur' : ''}">${escapeHtml(TEXT.oldestFirstBtn)}</button></div>
     <label class="check" title="${escapeHtml(TEXT.bookkeepingTitle)}"><input type="checkbox" data-cxa ${showBookkeeping ? 'checked' : ''}> ${escapeHtml(TEXT.bookkeeping)} (${bookkeeping})</label>
     <span class="grow"></span>

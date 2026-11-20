@@ -9,6 +9,12 @@ const storage = {
   get(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch { /* ignore */ } },
 };
+// the keys the page's settings are saved under; each is read in one file and written in another. (The language's key
+// is LANGUAGE_STORAGE_KEY in i18n.js, which loads before this file.)
+const SETTING_KEYS = {
+  theme: 'so.theme', layout: 'so.layout', range: 'so.range', replaySpeed: 'so.speed', detailSections: 'so.dsec',
+  contextRange: 'so.ctxMode', contextOrder: 'so.ctxOrder', contextBookkeeping: 'so.ctxMeta',
+};
 
 // CSS animations restart when their element is re-rendered: this placeholder becomes a negative delay that keeps
 // them in phase across renders

@@ -13,14 +13,22 @@ function contextBadgeHtml(size) {
 }
 
 // the context badge in SVG, right-aligned at rightX on a turn divider (baseline y)
+// the SVG badge, in px: a pill (its top above the text baseline) holding the bar, the value and the change
+const BADGE = {
+  charWidth: 7.2, padding: 10, height: 22, top: 15,
+  barWidth: 46, barHeight: 6, barTop: 7, barGap: 8, // the bar, and the gap between it and the value
+  valueRoom: 12, changeRoom: 16,                    // added to each text's width
+};
+
 function contextBadgeSvg(size, rightX, y) {
   if (!size) return '';
-  const charWidth = 7.2, barWidth = 46;
-  const changeWidth = size.changeText ? size.changeText.length * charWidth + 16 : 0;
-  const valueText = `${formatCompactNumber(size.tokens)} · ${percentOf(size)}%`, valueWidth = valueText.length * charWidth + 12;
-  const width = 10 + barWidth + 8 + valueWidth + changeWidth, left = rightX - width;
-  return `<g class="ctxs"><title>${escapeHtml(contextBadgeTooltip(size))}</title><rect class="cbg" x="${left}" y="${y - 15}" width="${width}" height="22" rx="11"/>`
-    + `<rect class="ctrk" x="${left + 10}" y="${y - 7}" width="${barWidth}" height="6" rx="3"/><rect class="cfil" x="${left + 10}" y="${y - 7}" width="${(barWidth * size.fraction).toFixed(1)}" height="6" rx="3"/>`
-    + `<text class="cv" x="${left + 10 + barWidth + 8}" y="${y}">${escapeHtml(valueText)}</text>`
-    + (size.changeText ? `<text class="cd ${size.tone}" x="${rightX - 10}" y="${y}" text-anchor="end">${escapeHtml(size.changeText)}</text>` : '') + '</g>';
+  const changeWidth = size.changeText ? size.changeText.length * BADGE.charWidth + BADGE.changeRoom : 0;
+  const valueText = `${formatCompactNumber(size.tokens)} · ${percentOf(size)}%`, valueWidth = valueText.length * BADGE.charWidth + BADGE.valueRoom;
+  const width = BADGE.padding + BADGE.barWidth + BADGE.barGap + valueWidth + changeWidth, left = rightX - width;
+  const barX = left + BADGE.padding, barY = y - BADGE.barTop, barRadius = BADGE.barHeight / 2;
+  return `<g class="ctxs"><title>${escapeHtml(contextBadgeTooltip(size))}</title><rect class="cbg" x="${left}" y="${y - BADGE.top}" width="${width}" height="${BADGE.height}" rx="${BADGE.height / 2}"/>`
+    + `<rect class="ctrk" x="${barX}" y="${barY}" width="${BADGE.barWidth}" height="${BADGE.barHeight}" rx="${barRadius}"/>`
+    + `<rect class="cfil" x="${barX}" y="${barY}" width="${(BADGE.barWidth * size.fraction).toFixed(1)}" height="${BADGE.barHeight}" rx="${barRadius}"/>`
+    + `<text class="cv" x="${barX + BADGE.barWidth + BADGE.barGap}" y="${y}">${escapeHtml(valueText)}</text>`
+    + (size.changeText ? `<text class="cd ${size.tone}" x="${rightX - BADGE.padding}" y="${y}" text-anchor="end">${escapeHtml(size.changeText)}</text>` : '') + '</g>';
 }

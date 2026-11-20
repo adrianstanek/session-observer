@@ -27,10 +27,11 @@ const clipText = text => text.length > CONTEXT_FIELD_MAX
   ? text.slice(0, CONTEXT_FIELD_MAX) + `\n… [+${text.length - CONTEXT_FIELD_MAX} chars not shown]`
   : text;
 
+const CLIP_DEPTH_MAX = 10; // values nested deeper are kept as they are
 // every string inside a value clipped (a tool's input can hold a whole file)
 function clipDeep(value, depth = 0) {
   if (typeof value === 'string') return clipText(value);
-  if (!value || typeof value !== 'object' || depth > 10) return value;
+  if (!value || typeof value !== 'object' || depth > CLIP_DEPTH_MAX) return value;
   if (Array.isArray(value)) return value.map(item => clipDeep(item, depth + 1));
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clipDeep(item, depth + 1)]));
 }

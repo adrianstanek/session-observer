@@ -2,7 +2,7 @@
 // Session Observer dashboard — Details, the frame around an opened event: collapsible sections, the colour key, the
 // card's meta line and its raw hook payload.
 // collapsible sections of the Details panel; which ones you closed is remembered across turns and reloads
-const detailSectionOpen = (() => { try { return JSON.parse(storage.get('so.dsec', '{}')) || {}; } catch { return {}; } })();
+const detailSectionOpen = (() => { try { return JSON.parse(storage.get(SETTING_KEYS.detailSections, '{}')) || {}; } catch { return {}; } })();
 const isDetailSectionOpen = (id, openByDefault = true) => detailSectionOpen[id] ?? openByDefault;
 const detailSectionHtml = (id, title, body) =>
   `<details class="dsec" data-dsec="${id}"${isDetailSectionOpen(id) ? ' open' : ''}><summary class="lbl2">${title}</summary>${body}</details>`;

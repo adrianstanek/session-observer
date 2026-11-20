@@ -4,9 +4,11 @@
 const FORK_OFFSET = 64;   // how far right of its Agent call a subagent's first stop sits
 const LANE_GAP = 40;      // free space kept between two subagents sharing a lane
 const RUNNING_TAIL = 40;  // the dashed tail a running subagent's lane is drawn with
+const STOP_WIDTH = { step: 24, end: 58, regular: 80 }; // the room a stop takes on its lane
+const MAIN_LANE = 'main'; // the main agent's lane key; a subagent's branch is keyed by its agent id
 
 // spacing between two consecutive stops on one lane
-const routeStopWidth = stop => (stop.isStep ? 24 : stop.isEnd ? 58 : 80);
+const routeStopWidth = stop => (stop.isStep ? STOP_WIDTH.step : stop.isEnd ? STOP_WIDTH.end : STOP_WIDTH.regular);
 const routeStopGap = (a, b) => (routeStopWidth(a) + routeStopWidth(b)) / 2;
 
 // Every lane keeps its own left→right position (px along the unwrapped route), so a busy subagent never pushes the
@@ -14,7 +16,7 @@ const routeStopGap = (a, b) => (routeStopWidth(a) + routeStopWidth(b)) / 2;
 function createRouteBuilder() {
   const stops = [];
   const branches = new Map();          // agent id → branch
-  const lastStepOfLane = new Map();    // 'main' or branch id → its latest model-step stop, which gets the text it wrote
+  const lastStepOfLane = new Map();    // MAIN_LANE or branch id → its latest model-step stop, which gets the text it wrote
   let lastMainStopIndex;
 
   // adds a stop to a lane: the main line (branch null) or a subagent's branch
@@ -85,12 +87,12 @@ function buildRouteModel(turn, limit) {
       case 'ModelStep':
         if (data.subagent && !branch) break; // internal helper agents with no branch: not part of the route
         stepCount++;
-        lastStepOfLane.set(branch ? branch.id : 'main', addStop(stopFor(event, { group: branch ? 'agents' : 'model', isStep: true }), branch));
+        lastStepOfLane.set(branch ? branch.id : MAIN_LANE, addStop(stopFor(event, { group: branch ? 'agents' : 'model', isStep: true }), branch));
         break;
       case 'ModelText': {
         if (data.subagent && !branch) break;
         const written = { text: String(data.text || ''), kind: data.kind, ts: eventTime(event) };
-        const step = lastStepOfLane.get(branch ? branch.id : 'main');
+        const step = lastStepOfLane.get(branch ? branch.id : MAIN_LANE);
         if (step) {
           const prefix = written.kind === 'thinking' ? `(${TEXT.event.thinking}) ` : '';
           step.text = (step.text ? step.text + ' ' : '') + prefix + written.text;
