@@ -24,14 +24,14 @@ function routeModel(t, lim) {
     lastTs = Math.max(lastTs, tms(ev));
     br0 = br;
     switch (ev.event) {
-      case 'UserPromptSubmit': br0 = null; add({ st: 'you', label: 'You', sub: 'prompt', seq: ev.seq, tip: evTip(ev) }); break;
+      case 'UserPromptSubmit': br0 = null; add({ st: 'you', label: TX.st.you, sub: TX.promptLc, seq: ev.seq, tip: evTip(ev) }); break;
       case 'ModelStep':
         if (d.subagent && !br) break; // internal helper agents with no branch: not part of the route
         steps++; lastStep.set(br ? br.id : 'main', add({ st: br ? 'agents' : 'model', small: true, seq: ev.seq, tip: evTip(ev) })); break;
       case 'ModelText': {
         if (d.subagent && !br) break;
         const tx = { text: String(d.text || ''), kind: d.kind, ts: tms(ev) }, ls = lastStep.get(br ? br.id : 'main');
-        if (ls) { ls.said = (ls.said ? ls.said + ' ' : '') + (tx.kind === 'thinking' ? '(thinking) ' : '') + tx.text; ls.seqs.push(ev.seq); }
+        if (ls) { ls.said = (ls.said ? ls.said + ' ' : '') + (tx.kind === 'thinking' ? `(${TX.ev.thinking}) ` : '') + tx.text; ls.seqs.push(ev.seq); }
         if (br) br.say = tx; else say = tx;
         break;
       }
@@ -49,9 +49,9 @@ function routeModel(t, lim) {
       }
       case 'SubagentStart': {
         const from = pendingAgent.shift() ?? (mainLast != null ? stops[mainLast] : null);
-        const b = { id: String(d.agent_id ?? ev.seq), type: d.agent_type || 'subagent', a: tms(ev), last: null };
+        const b = { id: String(d.agent_id ?? ev.seq), type: d.agent_type || TX.subagentLc, a: tms(ev), last: null };
         branches.set(b.id, b); br0 = b;
-        const s = add({ st: 'agents', label: b.type, sub: from?.desc || 'subagent', seq: ev.seq, tip: evTip(ev), fork: from ? from.i : null, branch: b });
+        const s = add({ st: 'agents', label: b.type, sub: from?.desc || TX.subagentLc, seq: ev.seq, tip: evTip(ev), fork: from ? from.i : null, branch: b });
         s.prev = null; s.pos = from ? from.pos + 64 : 0; b.first = s.i;
         break;
       }
@@ -59,18 +59,18 @@ function routeModel(t, lim) {
         if (!br) break; // helper agent that never started a branch
         br.closed = true; br0 = null;
         const tail = stops[br.last];
-        const s = add({ st: 'agents', label: '⤴ ' + br.type, sub: 'back · ' + fmtDur(tms(ev) - br.a), seq: ev.seq, tip: evTip(ev), merge: br.last });
+        const s = add({ st: 'agents', label: '⤴ ' + br.type, sub: TX.backX(fmtDur(tms(ev) - br.a)), seq: ev.seq, tip: evTip(ev), merge: br.last });
         s.pos = Math.max(s.pos, tail.pos + 64); br.mergeAt = s.i;
         break;
       }
-      case 'PermissionRequest': add({ st: 'you', label: 'Permission', sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
-      case 'PermissionDenied': errs++; add({ st: 'you', label: 'Denied', sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionRequest': add({ st: 'you', label: TX.ev.permission, sub: toolLabel(d.tool_name), seq: ev.seq, tip: evTip(ev) }); break;
+      case 'PermissionDenied': errs++; add({ st: 'you', label: TX.ev.denied, sub: toolLabel(d.tool_name), fail: true, seq: ev.seq, tip: evTip(ev) }); break;
       // a model switch mid-session is a stop on the main line: the steps after it run on a different model
-      case 'PostModelSwitch': mainStop(ev, 'model', 'Model', '→ ' + String(d.to_model || '?').replace(/^claude-/, '')); break;
+      case 'PostModelSwitch': mainStop(ev, 'model', TX.st.model, '→ ' + String(d.to_model || '?').replace(/^claude-/, '')); break;
       // session start, config changes and memory loads are stops too (the first turn opens with the ones before its prompt);
       // the sub is kept short, since the route cuts it at 12 characters — the tooltip has the full description
-      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || 'started'); break;
-      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || 'changed'); break;
+      case 'SessionStart': mainStop(ev, 'context', describe(ev)[0], d.source || TX.ev.startedSession); break;
+      case 'ConfigChange': mainStop(ev, 'context', describe(ev)[0], spaced(d.source) || TX.ev.changedConfig); break;
       case 'PreCompact': case 'InstructionsLoaded': { const [label, sub] = describe(ev); mainStop(ev, 'context', label, base(sub)); break; }
       case 'Stop': case 'StopFailure': case 'SessionEnd': ended = ended || ev; break;
     }
@@ -106,7 +106,7 @@ function ctxInfo(sess, tt, lim) {
   const tone = d == null ? '' : d < 0 ? 'down' : d >= win * 0.1 ? 'big' : 'up';
   return { c, d, win, pct: Math.min(1, c / win), tone, dTxt: d == null ? '' : `${d >= 0 ? '+' : '−'}${fmtN(Math.abs(d))}` };
 }
-const ctxTip = x => `Context at the end of this turn: ${fmtN(x.c)} of ${fmtN(x.win)} (${Math.round(x.pct * 100)}%)${x.d == null ? '' : `\nChange from the previous turn: ${x.dTxt}${x.d < 0 ? ' (compacted)' : ''}`}`;
+const ctxTip = x => TX.ctxEndTip(TX.ofPct(fmtN(x.c), fmtN(x.win), Math.round(x.pct * 100))) + (x.d == null ? '' : '\n' + TX.ctxChangeTip(x.dTxt, x.d < 0));
 // HTML badge for the route header
 function ctxBadge(x) {
   if (!x) return '';
@@ -131,7 +131,7 @@ function routeHtml() {
   const lim = state.cursor ?? Infinity;
   const pinned = state.turnSel ? TURNS.find(x => x.key === state.turnSel) : null;
   let t = pinned; if (!t) for (const x of TURNS) if (Date.parse(x.start) <= lim) t = x;
-  if (!t) return '<div class="empty">No turns yet — the next prompt draws its route here.</div>';
+  if (!t) return `<div class="empty">${esc(TX.noTurnsRoute)}</div>`;
 
   // chain this session's turns, oldest → newest (at most CAP, always including the focused one)
   const sess = TURNS.filter(x => x.sid === t.sid && Date.parse(x.start) <= lim), CAP = 30;
@@ -228,13 +228,13 @@ function routeHtml() {
   for (const r of rows) {
     if (!r.div) continue;
     const tt = r.div, n = sess.indexOf(tt) + 1, cur = tt.key === t.key, dy = r.divY + 6;
-    const M2 = models.get(tt.key), sum = r.collapsed && M2 ? ` · ${M2.steps} steps · ${M2.tools} tools${M2.errs ? ` · ✕${M2.errs}` : ''}` : '';
+    const M2 = models.get(tt.key), sum = r.collapsed && M2 ? ` · ${nw(M2.steps, 'step')} · ${nw(M2.tools, 'tool')}${M2.errs ? ` · ✕${M2.errs}` : ''}` : '';
     const cx = ctxInfo(sess, tt, lim);
-    const label = `Turn ${n} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? 'Session start'), cx ? Math.max(20, Math.floor((usable - 260) / 8) - 30) : 90)}${sum}`;
+    const label = `${TX.turnN(n)} · ${fmtTime(tt.start)} · ${trunc(clean(tt.prompt ?? TX.sessionStart), cx ? Math.max(20, Math.floor((usable - 260) / 8) - 30) : 90)}${sum}`;
     // the chevron toggles the turn open / collapsed; the rest of the divider selects the turn
     svg += `<g class="tdiv ${cur ? 'cur' : ''}${pinned && !cur ? ' dim' : ''}" data-key="${esc(tt.key)}"><line x1="6" y1="${dy}" x2="${usable + 2 * PAD - 6}" y2="${dy}"/>`
-      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="6" y="${dy + 6}" width="18" height="18" rx="5"/><path d="${r.collapsed ? `M13 ${dy + 11}l4 4l-4 4` : `M11 ${dy + 13}l4 4l4 -4`}"/><title>${r.collapsed ? 'Expand' : 'Collapse'} this turn</title></g>`
-      + `<text x="32" y="${dy + 20}">${esc(label)}</text>${ctxBadgeSvg(cx, usable + 2 * PAD - 6, dy + 20)}<title>${esc(short(tt.prompt ?? 'Session start', 300))}</title></g>`;
+      + `<g class="ttog" data-tog="${esc(tt.key)}" data-open="${r.collapsed ? 0 : 1}"><rect x="6" y="${dy + 6}" width="18" height="18" rx="5"/><path d="${r.collapsed ? `M13 ${dy + 11}l4 4l-4 4` : `M11 ${dy + 13}l4 4l4 -4`}"/><title>${esc(r.collapsed ? TX.expandTurn : TX.collapseTurn)}</title></g>`
+      + `<text x="32" y="${dy + 20}">${esc(label)}</text>${ctxBadgeSvg(cx, usable + 2 * PAD - 6, dy + 20)}<title>${esc(short(tt.prompt ?? TX.sessionStart, 300))}</title></g>`;
   }
   // draw order: subagent lanes, then the forks / merges (over a background-coloured halo, so where one
   // has to cross another lane it passes over it with a small gap), then the main line on top
@@ -254,10 +254,10 @@ function routeHtml() {
     if (s.end) {
       const col = s.fail ? 'var(--err)' : s.pending ? 'var(--faint)' : 'var(--ok)';
       svg += `<g class="stop${dim(s)}" data-ln="${sl(s)}" data-seqs="${s.seq ?? ''}" transform="translate(${s.x.toFixed(1)},${s.y})"${s.seq != null ? ` data-seq="${s.seq}"` : ''} style="color:${col}">${s.pending ? '<circle r="8" class="ring"/>' : `<circle r="8" fill="${col}"/><circle r="13" fill="none" stroke="${col}" stroke-width="2"/>`}
-        ${s.pending ? `<title>${esc(routeActivity(models.get(s.turn), sn))}</title>` : ''}<text class="sl" y="-33">${s.pending ? 'working…' : s.fail ? 'failed' : 'done'}</text><text class="ss" y="-21">${esc(fmtDur(s.dur))}</text></g>`;
+        ${s.pending ? `<title>${esc(routeActivity(models.get(s.turn), sn))}</title>` : ''}<text class="sl" y="-33">${esc(s.pending ? TX.workingEll : s.fail ? TX.failedLc : TX.ev.done)}</text><text class="ss" y="-21">${esc(fmtDur(s.dur))}</text></g>`;
       continue;
     }
-    const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? 'failed' : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
+    const arg = String(s.sub ?? ''), subTxt = s.run ? `● ${fmtDur(sn - s.a)}` : s.fail ? TX.failedLc : /[\\/]/.test(arg) && !/\s/.test(arg) ? base(arg) : arg;
     const r = s.lane && !s.branch ? 10 : 12;
     // a call with a known language / tool: the stop is filled with the badge colour and carries its mark
     const k = s.tech ? TECH[s.tech] : null, ks = r * 0.85, more = k ? s.techs.length - 1 : 0;
@@ -342,10 +342,10 @@ function routePoly(pts) {
 function routeActivity(R, sn) {
   if (!R) return '';
   const parts = [], runBr = [...R.branches.values()].filter(b => !b.closed && b.run);
-  for (const s of R.stops) if (s.run && !s.br) parts.push(`running ${s.label}${s.sub ? ' ' + trunc(base(String(s.sub)), 40) : ''} · ${fmtDur(sn - s.a)}`);
-  if (runBr.length) parts.push(`${runBr.length} subagent${runBr.length > 1 ? 's' : ''} working`);
+  for (const s of R.stops) if (s.run && !s.br) parts.push(TX.runningX(`${s.label}${s.sub ? ' ' + trunc(base(String(s.sub)), 40) : ''}`, fmtDur(sn - s.a)));
+  if (runBr.length) parts.push(TX.subagentsWorking(runBr.length));
   const lastMain = R.mainLast != null ? R.stops[R.mainLast] : null;
-  if (!parts.length) parts.push(lastMain?.label === 'Permission' ? 'waiting for your permission' : `model generating · ${fmtDur(Math.max(0, sn - R.lastTs))} since last step`);
+  if (!parts.length) parts.push(lastMain?.label === TX.ev.permission ? TX.waitingPermission : TX.modelGenerating(fmtDur(Math.max(0, sn - R.lastTs))));
   return parts.join(' · ');
 }
 
@@ -354,17 +354,17 @@ function routeFrame(t, pinned, sess, models, lim, H, svg, fy) {
   const R = models.get(t.key) || routeModel(t, lim), ended = R.ended;
   const live = !ended && (state.cursor != null || turnRunning(t));
   const nb = R.branches.size;
-  const state2 = live ? '<span class="dot busy"></span>running' : ended ? (ended.event === 'StopFailure' ? '<span class="err">✕</span> failed' : '<span style="color:var(--ok)">✓</span> done') : '<span class="dot"></span>unfinished';
+  const state2 = live ? `<span class="dot busy"></span>${esc(TX.running)}` : ended ? (ended.event === 'StopFailure' ? `<span class="err">✕</span> ${esc(TX.failedLc)}` : `<span style="color:var(--ok)">✓</span> ${esc(TX.ev.done)}`) : `<span class="dot"></span>${esc(TX.unfinished)}`;
   // live: what it is doing now, and the latest thing the model wrote in this turn
-  const sn = simNow(), now = live ? `<div class="la"><b>Now:</b> <span class="act">${esc(routeActivity(R, sn))}</span>${R.say ? ` · “${esc(short(R.say.text, 220))}” <span class="muted">${agoMs(sn - R.say.ts)} ago</span>` : ''}</div>` : '';
-  const head = `<div class="lhead${live ? ' live' : ''}"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : '<span class="muted">Session start</span>'}</div>
-    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${R.steps} steps · ${R.tools} tools${nb ? ` · ${nb} subagent${nb > 1 ? 's' : ''}` : ''}</span>${ctxBadge(ctxInfo(sess, t, lim))}${R.errs ? `·<span class="err">${R.errs} problems</span>` : ''}
+  const sn = simNow(), now = live ? `<div class="la"><b>${esc(TX.nowLbl)}</b> <span class="act">${esc(routeActivity(R, sn))}</span>${R.say ? ` · “${esc(short(R.say.text, 220))}” <span class="muted">${esc(TX.ago(agoMs(sn - R.say.ts)))}</span>` : ''}</div>` : '';
+  const head = `<div class="lhead${live ? ' live' : ''}"><div class="lp">${t.prompt !== null ? esc(short(clean(t.prompt), 240)) : `<span class="muted">${esc(TX.sessionStart)}</span>`}</div>
+    <div class="lm"><span class="state">${state2}</span>·<span>${esc(base(state.sessions.get(t.sid)?.cwd))}</span>·<span>${fmtTime(t.start)}</span>·<span>${esc(nw(R.steps, 'step'))} · ${esc(nw(R.tools, 'tool'))}${nb ? ` · ${esc(nw(nb, 'subagent'))}` : ''}</span>${ctxBadge(ctxInfo(sess, t, lim))}${R.errs ? `·<span class="err">${esc(nw(R.errs, 'problem'))}</span>` : ''}
 </div>${now}</div>`;
   // turn navigator: previous / next turn, position, and a way back to the live (latest) turn
   const list = sess, idx = list.indexOf(t);
   const prevT = list[idx - 1], nextT = list[idx + 1];
-  const nav = (p, txt) => p ? `<button class="seg" data-key="${esc(p.key)}" title="${esc(fmtTime(p.start) + ' · ' + short(p.prompt ?? 'Session start', 120))}">${txt}</button>` : `<button class="seg" disabled>${txt}</button>`;
-  const hist = `<div class="lhist">${nav(prevT, '‹ Previous turn')}<span class="muted">Turn <b style="color:var(--text)">${idx + 1}</b> of ${list.length}</span>${nav(nextT, 'Next turn ›')}
-    <span class="grow"></span>${pinned ? '<button class="seg" data-follow>Back to latest ⟳</button>' : '<span class="muted"><span class="dot busy"></span> showing the latest turn · updates live</span>'}</div>`;
+  const nav = (p, txt) => p ? `<button class="seg" data-key="${esc(p.key)}" title="${esc(fmtTime(p.start) + ' · ' + short(p.prompt ?? TX.sessionStart, 120))}">${txt}</button>` : `<button class="seg" disabled>${txt}</button>`;
+  const hist = `<div class="lhist">${nav(prevT, esc(TX.prevTurn))}<span class="muted">${TX.turnOf('<b style="color:var(--text)">' + (idx + 1) + '</b>', list.length)}</span>${nav(nextT, esc(TX.nextTurn))}
+    <span class="grow"></span>${pinned ? `<button class="seg" data-follow>${esc(TX.backToLatest)}</button>` : `<span class="muted"><span class="dot busy"></span> ${esc(TX.showingLatest)}</span>`}</div>`;
   return head + `<div class="mscroll" data-focus="${esc(t.key)}" data-fy="${isFinite(fy) ? fy : 0}" style="height:${H - (live ? 70 : 50) - 48}px">${svg}</div>` + hist;
 }

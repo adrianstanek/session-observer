@@ -11,7 +11,7 @@ function mdLite(src) {
 function chatHtml() {
   const lim = state.cursor ?? Infinity, multi = state.scope === 'all';
   const turns = TURNS.filter(t => tms(t.events[0]) <= lim).slice(-150);
-  if (!turns.length) return '<div class="chat"><div class="cempty">No conversation yet</div></div>';
+  if (!turns.length) return `<div class="chat"><div class="cempty">${TX.noConversation}</div></div>`;
   let h = '<div class="chat">', lastSid = null;
   for (const t of turns) {
     if (multi && t.sid !== lastSid) {
@@ -21,7 +21,7 @@ function chatHtml() {
     lastSid = t.sid;
     const evs = t.events.filter(e => tms(e) <= lim && (!e.data?.subagent && e.data?.agent_id == null || e.event === 'SubagentStart' || e.event === 'SubagentStop'));
     const cls = [state.turnSel === t.key && 'sel', filtersActive() && !turnMatches(t) && 'dim'].filter(Boolean).join(' ');
-    h += `<div class="cturn ${cls}" data-tk="${esc(t.key)}"><div class="cth" data-key="${esc(t.key)}" title="Open this turn">${fmtTime(t.start)}${t.tools ? ' · ' + t.tools + ' tools' : ''}${t.errors ? ' · ✕' + t.errors : ''}</div>`;
+    h += `<div class="cturn ${cls}" data-tk="${esc(t.key)}"><div class="cth" data-key="${esc(t.key)}" title="${esc(TX.openTurn)}">${fmtTime(t.start)}${t.tools ? ' · ' + esc(nw(t.tools, 'tool')) : ''}${t.errors ? ' · ✕' + t.errors : ''}</div>`;
     let tools = [], said = false, stop = null;
     // a text bubble belongs to the model step it came from: hovering / clicking it reaches that step's row in Details
     const stepSeq = new Map(t.events.filter(e => e.event === 'ModelStep' && e.data?.msg_id).map(e => [e.data.msg_id, e.seq]));
@@ -50,17 +50,17 @@ function chatHtml() {
           if (d.tool_use_id) { open.delete(d.tool_use_id); const k = `__S${d.tool_use_id}__`; tools = tools.map(x => x.replace(k, ' ' + ev.seq)); h = h.replace(k, ' ' + ev.seq); }
           if (ev.event === 'PostToolUseFailure') { const k = `__R${d.tool_use_id}__`; tools = tools.map(x => x.replace(k, 'fail')); h = h.replace(k, 'fail'); }
           break;
-        case 'SubagentStart': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || 'subagent')}</b> started</span></span>`); break;
-        case 'SubagentStop': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || 'subagent')}</b> done</span></span>`); break;
-        case 'PermissionDenied': tools.push(`<span class="ctool fail" data-seq="${ev.seq}" data-seqs="${ev.seq}" title="${evTip(ev)}">${icon('you')}<span>denied ${esc(toolLabel(d.tool_name))}</span></span>`); break;
+        case 'SubagentStart': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || TX.subagentLc)}</b> ${esc(TX.ev.started)}</span></span>`); break;
+        case 'SubagentStop': tools.push(`<span class="ctool" data-seq="${ev.seq}" data-seqs="${ev.seq}" style="--c:var(--s-agents)" title="${evTip(ev)}">${icon('agents')}<span><b>${esc(d.agent_type || TX.subagentLc)}</b> ${esc(TX.ev.done)}</span></span>`); break;
+        case 'PermissionDenied': tools.push(`<span class="ctool fail" data-seq="${ev.seq}" data-seqs="${ev.seq}" title="${evTip(ev)}">${icon('you')}<span>${esc(TX.ev.deniedLc)} ${esc(toolLabel(d.tool_name))}</span></span>`); break;
         case 'Stop': case 'StopFailure': stop = ev; break;
       }
     }
     flush();
     // the hook's final message, when the transcript text never arrived
     if (stop && !said && (stop.data?.last_assistant_message || stop.event === 'StopFailure'))
-      h += `<div class="bub ai ${stop.event === 'StopFailure' ? 'fail' : ''}" data-seq="${stop.seq}" data-seqs="${stop.seq}">${mdLite(stop.data?.last_assistant_message || stop.data?.error || 'turn failed')}<span class="bt">${fmtTime(stop.ts)}</span></div>`;
-    if (!stop && turnRunning(t) && state.cursor == null) h += `<div class="ctyping"><span class="dot busy"></span>Claude is working…</div>`;
+      h += `<div class="bub ai ${stop.event === 'StopFailure' ? 'fail' : ''}" data-seq="${stop.seq}" data-seqs="${stop.seq}">${mdLite(stop.data?.last_assistant_message || stop.data?.error || TX.ev.turnFailedLc)}<span class="bt">${fmtTime(stop.ts)}</span></div>`;
+    if (!stop && turnRunning(t) && state.cursor == null) h += `<div class="ctyping"><span class="dot busy"></span>${esc(TX.claudeWorking)}</div>`;
     h += '</div>';
     // tool chips still open are running; the rest are plain
     for (const id of open.keys()) h = h.replace(`__R${id}__`, 'run');

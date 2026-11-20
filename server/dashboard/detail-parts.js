@@ -7,9 +7,9 @@ const isDsecOpen = (id, dflt = true) => dsecOpen[id] ?? dflt;
 const dsec = (id, title, body) => `<details class="dsec" data-dsec="${id}"${isDsecOpen(id) ? ' open' : ''}><summary class="lbl2">${title}</summary>${body}</details>`;
 function colourKey(t) {
   const ks = t ? [...new Set(t.events.flatMap(evTechs))] : [];
-  const tech = ks.length ? `<div class="muted" style="margin-top:12px;font-size:12px">Languages and tools in this turn</div><div class="keygrid">${ks.map(k => `<div>${techIcon(k)}<span>${esc(TECH[k][0])}</span></div>`).join('')}</div>` : '';
-  return `<details class="key dsec" data-dsec="key"${isDsecOpen('key', false) ? ' open' : ''}><summary>Colour key</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
-    <div><span style="color:var(--ok)">●</span> running</div><div><span class="muted">·</span> done</div><div><span class="err">✕</span> failed / denied</div><div><span style="color:var(--s-model)">◆</span> model reply</div></div>${tech}</details>`;
+  const tech = ks.length ? `<div class="muted" style="margin-top:12px;font-size:12px">${esc(TX.langsInTurn)}</div><div class="keygrid">${ks.map(k => `<div>${techIcon(k)}<span>${esc(TECH[k][0])}</span></div>`).join('')}</div>` : '';
+  return `<details class="key dsec" data-dsec="key"${isDsecOpen('key', false) ? ' open' : ''}><summary>${esc(TX.colourKey)}</summary><div class="keygrid">${STATIONS.map(s => `<div style="color:var(--s-${s.id})">${icon(s.id)}<span style="color:var(--text)">${s.label}</span></div>`).join('')}
+    <div><span style="color:var(--ok)">●</span> ${esc(TX.running)}</div><div><span class="muted">·</span> ${esc(TX.ev.done)}</div><div><span class="err">✕</span> ${esc(TX.failedDenied)}</div><div><span style="color:var(--s-model)">◆</span> ${esc(TX.modelReply)}</div></div>${tech}</details>`;
 }
 // ---- an opened event row: a readable card for every event, with the raw hook payload folded underneath
 const rawPre = e => `<pre class="raw">${esc(e.event)}${e.duration_ms ? ' · ' + fmtDur(e.duration_ms) : ''}\n${jsonHtml(e.data)}</pre>`;
@@ -52,7 +52,7 @@ function fmtOutput(txt) {
   const html = lines.map(x => {
     if (x.v === undefined) return fold ? `<div>${esc(x.line) || '&nbsp;'}</div>` : esc(x.line);
     if (!fold) return (x.label ? `<b class="jl">${esc(x.label)}</b>\n` : '') + jsonHtml(x.v);
-    const keys = Array.isArray(x.v) ? `${x.v.length} items` : Object.keys(x.v).join(', ');
+    const keys = Array.isArray(x.v) ? nw(x.v.length, 'item') : Object.keys(x.v).join(', ');
     return `<details class="jfold"><summary><b class="jl">${esc(x.label || (Array.isArray(x.v) ? 'array' : 'object'))}</b> <span class="muted">${esc(trunc(keys, 110))}</span></summary><div class="jbody">${jsonHtml(x.v)}</div></details>`;
   }).join(fold ? '' : '\n');
   return { html, json: true, fold };
@@ -75,6 +75,6 @@ function evKv(o, skip = EV_COMMON) {
 }
 // raw: what goes under the meta line; by default the event's own payload
 function evCard(e, inner, raw) {
-  const d = e.data || {}, bits = [fmtTime(e.ts), d.agent_type ? `subagent ${d.agent_type}` : d.subagent ? 'subagent' : 'main agent', d.effort?.level && `effort ${d.effort.level}`, d.permission_mode && `mode ${d.permission_mode}`, `#${e.seq}`];
-  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div>${raw ?? `<details><summary>Raw payload</summary>${rawPre(e)}</details>`}</div>`;
+  const d = e.data || {}, bits = [fmtTime(e.ts), d.agent_type ? `${TX.subagentLc} ${d.agent_type}` : d.subagent ? TX.subagentLc : TX.mainAgentLc, d.effort?.level && TX.effortX(d.effort.level), d.permission_mode && TX.modeX(d.permission_mode), `#${e.seq}`];
+  return `<div class="evx">${inner}<div class="meta">${bits.filter(Boolean).map(esc).join(' · ')}</div>${raw ?? `<details><summary>${esc(TX.rawPayload)}</summary>${rawPre(e)}</details>`}</div>`;
 }

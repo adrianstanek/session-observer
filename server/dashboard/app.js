@@ -3,11 +3,11 @@
 // ---------------------------------------------------------------- header
 function renderHeader() {
   const c = $('conn'); c.className = 'dot ' + (state.connected ? 'on' : 'bad');
-  $('connTxt').textContent = state.connected ? 'live' : 'disconnected';
+  $('connTxt').textContent = state.connected ? TX.live : TX.disconnected;
   const working = [...state.sessions.values()].filter(s => s.busy && !s.ended).length;
-  $('hdrBusy').innerHTML = `<span class="dot ${working ? 'busy' : ''}"></span>${working} working`;
-  $('conn').parentElement.title = 'Live connection to the local server' + (state.updated ? ` · last update ${fmtTime(state.updated)}` : '');
-  $('pause').textContent = state.paused ? `Unfreeze${state.buffer.length ? ` (${state.buffer.length} new)` : ''}` : 'Freeze';
+  $('hdrBusy').innerHTML = `<span class="dot ${working ? 'busy' : ''}"></span>${esc(TX.working(working))}`;
+  $('conn').parentElement.title = TX.connTitle + (state.updated ? TX.lastUpdate(fmtTime(state.updated)) : '');
+  $('pause').textContent = state.paused ? TX.unfreeze(state.buffer.length) : TX.freeze;
   $('pause').classList.toggle('on', state.paused);
 }
 
@@ -109,10 +109,16 @@ function connect() {
 function applyTheme() {
   const r = document.documentElement;
   if (state.theme === 'auto') delete r.dataset.theme; else r.dataset.theme = state.theme;
-  $('theme').textContent = 'Theme: ' + state.theme;
+  $('theme').textContent = TX.theme(TX.themes[state.theme] || state.theme);
 }
 function initControls() {
-  $('station').innerHTML = '<option value="">all groups</option>' + STATIONS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+  applyText();
+  // the language: Auto follows the browser; a choice is remembered, and the page reloads in it
+  const saved = ls.get('so.lang', '');
+  $('lang').innerHTML = `<option value="">${esc(TX.langAuto)}</option>` + Object.entries(LANGS).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
+  $('lang').value = TEXT[saved] ? saved : '';
+  $('lang').onchange = e => { ls.set('so.lang', e.target.value); location.reload(); };
+  $('station').innerHTML = `<option value="">${esc(TX.allGroups)}</option>` + STATIONS.map(s => `<option value="${s.id}">${esc(s.label)}</option>`).join('');
   $('range').value = String(state.range); if (!$('range').value) { $('range').value = '86400000'; state.range = 86400000; }
   $('speed').value = String(state.speed); if (!$('speed').value) { $('speed').value = '5'; state.speed = 5; }
   applyTheme();
@@ -129,7 +135,7 @@ function initControls() {
   $('speed').onchange = e => { state.speed = Number(e.target.value); ls.set('so.speed', state.speed); };
   $('theme').onclick = () => { state.theme = { auto: 'dark', dark: 'light', light: 'auto' }[state.theme] || 'auto'; ls.set('so.theme', state.theme); applyTheme(); };
   $('pause').onclick = () => { state.paused = !state.paused; if (!state.paused) { flushBuffer(); schedule('sessions', 'mid'); } schedule('header'); };
-  $('clearLog').onclick = async () => { if (!confirm('Delete all recorded events?')) return; await fetch('/api/clear', { method: 'POST' }); };
+  $('clearLog').onclick = async () => { if (!confirm(TX.clearConfirm)) return; await fetch('/api/clear', { method: 'POST' }); };
   $('play').onclick = () => { if (state.playing) { state.playing = false; renderReplay(); } else startReplay(); };
   $('live').onclick = () => goLive();
 
@@ -193,8 +199,7 @@ function initControls() {
       const p = VCTX.pts.reduce((a, q) => Math.abs(q.x - mx) < Math.abs(a.x - mx) ? q : a);
       xh.style.display = ''; xh.querySelector('line').setAttribute('x1', p.x); xh.querySelector('line').setAttribute('x2', p.x);
       xh.querySelector('circle').setAttribute('cx', p.x); xh.querySelector('circle').setAttribute('cy', p.y);
-      return showTip(`${fmtTime(p.t)}
-context ${fmtN(p.v)} of ${fmtN(VCTX.win)} (${Math.round(100 * p.v / VCTX.win)}%)`, e.clientX, e.clientY);
+      return showTip(`${fmtTime(p.t)}\n${TX.ctxLc} ${TX.ofPct(fmtN(p.v), fmtN(VCTX.win), Math.round(100 * p.v / VCTX.win))}`, e.clientX, e.clientY);
     }
     for (const x of $('mid').querySelectorAll('.xhair')) x.style.display = 'none';
     const t = e.target.closest('[data-tip]');

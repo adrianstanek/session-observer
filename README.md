@@ -185,6 +185,12 @@ The server starts automatically on the first `SessionStart`. Open
 
 Run it manually: `node server/server.js`.
 
+The dashboard speaks English, French, German, Italian, Polish, Portuguese, Spanish, Japanese, Korean
+and Simplified Chinese. It follows your
+browser's language; the menu next to **Theme** picks another one and remembers it. Tool names, hook
+event names and your own prompts stay as they are. **Copy** in the Context view always writes English
+Markdown.
+
 ![Dashboard layout: 1 filters, 2 sessions, 3 views, 4 route, 5 event types and replay, 6 details](docs/layout.jpg)
 
 The session list shows each session's title and a dot for its state (working, live or ended). Hover a

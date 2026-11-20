@@ -73,7 +73,39 @@ if (plugin.version !== released) {
     ' The version is set by the release PR; do not edit it by hand');
 }
 
-// 6. In CI on a pull request: the title is a Conventional Commit. A squash merge puts it on main, where
+// 6. Every dashboard language has exactly the English keys, each the same kind of value (text, function or group),
+//    and every function returns text. LANGS (the language menu) and the tables name the same languages.
+{
+  const dir = path.join(ROOT, 'server', 'dashboard');
+  const tables = fs.readdirSync(dir).filter(f => /^i18n-[a-z]{2}\.js$/.test(f));
+  let got = null;
+  try { got = new Function(['i18n.js', ...tables].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\nreturn { TEXT, LANGS };')(); }
+  catch (e) { fail(`server/dashboard/i18n: the language tables do not load (${e.message})`); }
+  if (got) {
+    const { TEXT, LANGS } = got;
+    const kind = v => typeof v === 'function' ? 'function' : v && typeof v === 'object' ? 'group' : typeof v;
+    const compare = (en, x, code, at = '') => {
+      for (const [k, v] of Object.entries(en)) {
+        const key = at + k;
+        if (!(k in x)) { fail(`i18n-${code}.js: missing "${key}"`); continue; }
+        if (kind(v) !== kind(x[k])) { fail(`i18n-${code}.js: "${key}" is a ${kind(x[k])}, English has a ${kind(v)}`); continue; }
+        if (kind(v) === 'group') compare(v, x[k], code, key + '.');
+        if (kind(v) === 'function') for (const n of [0, 1, 2, 5, 22]) {
+          let r; try { r = x[k](n, n, n); } catch (e) { r = e; }
+          if (typeof r !== 'string' || !r) { fail(`i18n-${code}.js: "${key}"(${n}) does not return text`); break; }
+        }
+      }
+      for (const k of Object.keys(x)) if (!(k in en)) fail(`i18n-${code}.js: "${at + k}" is not in English`);
+    };
+    for (const code of Object.keys(TEXT)) {
+      if (!LANGS[code]) fail(`i18n-${code}.js: language "${code}" is not in LANGS (server/dashboard/i18n.js)`);
+      compare(TEXT.en, TEXT[code], code);
+    }
+    for (const code of Object.keys(LANGS)) if (!TEXT[code]) fail(`server/dashboard/i18n.js: LANGS has "${code}" but there is no i18n-${code}.js`);
+  }
+}
+
+// 7. In CI on a pull request: the title is a Conventional Commit. A squash merge puts it on main, where
 //    release-please reads it to pick the next version and write the changelog.
 const title = process.env.PR_TITLE;
 if (title && !/^(feat|fix|perf|refactor|revert|docs|test|ci|chore|build|style)(\([^)]+\))?!?: \S/.test(title)) {

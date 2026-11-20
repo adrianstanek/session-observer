@@ -27,10 +27,10 @@ function ctxFetch(sid, ver) {
     .finally(() => { CTX.busy = false; altDirty = true; });
 }
 
-const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const plural = nw; // a count and its noun, in the chosen language
 // characters per token: measured for this session from its first model step when the transcript allows, else about 4
 const ctxCpt = () => CTX.data?.measured?.cpt || 4;
-const ctxTok = chars => '≈' + fmtN(Math.round(chars / ctxCpt())) + ' tokens';
+const ctxTok = chars => TX.approxTokens(fmtN(Math.round(chars / ctxCpt())));
 const ctxLen = s => String(s ?? '').length;
 const ctxInputLen = c => ctxLen(JSON.stringify(c.input ?? {}));
 // one size for a tool definition, used by both the Tool definitions card and Context usage (the measured characters
@@ -50,11 +50,11 @@ function ctxInput(name, i) {
   i = i || {};
   if (name === 'Bash' || name === 'PowerShell') return (i.command ? `<pre class="code">${bashHtml(i.command)}</pre>` : '') + (i.description ? `<div class="muted">${esc(i.description)}</div>` : '');
   if (name === 'Edit' || name === 'MultiEdit') return toolInputHtml(name, i);
-  if (name === 'Write') return evKv({ file: i.file_path }, new Set()) + `<pre class="code">${codeHtml(i.content ?? '', langOf(i.file_path))}</pre>`;
-  if (name === 'Agent' || name === 'Task') return evKv({ description: i.description, type: i.subagent_type, model: i.model }, new Set()) + `<pre class="cxt">${esc(i.prompt ?? '')}</pre>`;
+  if (name === 'Write') return evKv({ [TX.kv.file]: i.file_path }, new Set()) + `<pre class="code">${codeHtml(i.content ?? '', langOf(i.file_path))}</pre>`;
+  if (name === 'Agent' || name === 'Task') return evKv({ [TX.kv.description]: i.description, [TX.kv.type]: i.subagent_type, [TX.kv.model]: i.model }, new Set()) + `<pre class="cxt">${esc(i.prompt ?? '')}</pre>`;
   return `<pre class="code fj">${jsonHtml(i)}</pre>`;
 }
-const ctxOutput = (txt, err) => !txt ? '<div class="muted">no output</div>'
+const ctxOutput = (txt, err) => !txt ? `<div class="muted">${esc(TX.noOutput)}</div>`
   : txt.length < 20000 ? evOut(txt, err ? 'err' : '') : `<pre class="code ${err ? 'err' : ''}">${esc(txt)}</pre>`;
 const ctxHay = it => (it._hay ??= [it.text, it.name, it.label, it.input && JSON.stringify(it.input), it.result?.text].filter(Boolean).join(' ').toLowerCase());
 
@@ -153,18 +153,18 @@ function ctxItems(list, pre, q, sub = false) {
     n++;
     if (!m.blocks.length) return '';
     const st = m.step, ts = st?.ts || m.ts;
-    const label = m.role === 'assistant' ? `${icon('model')} Claude` : sub ? `${icon('model')} Task and results` : `${icon('you')} You`;
-    const right = st ? `${ctxBadge(ctxSize(st.ctx, m.d))} <span class="sz muted">${fmtN(st.out)} out</span>` : `<span class="sz muted">${ctxTok(m.size)}</span>`;
+    const label = m.role === 'assistant' ? `${icon('model')} ${esc(TX.claude)}` : sub ? `${icon('model')} ${esc(TX.taskAndResults)}` : `${icon('you')} ${esc(TX.st.you)}`;
+    const right = st ? `${ctxBadge(ctxSize(st.ctx, m.d))} <span class="sz muted">${esc(TX.outX(fmtN(st.out)))}</span>` : `<span class="sz muted">${ctxTok(m.size)}</span>`;
     // the hook events this message matches: its header opens their turn in Details, hovering lights their rows there
     const seqs = m.seqs = ctxSeqsOf(m);
-    const link = seqs.length ? ` data-seq="${seqs[0]}" title="Show this message in Details"` : '';
+    const link = seqs.length ? ` data-seq="${seqs[0]}" title="${esc(TX.showInDetails)}"` : '';
     return `<div class="cxw ${m.role}"${ts ? ` data-t="${Date.parse(ts)}"` : ''}${seqs.length ? ` data-seqs="${seqs.join(' ')}"` : ''}${st?.model ? ` title="${esc(st.model)}"` : ''}><div class="cxl${seqs.length ? ' go' : ''}"${link}>${label} <span class="muted">#${n}${ts ? ' · ' + fmtTime(ts) : ''}</span><span class="grow"></span>${right}</div>${m.blocks.join('')}</div>`;
   });
   if (sub) { if (!old) out.reverse(); return out.join(''); }
   return ctxTurns(msgs, out, old);
 
   function compact(it) {
-    return `<div class="cxcomp">${icon('context')} Compacted${it.trigger ? ' (' + esc(it.trigger) + ')' : ''}${it.preTokens ? ` at ${fmtN(it.preTokens)} tokens` : ''}${it.ts ? ' · ' + fmtTime(it.ts) : ''} — everything ${old ? 'above' : 'below'} was replaced by the summary ${old ? 'below' : 'above'}</div>`;
+    return `<div class="cxcomp">${icon('context')} ${esc(TX.compacted)}${it.trigger ? ' (' + esc(it.trigger) + ')' : ''}${it.preTokens ? ' ' + esc(TX.atTokens(fmtN(it.preTokens))) : ''}${it.ts ? ' · ' + fmtTime(it.ts) : ''} — ${esc(old ? TX.replacedAbove : TX.replacedBelow)}</div>`;
   }
   function block(it, id) {
     if (q && !ctxHay(it).includes(q) && !(it.sub && it.sub.items.some(x => ctxHay(x).includes(q)))) return '';
@@ -172,31 +172,31 @@ function ctxItems(list, pre, q, sub = false) {
     switch (it.kind) {
       case 'user': return `<div class="cxt">${esc(it.text)}</div>`;
       case 'text': return `<div class="cxt">${mdLite(it.text)}</div>`;
-      case 'summary': return ctxCard(id, 'sum', `${icon('context')} <b>Compaction summary</b><span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`, true);
-      case 'thinking': return ctxCard(id, 'think', `<b>thinking</b> <span class="muted">${esc(short(it.text, 110))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`);
-      case 'meta': return ctxCard(id, 'att', `<b>injected</b> <span class="muted">${esc(short(it.text, 110))}</span><span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`);
+      case 'summary': return ctxCard(id, 'sum', `${icon('context')} <b>${esc(TX.compactionSummary)}</b><span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`, true);
+      case 'thinking': return ctxCard(id, 'think', `<b>${esc(TX.thinking)}</b> <span class="muted">${esc(short(it.text, 110))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`);
+      case 'meta': return ctxCard(id, 'att', `<b>${esc(TX.injected)}</b> <span class="muted">${esc(short(it.text, 110))}</span><span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, `<pre class="cxt">${esc(it.text)}</pre>`);
       case 'attachment': {
         // bookkeeping only when asked for; the lists pinned on top only when they change later in the session
         if (it.role === 'meta' ? !ctxMeta : it.role === 'pinned' && !stepped) return '';
-        const note = it.role === 'meta' ? 'not sent to the model' : it.role === 'pinned' ? 'change to a list pinned on top'
-          : it.rendered ? 'sent as text made from this data' : 'sent to the model';
-        h += ctxCard(id, it.role === 'meta' ? 'att meta' : 'att', `<b>${esc(it.label || 'attachment')}</b> <span class="muted">${esc(short(it.text, 90))}</span><span class="grow"></span><span class="sz">${it.role === 'meta' ? 'not sent' : ctxTok(ctxLen(it.text))}</span>`,
-          `<div class="muted">${note}</div><pre class="cxt">${esc(it.text)}</pre>`);
+        const note = it.role === 'meta' ? TX.notSentModel : it.role === 'pinned' ? TX.pinnedChange
+          : it.rendered ? TX.sentAsText : TX.sentModel;
+        h += ctxCard(id, it.role === 'meta' ? 'att meta' : 'att', `<b>${esc(it.label || TX.attachment)}</b> <span class="muted">${esc(short(it.text, 90))}</span><span class="grow"></span><span class="sz">${it.role === 'meta' ? esc(TX.notSent) : ctxTok(ctxLen(it.text))}</span>`,
+          `<div class="muted">${esc(note)}</div><pre class="cxt">${esc(it.text)}</pre>`);
         return h;
       }
       case 'result': {
         const c = it.call;
-        h += ctxCard(id, 'tool', `${toolIcon(c.name, c.input, toolStation(c.name, c.input))}<b>result</b> <span class="muted">${esc(toolLabel(c.name))} · ${esc(short(it.text, 90))}</span>${it.error ? ' <span class="err">✕ failed</span>' : ''}<span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, ctxOutput(it.text, it.error));
+        h += ctxCard(id, 'tool', `${toolIcon(c.name, c.input, toolStation(c.name, c.input))}<b>${esc(TX.result)}</b> <span class="muted">${esc(toolLabel(c.name))} · ${esc(short(it.text, 90))}</span>${it.error ? ` <span class="err">✕ ${esc(TX.failedLc)}</span>` : ''}<span class="grow"></span><span class="sz">${ctxTok(ctxLen(it.text))}</span>`, ctxOutput(it.text, it.error));
         return h;
       }
-      case 'orphan': h += ctxCard(id, 'tool', `<b>tool result</b> <span class="muted">${esc(short(it.text, 90))}</span>`, ctxOutput(it.text, it.error)); return h;
+      case 'orphan': h += ctxCard(id, 'tool', `<b>${esc(TX.toolResult)}</b> <span class="muted">${esc(short(it.text, 90))}</span>`, ctxOutput(it.text, it.error)); return h;
       case 'call': {
         const r = it.result, st = toolStation(it.name, it.input);
-        const state_ = !r ? '<span class="run">● running</span>' : r.error ? '<span class="err">✕ failed</span>' : '<span class="ok">✓</span>';
+        const state_ = !r ? `<span class="run">● ${esc(TX.running)}</span>` : r.error ? `<span class="err">✕ ${esc(TX.failedLc)}</span>` : '<span class="ok">✓</span>';
         const arg = toolArg({ tool_name: it.name, tool_input: it.input || {} });
         const head = `${toolIcon(it.name, it.input, st)}<b>${esc(toolLabel(it.name))}</b> <span class="muted mono">${esc(short(arg, 100))}</span><span class="grow"></span><span class="sz">${state_} ${ctxTok(ctxInputLen(it))}</span>`;
-        const sub = it.sub ? `<div class="cxsub"><div class="cxl">${icon('agents')} Subagent${it.sub.type ? ' · ' + esc(it.sub.type) : ''}${it.sub.description ? ` <span class="muted">${esc(it.sub.description)}</span>` : ''} <span class="muted">· its own context, ${plural(it.sub.items.filter(x => x.kind === 'call').length, 'tool call')}</span></div>${ctxPrompt(it.sub, id + '.', false)}${ctxItems(it.sub.items, id + '.', q, true)}</div>` : '';
-        h += ctxCard(id, 'tool', head, `<div class="lbl2">Input</div>${ctxInput(it.name, it.input)}${sub}`);
+        const sub = it.sub ? `<div class="cxsub"><div class="cxl">${icon('agents')} ${esc(TX.subagent)}${it.sub.type ? ' · ' + esc(it.sub.type) : ''}${it.sub.description ? ` <span class="muted">${esc(it.sub.description)}</span>` : ''} <span class="muted">· ${esc(TX.ownContext(plural(it.sub.items.filter(x => x.kind === 'call').length, 'toolCall')))}</span></div>${ctxPrompt(it.sub, id + '.', false)}${ctxItems(it.sub.items, id + '.', q, true)}</div>` : '';
+        h += ctxCard(id, 'tool', head, `<div class="lbl2">${esc(TX.input)}</div>${ctxInput(it.name, it.input)}${sub}`);
         return h;
       }
     }
@@ -221,13 +221,13 @@ function ctxTurns(msgs, out, old) {
     for (const m of g.msgs) for (const s of m.seqs || []) { const k = TURN_BY_SEQ.get(s)?.key; if (k) votes.set(k, (votes.get(k) || 0) + 1); }
     const key = [...votes].sort((a, b) => b[1] - a[1])[0]?.[0] || null, sel = key && key === state.turnSel;
     const steps = g.msgs.filter(m => m.step).length, calls = g.msgs.reduce((c, m) => c + (m.items || []).filter(x => x.kind === 'call').length, 0);
-    const title = g.prompt != null ? `Turn ${n}` : g.msgs[0].compact ? 'After compaction' : 'Before the first prompt';
+    const title = esc(g.prompt != null ? TX.turnN(n) : g.msgs[0].compact ? TX.afterCompaction : TX.beforeFirstPrompt);
     // remembered by when the turn started: stable while hook events load and across the two modes, unlike its number or key
     const id = 't' + (g.ts || n), shut = ctxShut.has(id);
-    const head = `<div class="cxth${key ? ' go' : ''}"${key ? ` data-key="${esc(key)}" title="Show this turn in Details"` : ''}>`
-      + `<button class="cxtog" data-cxtt="${esc(id)}" title="${shut ? 'Expand' : 'Collapse'} this turn" aria-expanded="${!shut}"></button>${icon('you')}<b>${title}</b>`
+    const head = `<div class="cxth${key ? ' go' : ''}"${key ? ` data-key="${esc(key)}" title="${esc(TX.showTurnInDetails)}"` : ''}>`
+      + `<button class="cxtog" data-cxtt="${esc(id)}" title="${esc(shut ? TX.expandTurn : TX.collapseTurn)}" aria-expanded="${!shut}"></button>${icon('you')}<b>${title}</b>`
       + `${g.ts ? `<span class="muted">${fmtTime(g.ts)}</span>` : ''}<span class="cxtp">${g.prompt != null ? esc(short(g.prompt, 160)) : ''}</span><span class="grow"></span>`
-      + `<span class="muted">${plural(steps, 'step')} · ${plural(calls, 'tool call')}</span>${key ? `<span class="cxtgo">${sel ? 'in Details' : 'Details ›'}</span>` : ''}</div>`;
+      + `<span class="muted">${esc(plural(steps, 'step'))} · ${esc(plural(calls, 'toolCall'))}</span>${key ? `<span class="cxtgo">${esc(sel ? TX.inDetails : TX.detailsGo)}</span>` : ''}</div>`;
     const body = old ? g.html : [...g.html].reverse();
     return `<section class="cxturn${sel ? ' sel' : ''}${shut ? ' shut' : ''}" data-cxt="${esc(id)}"${key ? ` data-tk="${esc(key)}"` : ''}>${head}${body.join('')}</section>`;
   });
@@ -239,7 +239,7 @@ function ctxSetShut(sec, shut) {
   const id = sec.dataset.cxt, b = sec.querySelector(':scope > .cxth > .cxtog');
   if (shut) ctxShut.add(id); else ctxShut.delete(id);
   sec.classList.toggle('shut', shut);
-  if (b) { b.title = `${shut ? 'Expand' : 'Collapse'} this turn`; b.setAttribute('aria-expanded', String(!shut)); }
+  if (b) { b.title = shut ? TX.expandTurn : TX.collapseTurn; b.setAttribute('aria-expanded', String(!shut)); }
 }
 // the arrow only folds the turn: stop the click before it reaches the header's "show in Details"
 $('alt').addEventListener('click', e => {
@@ -254,47 +254,46 @@ $('alt').addEventListener('click', () => { if (state.layout === 'context') ctxLo
 
 // What the model is given before the conversation, pinned on top: the system prompt (for a custom subagent, the body
 // of its .md file), the tool definitions, and the instruction files (CLAUDE.md, AGENTS.md, rules, auto-memory).
-const INSTR_KIND = { User: 'global, ~/.claude', Project: 'project', Local: 'local, not checked in', AutoMem: 'auto-memory', Managed: 'managed policy' };
+const INSTR_KIND = TX.instr;
 function ctxPrompt(p, pre, main) {
   let h = '';
   const ms = main && p.measured;
-  if (ms) h += `<div class="cxnote muted">Measured: the first request was ${fmtN(ms.firstCtx)} tokens (system prompt, tools, instructions, listings and the first prompt). ${ms.cpt
-    ? `Sizes on cards use this session's average of ${ms.cpt.toFixed(1)} characters per token.` : 'Sizes on cards are estimates at about 4 characters per token.'}</div>`;
+  if (ms) h += `<div class="cxnote muted">${esc(TX.measuredNote(fmtN(ms.firstCtx), ms.cpt ? dec(ms.cpt.toFixed(1)) : null))}</div>`;
   if (p.system != null) {
-    h += ctxCard(pre + 'sys', 'sys', `${icon('core')} <b>System prompt</b><span class="grow"></span><span class="sz">${fmtN(p.system.length)} chars · ${ctxTok(p.system.length)}</span>`, `<pre class="cxt">${esc(p.system)}</pre>`);
+    h += ctxCard(pre + 'sys', 'sys', `${icon('core')} <b>${esc(TX.systemPrompt)}</b><span class="grow"></span><span class="sz">${esc(TX.charsN(fmtN(p.system.length)))} · ${ctxTok(p.system.length)}</span>`, `<pre class="cxt">${esc(p.system)}</pre>`);
     // built-in tools first, then each MCP server's, largest first
     const tg = ctxGroups(p.tools.map((t, i) => ({ ...t, i })), t => ctxMcp(t.name)?.[0] || '', ctxToolLen);
     const nMcp = tg.filter(([g]) => g).length;
-    h += ctxCard(pre + 'tools', 'sys', `${icon('other')} <b>Tool definitions</b> <span class="muted">${plural(p.tools.length, 'tool')}${nMcp ? ` · ${plural(nMcp, 'MCP server')}` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(p.tools.reduce((n, t) => n + ctxToolLen(t), 0))}</span>`,
-      tg.map(([g, l]) => ctxGroup(pre + 'tools.g.' + g, g ? esc(g) : 'Built-in', g ? `MCP · ${plural(l.length, 'tool')}` : plural(l.length, 'tool'), ctxTok(l.reduce((n, t) => n + ctxToolLen(t), 0)),
+    h += ctxCard(pre + 'tools', 'sys', `${icon('other')} <b>${esc(TX.toolDefs)}</b> <span class="muted">${esc(plural(p.tools.length, 'tool'))}${nMcp ? ` · ${esc(plural(nMcp, 'mcpServer'))}` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(p.tools.reduce((n, t) => n + ctxToolLen(t), 0))}</span>`,
+      tg.map(([g, l]) => ctxGroup(pre + 'tools.g.' + g, g ? esc(g) : esc(TX.builtIn), esc(g ? `MCP · ${plural(l.length, 'tool')}` : plural(l.length, 'tool')), ctxTok(l.reduce((n, t) => n + ctxToolLen(t), 0)),
         l.map(t => ctxCard(pre + 'tool.' + t.i, 'tdef', `<b class="mono">${esc(ctxMcp(t.name)?.[1] || t.name)}</b> <span class="muted">${esc(short(t.description, 100))}</span><span class="grow"></span><span class="sz">${ctxTok(ctxToolLen(t))}</span>`,
           `<pre class="cxt">${esc(t.description)}</pre>${t.schema ? `<pre class="code fj">${jsonHtml(t.schema)}</pre>` : ''}`)).join(''))).join(''));
-  } else if (main) h += `<div class="cxnote muted">The system prompt and tool definitions are not in this transcript: Claude Code records them only in some versions. Everything below is.</div>`;
+  } else if (main) h += `<div class="cxnote muted">${esc(TX.noSystem)}</div>`;
   const ins = p.instructions || [];
-  if (ins.length) h += ctxCard(pre + 'ins', 'sys', `${icon('core')} <b>Instructions</b> <span class="muted">${esc(ins.map(f => f.path.split(/[\\/]/).pop()).join(', '))}</span><span class="grow"></span><span class="sz">${ctxTok(ins.reduce((n, f) => n + ctxLen(f.content), 0))}</span>`,
+  if (ins.length) h += ctxCard(pre + 'ins', 'sys', `${icon('core')} <b>${esc(TX.instructions)}</b> <span class="muted">${esc(ins.map(f => f.path.split(/[\\/]/).pop()).join(', '))}</span><span class="grow"></span><span class="sz">${ctxTok(ins.reduce((n, f) => n + ctxLen(f.content), 0))}</span>`,
     ins.map((f, i) => ctxCard(pre + 'ins.' + i, 'tdef', `<b class="mono">${esc(f.path)}</b> <span class="muted">${esc(INSTR_KIND[f.type] || f.type || '')}</span><span class="grow"></span><span class="sz">${ctxTok(ctxLen(f.content))}</span>`, `<pre class="cxt">${esc(f.content)}</pre>`)).join(''));
-  else if (main) h += `<div class="cxnote muted">No instruction files in this transcript: no CLAUDE.md (global, project or local), AGENTS.md, rules or auto-memory were loaded.</div>`;
+  else if (main) h += `<div class="cxnote muted">${esc(TX.noInstructions)}</div>`;
   // what the model knows it can use: skills and subagent types by name and description, deferred tools by name only
   // skills by source: a plugin's skills are named "plugin:skill"; the transcript doesn't say where the others come from
   if (p.skills?.length) {
     const sg = ctxGroups(p.skills, s => s.name.includes(':') ? s.name.slice(0, s.name.indexOf(':')) : '', s => ctxListLen([s]));
     const nPl = sg.filter(([g]) => g).length;
-    h += ctxCard(pre + 'skills', 'sys', `${icon('skills')} <b>Skills</b> <span class="muted">${plural(p.skills.length, 'skill')}${nPl ? ` · ${plural(nPl, 'plugin')}` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(ctxListLen(p.skills))}</span>`,
-      `<div class="muted">Name and description only: a skill's SKILL.md enters the context when it is invoked.</div>`
-      + sg.map(([g, l]) => ctxGroup(pre + 'skills.g.' + g, g ? esc(g) : 'Not from a plugin', `${g === 'anthropic-skills' ? 'claude.ai sync · ' : g ? 'plugin · ' : ''}${plural(l.length, 'skill')}`, ctxTok(ctxListLen(l)),
+    h += ctxCard(pre + 'skills', 'sys', `${icon('skills')} <b>${esc(TX.skills)}</b> <span class="muted">${esc(plural(p.skills.length, 'skill'))}${nPl ? ` · ${esc(plural(nPl, 'plugin'))}` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(ctxListLen(p.skills))}</span>`,
+      `<div class="muted">${esc(TX.skillsNote)}</div>`
+      + sg.map(([g, l]) => ctxGroup(pre + 'skills.g.' + g, g ? esc(g) : esc(TX.notFromPlugin), esc(`${g === 'anthropic-skills' ? TX.claudeSync + ' · ' : g ? TX.pluginLc + ' · ' : ''}${plural(l.length, 'skill')}`), ctxTok(ctxListLen(l)),
         `<div class="cxlist">${l.map(x => `<div><b class="mono">${esc(g ? x.name.slice(g.length + 1) : x.name)}</b>${x.description ? ` <span class="muted">${esc(x.description)}</span>` : ''}</div>`).join('')}</div>`)).join(''));
   }
   // subagent types: one section each, its description inside
-  if (p.agents?.length) h += ctxCard(pre + 'agents', 'sys', `${icon('agents')} <b>Subagent types</b> <span class="muted">${p.agents.length}</span><span class="grow"></span><span class="sz">${ctxTok(ctxListLen(p.agents))}</span>`,
+  if (p.agents?.length) h += ctxCard(pre + 'agents', 'sys', `${icon('agents')} <b>${esc(TX.subagentTypes)}</b> <span class="muted">${p.agents.length}</span><span class="grow"></span><span class="sz">${ctxTok(ctxListLen(p.agents))}</span>`,
     p.agents.map((x, i) => ctxCard(pre + 'agents.' + i, 'tdef', `<b class="mono">${esc(x.name)}</b> <span class="muted">${esc(short(x.description, 100))}</span><span class="grow"></span><span class="sz">${ctxTok(ctxListLen([x]))}</span>`,
-      x.description ? `<pre class="cxt">${esc(x.description)}</pre>` : '<div class="muted">no description</div>')).join(''));
-  if (p.mcp?.length) h += ctxCard(pre + 'mcp', 'sys', `${icon('other')} <b>MCP server instructions</b> <span class="muted">${p.mcp.length}</span><span class="grow"></span><span class="sz">${ctxTok(p.mcp.reduce((n, x) => n + ctxLen(x.description), 0))}</span>`,
+      x.description ? `<pre class="cxt">${esc(x.description)}</pre>` : `<div class="muted">${esc(TX.noDescription)}</div>`)).join(''));
+  if (p.mcp?.length) h += ctxCard(pre + 'mcp', 'sys', `${icon('other')} <b>${esc(TX.mcpInstructions)}</b> <span class="muted">${p.mcp.length}</span><span class="grow"></span><span class="sz">${ctxTok(p.mcp.reduce((n, x) => n + ctxLen(x.description), 0))}</span>`,
     p.mcp.map((x, i) => ctxCard(pre + 'mcp.' + i, 'tdef', `<b class="mono">${esc(x.name)}</b><span class="grow"></span><span class="sz">${ctxTok(ctxLen(x.description))}</span>`, `<pre class="cxt">${esc(x.description)}</pre>`)).join(''));
   const df = p.deferred;
   if (df) {
     const loaded = df.tools.filter(t => ctxLoaded(p, t)).length;
-    h += ctxCard(pre + 'deferred', 'sys', `${icon('other')} <b>Deferred tools</b> <span class="muted">${df.tools.length} known by name, ${loaded} loaded${df.failedMcp.length ? ` · ${plural(df.failedMcp.length, 'MCP server')} failed` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(ctxDeferredLen(df))}</span>`,
-      `<div class="muted">Only the names are in the context; a tool's definition loads through ToolSearch when needed. Highlighted names have been loaded.</div>`
+    h += ctxCard(pre + 'deferred', 'sys', `${icon('other')} <b>${esc(TX.deferredTools)}</b> <span class="muted">${esc(TX.deferredSub(df.tools.length, loaded))}${df.failedMcp.length ? ` · ${esc(TX.failedX(plural(df.failedMcp.length, 'mcpServer')))}` : ''}</span><span class="grow"></span><span class="sz">${ctxTok(ctxDeferredLen(df))}</span>`,
+      `<div class="muted">${esc(TX.deferredNote)}</div>`
       + ctxDeferredGroups(p, df, pre + 'deferred.g.'));
   }
   return h;
@@ -317,10 +316,10 @@ function ctxDeferredGroups(p, df, pre) {
   const fail = new Map(df.failedMcp.map(f => [f.name, f.error]));
   return groups.map(([g, l]) => {
     const err = fail.get(g), on = l.filter(t => ctxLoaded(p, t)).length;
-    return ctxGroup(pre + g, g ? esc(g) : 'Built-in', err != null ? '<span class="chip err">failed to connect</span>' : `${g ? 'MCP · ' : ''}${plural(l.length, 'tool')}${on ? ` · ${on} loaded` : ''}`,
+    return ctxGroup(pre + g, g ? esc(g) : esc(TX.builtIn), err != null ? `<span class="chip err">${esc(TX.failedConnect)}</span>` : esc(`${g ? 'MCP · ' : ''}${plural(l.length, 'tool')}${on ? ` · ${TX.loadedN(on)}` : ''}`),
       l.length ? ctxTok(ctxDeferredLen({ tools: l })) : '',
       (err ? `<div class="cu-err">${esc(err)}</div>` : '')
-      + (l.length ? `<div class="cu-chips">${l.map(t => `<span class="chip${ctxLoaded(p, t) ? ' on' : ''}" title="${esc(t.name)}${ctxLoaded(p, t) ? ' · loaded' : ' · name only, loads on demand'}">${esc(ctxMcp(t.name)?.[1] || t.name)}</span>`).join('')}</div>` : ''), err != null);
+      + (l.length ? `<div class="cu-chips">${l.map(t => `<span class="chip${ctxLoaded(p, t) ? ' on' : ''}" title="${esc(t.name)} · ${esc(ctxLoaded(p, t) ? TX.loadedLc : TX.nameOnly)}">${esc(ctxMcp(t.name)?.[1] || t.name)}</span>`).join('')}</div>` : ''), err != null);
   }).join('');
 }
 
@@ -329,8 +328,8 @@ function ctxDeferredGroups(p, df, pre) {
 // latest model step); the parts are estimates from the text sizes, and Messages is what's left of the total.
 const CU_CARD = { sys: 'sys', tools: 'tools', mcpt: 'tools', mcpi: 'mcp', mem: 'ins', skills: 'skills', agents: 'agents', defer: 'deferred', msgs: '@msgs' };
 const CTX_BUFFER = 33000; // what Claude Code holds back for auto-compaction
-const fmtT = n => n >= 1e6 ? +(n / 1e6).toFixed(1) + 'm' : n >= 1e3 ? +(n / 1e3).toFixed(1) + 'k' : String(Math.round(n));
-const fmtPct = (n, w) => (n / w * 100).toFixed(1) + '%';
+const fmtT = n => n >= 1e6 ? dec(+(n / 1e6).toFixed(1)) + 'm' : n >= 1e3 ? dec(+(n / 1e3).toFixed(1)) + 'k' : String(Math.round(n));
+const fmtPct = (n, w) => dec((n / w * 100).toFixed(1)) + '%';
 function ctxUsage(d, pre) {
   const last = d.items.filter(x => x.kind === 'step').at(-1);
   if (!last) return '';
@@ -339,18 +338,19 @@ function ctxUsage(d, pre) {
   const tdef = ctxToolLen; // the same sizes as the cards below
   const isMcp = n => /^mcp__/.test(n);
   const known = d.system != null;
+  const C = TX.cu;
   const parts = [
-    known && ['sys', 'System prompt', tok(d.system.length)],
-    known && ['tools', 'System tools', tok(d.tools.filter(t => !isMcp(t.name)).reduce((n, t) => n + tdef(t), 0))],
-    known && ['mcpt', 'MCP tools', tok(d.tools.filter(t => isMcp(t.name)).reduce((n, t) => n + tdef(t), 0))],
-    ['mcpi', 'MCP server instructions', tok((d.mcp || []).reduce((n, x) => n + ctxLen(x.description), 0))],
-    ['mem', 'Memory files', tok((d.instructions || []).reduce((n, f) => n + ctxLen(f.content), 0))],
-    ['skills', 'Skills', tok(ctxListLen(d.skills))],
-    ['agents', 'Subagent types', tok(ctxListLen(d.agents))],
-    ['defer', 'Deferred tool names', tok(ctxDeferredLen(d.deferred))],
+    known && ['sys', C.sys, tok(d.system.length)],
+    known && ['tools', C.tools, tok(d.tools.filter(t => !isMcp(t.name)).reduce((n, t) => n + tdef(t), 0))],
+    known && ['mcpt', C.mcpt, tok(d.tools.filter(t => isMcp(t.name)).reduce((n, t) => n + tdef(t), 0))],
+    ['mcpi', C.mcpi, tok((d.mcp || []).reduce((n, x) => n + ctxLen(x.description), 0))],
+    ['mem', C.mem, tok((d.instructions || []).reduce((n, f) => n + ctxLen(f.content), 0))],
+    ['skills', C.skills, tok(ctxListLen(d.skills))],
+    ['agents', C.agents, tok(ctxListLen(d.agents))],
+    ['defer', C.defer, tok(ctxDeferredLen(d.deferred))],
   ].filter(p => p && p[2] > 0);
   const rest = Math.max(0, used - parts.reduce((n, p) => n + p[2], 0));
-  parts.push(['msgs', known ? 'Messages' : 'Messages, system prompt and tools', rest]);
+  parts.push(['msgs', known ? C.msgs : C.msgsAll, rest]);
   const buffer = Math.min(CTX_BUFFER, Math.max(0, win - used)), free = Math.max(0, win - used - buffer);
 
   // the grid: each part gets its share of the 200 cells, at least one; a part's last cell is half-filled when the share isn't whole
@@ -364,16 +364,17 @@ function ctxUsage(d, pre) {
   for (let i = 0; i < nFree; i++) cells.push('<i class="c free cu-free"></i>');
   for (let i = 0; i < nBuf && cells.length < N; i++) cells.push('<i class="c buf cu-buf"></i>');
 
-  const legend = parts.map(([k, label, n]) => `<div class="cu-go" data-cxgo="${CU_CARD[k]}" title="Show it below"><i class="c full cu-${k}"></i> ${esc(label)}: <b>${fmtT(n)}</b> tokens <span class="muted">(${fmtPct(n, win)})</span></div>`).join('')
-    + `<div><i class="c free cu-free"></i> Free space: <b>${fmtT(free)}</b> <span class="muted">(${fmtPct(free, win)})</span></div>`
-    + (buffer ? `<div><i class="c buf cu-buf"></i> Autocompact buffer: <b>${fmtT(buffer)}</b> tokens <span class="muted">(${fmtPct(buffer, win)})</span></div>` : '');
-  const head = `<div class="cu-top"><div class="cu-grid" title="200 cells, each 0.5% of the window">${cells.join('')}</div><div class="cu-side">
-    <div><b>${esc(d.model || 'model unknown')}</b></div>
-    <div><b>${fmtT(used)}</b>/${fmtT(win)} tokens <span class="muted">(${Math.round(used / win * 100)}%)</span>${last.ts ? ` <span class="muted">· ${fmtTime(last.ts)}</span>` : ''}</div>
-    <div class="cu-h">Estimated usage by category</div>${legend}</div></div>`;
+  const tk = esc(TX.tokens);
+  const legend = parts.map(([k, label, n]) => `<div class="cu-go" data-cxgo="${CU_CARD[k]}" title="${esc(TX.showBelow)}"><i class="c full cu-${k}"></i> ${esc(label)}: <b>${fmtT(n)}</b> ${tk} <span class="muted">(${fmtPct(n, win)})</span></div>`).join('')
+    + `<div><i class="c free cu-free"></i> ${esc(TX.freeSpace)}: <b>${fmtT(free)}</b> <span class="muted">(${fmtPct(free, win)})</span></div>`
+    + (buffer ? `<div><i class="c buf cu-buf"></i> ${esc(TX.autocompact)}: <b>${fmtT(buffer)}</b> ${tk} <span class="muted">(${fmtPct(buffer, win)})</span></div>` : '');
+  const head = `<div class="cu-top"><div class="cu-grid" title="${esc(TX.cellsTitle)}">${cells.join('')}</div><div class="cu-side">
+    <div><b>${esc(d.model || TX.modelUnknown)}</b></div>
+    <div><b>${fmtT(used)}</b>/${fmtT(win)} ${tk} <span class="muted">(${Math.round(used / win * 100)}%)</span>${last.ts ? ` <span class="muted">· ${fmtTime(last.ts)}</span>` : ''}</div>
+    <div class="cu-h">${esc(TX.usageByCat)}</div>${legend}</div></div>`;
 
-  const note = `<div class="cxnote muted">Like Claude Code's /context. The total is measured at the latest model step; the parts are estimated from their text${d.measured?.cpt ? ` at this session's ${d.measured.cpt.toFixed(1)} characters per token` : ' at about 4 characters per token'}, and Messages is the rest. Click a category to see it below.${known ? '' : ' This transcript has no system prompt or tool definitions, so they are counted in Messages.'}</div>`;
-  return ctxCard(pre + 'usage', 'sys usage', `${icon('context')} <b>Context usage</b> <span class="muted">${esc(d.model || '')}</span><span class="grow"></span><span class="sz">${fmtT(used)}/${fmtT(win)} tokens (${Math.round(used / win * 100)}%)</span>`,
+  const note = `<div class="cxnote muted">${esc(TX.cuNote(d.measured?.cpt ? dec(d.measured.cpt.toFixed(1)) : null, known))}</div>`;
+  return ctxCard(pre + 'usage', 'sys usage', `${icon('context')} <b>${esc(TX.ctxUsage)}</b> <span class="muted">${esc(d.model || '')}</span><span class="grow"></span><span class="sz">${fmtT(used)}/${fmtT(win)} ${tk} (${Math.round(used / win * 100)}%)</span>`,
     head + note, true);
 }
 
@@ -388,24 +389,24 @@ function ctxBody(d, q) {
   const st = d.items.filter(x => x.kind === 'step'), last = st.at(-1);
   const now = last ? ctxSize(last.ctx, st.length > 1 ? last.ctx - st.at(-2).ctx : null) : null;
   const tb = `<div class="cxbar">
-    <div class="seg"><button data-cxm="all" class="${ctxMode === 'all' ? 'cur' : ''}">Whole session</button><button data-cxm="now" class="${ctxMode === 'now' ? 'cur' : ''}" ${compacted ? '' : 'disabled title="This session has not been compacted, so the whole session is the current context"'}>Since last compaction</button></div>
-    <div class="seg" title="Message order"><button data-cxo="new" class="${ctxOrder !== 'old' ? 'cur' : ''}">Newest first</button><button data-cxo="old" class="${ctxOrder === 'old' ? 'cur' : ''}">Oldest first</button></div>
-    <label class="check" title="Records Claude Code keeps in the transcript for itself; they are never sent to the model"><input type="checkbox" data-cxa ${ctxMeta ? 'checked' : ''}> bookkeeping (${nMeta})</label>
+    <div class="seg"><button data-cxm="all" class="${ctxMode === 'all' ? 'cur' : ''}">${esc(TX.wholeSession)}</button><button data-cxm="now" class="${ctxMode === 'now' ? 'cur' : ''}" ${compacted ? '' : `disabled title="${esc(TX.notCompacted)}"`}>${esc(TX.sinceCompaction)}</button></div>
+    <div class="seg" title="${esc(TX.msgOrder)}"><button data-cxo="new" class="${ctxOrder !== 'old' ? 'cur' : ''}">${esc(TX.newestFirstBtn)}</button><button data-cxo="old" class="${ctxOrder === 'old' ? 'cur' : ''}">${esc(TX.oldestFirstBtn)}</button></div>
+    <label class="check" title="${esc(TX.bookkeepingTitle)}"><input type="checkbox" data-cxa ${ctxMeta ? 'checked' : ''}> ${esc(TX.bookkeeping)} (${nMeta})</label>
     <span class="grow"></span>
-    <span class="muted">${plural(prompts, 'prompt')} · ${plural(calls, 'tool call')}</span>${now ? `<span class="muted">context now</span>${ctxBadge(now)}` : ''}
-    <div class="seg" title="Turns"><button data-cxx="topen">Expand turns</button><button data-cxx="tclose">Collapse turns</button></div>
-    <button data-cxx="open">Expand all</button><button data-cxx="close">Collapse all</button><button data-cxx="copy" title="Copy everything shown as Markdown">Copy</button></div>`;
+    <span class="muted">${esc(plural(prompts, 'prompt'))} · ${esc(plural(calls, 'toolCall'))}</span>${now ? `<span class="muted">${esc(TX.ctxNow)}</span>${ctxBadge(now)}` : ''}
+    <div class="seg" title="${esc(TX.turns)}"><button data-cxx="topen">${esc(TX.expandTurns)}</button><button data-cxx="tclose">${esc(TX.collapseTurns)}</button></div>
+    <button data-cxx="open">${esc(TX.expandAll)}</button><button data-cxx="close">${esc(TX.collapseAll)}</button><button data-cxx="copy" title="${esc(TX.copyTitle)}">${esc(TX.copy)}</button></div>`;
   const body = ctxItems(items, 'i', q);
-  return `<div class="ctxv">${tb}<div class="cxs">${ctxUsage(d, '')}${ctxPrompt(d, '', true)}${q ? `<div class="cxnote muted">Showing what matches “${esc(q)}”. Reset filters to see everything.</div>` : ''}${body || '<div class="cempty">Nothing here yet</div>'}</div></div>`;
+  return `<div class="ctxv">${tb}<div class="cxs">${ctxUsage(d, '')}${ctxPrompt(d, '', true)}${q ? `<div class="cxnote muted">${esc(TX.showingMatches(q))}</div>` : ''}${body || `<div class="cempty">${esc(TX.nothingYet)}</div>`}</div></div>`;
 }
 
 function contextHtml() {
   const sid = ctxSid();
-  if (!sid) return `<div class="ctxv"><div class="cempty">Pick a session on the left to see its whole context.</div></div>`;
+  if (!sid) return `<div class="ctxv"><div class="cempty">${esc(TX.pickSession)}</div></div>`;
   const s = state.sessions.get(sid), ver = s ? `${s.eventCount}:${s.usage?.turns}:${s.last}` : '';
   if (CTX.sid !== sid || (CTX.ver !== ver && Date.now() - CTX.at > 1500)) ctxFetch(sid, ver);
-  if (CTX.sid !== sid) return `<div class="ctxv"><div class="cempty">Reading the transcript…</div></div>`;
-  if (!CTX.data) return `<div class="ctxv"><div class="cempty">Could not read this session's transcript${CTX.err ? `: ${esc(CTX.err)}` : ''}.</div></div>`;
+  if (CTX.sid !== sid) return `<div class="ctxv"><div class="cempty">${esc(TX.readingTranscript)}</div></div>`;
+  if (!CTX.data) return `<div class="ctxv"><div class="cempty">${esc(TX.cantRead(CTX.err))}</div></div>`;
   const key = [CTX.at, ctxMode, ctxOrder, ctxMeta, state.q, state.turnSel, TURNS.length, [...ctxOpen].join(','), [...ctxShut].join(',')].join('|');
   if (key !== CTX.key) { CTX.key = key; CTX.html = ctxBody(CTX.data, state.q); }
   return CTX.html;
@@ -459,7 +460,7 @@ $('alt').addEventListener('click', e => {
   }
   const x = e.target.closest('[data-cxx]'); if (!x) return;
   if (x.dataset.cxx === 'copy') {
-    navigator.clipboard?.writeText(ctxMarkdown()).then(() => { x.textContent = 'Copied'; setTimeout(() => { x.textContent = 'Copy'; }, 1200); }, () => { x.textContent = 'Copy failed'; });
+    navigator.clipboard?.writeText(ctxMarkdown()).then(() => { x.textContent = TX.copied; setTimeout(() => { x.textContent = TX.copy; }, 1200); }, () => { x.textContent = TX.copyFailed; });
     return;
   }
   if (x.dataset.cxx === 'topen' || x.dataset.cxx === 'tclose') {
