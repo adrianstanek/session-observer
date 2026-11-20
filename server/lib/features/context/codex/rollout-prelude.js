@@ -137,7 +137,9 @@ function codexPreludeOf(rows) {
         case 'deferred': deferred = deferredToolsOf(text); break;
         case 'instructions': {
           const agentsFile = AGENTS_FILE.exec(text);
-          const path = agentsFile ? `${agentsFile[2].trim()}/${agentsFile[1]}` : kindLabel(kind);
+          const folder = agentsFile?.[2].trim();
+          const separator = folder?.includes('\\') ? '\\' : '/'; // the folder's own: a Windows path keeps backslashes
+          const path = agentsFile ? `${folder.replace(/[\\/]$/, '')}${separator}${agentsFile[1]}` : kindLabel(kind);
           instructions.set(path, { path, type: agentsFile ? 'Project' : 'Codex', content: clipText(text) });
           break;
         }
