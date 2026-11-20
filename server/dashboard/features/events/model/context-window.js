@@ -1,0 +1,12 @@
+'use strict';
+// Session Observer dashboard — the context window: its size, and how full a number of tokens makes it.
+const DEFAULT_CONTEXT_WINDOW = 200000;
+const ONE_MILLION_WINDOW = 1000000;
+
+// A context size for a badge: tokens, the change from before, the window and how full it is. The change's colour:
+// shrank (compaction) = down, a big jump (≥ 10% of the window) = big, otherwise up.
+function contextSize(tokens, change, window, changeText) {
+  const tone = change == null ? '' : change < 0 ? 'down' : change >= window * 0.1 ? 'big' : 'up';
+  return { tokens, change, window, fraction: Math.min(1, tokens / window), tone, changeText };
+}
+const signedTokens = change => `${change >= 0 ? '+' : '−'}${formatCompactNumber(Math.abs(change))}`;

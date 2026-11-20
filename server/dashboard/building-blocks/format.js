@@ -1,0 +1,85 @@
+'use strict';
+// Session Observer dashboard — formatting: HTML escaping, shortening, numbers, times and durations in the chosen language.
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => HTML_ESCAPES[char]);
+
+// one line of at most maxLength characters: whitespace collapsed, the rest cut with "…"
+function shorten(text, maxLength = 160) {
+  const line = String(text ?? '').replace(/\s+/g, ' ').trim();
+  return line.length > maxLength ? line.slice(0, maxLength) + '…' : line;
+}
+
+// preview lengths (characters) used in more than one place
+const TITLE_PREVIEW_MAX = 140;   // a session title, or a prompt standing in for one
+const TOOLTIP_PREVIEW_MAX = 400; // the longer text a hover tooltip shows
+
+// text without HTML / XML-like tags (prompts often carry <system-reminder> and the like), on one line
+const stripTags = text => String(text ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
+// the last part of a path ("src/app.ts" → "app.ts"), for both / and \ paths
+const baseName = filePath => String(filePath || '').split(/[\\/]/).filter(Boolean).pop() || filePath || '';
+// hook enum values (user_settings, add_dir…) as words
+const underscoresToSpaces = text => String(text || '').replace(/_/g, ' ');
+
+// Cut to a number of columns. East Asian wide characters (CJK, kana, hangul, fullwidth forms) take two, as they do
+// on screen.
+const WIDE_CHARACTER = /[ᄀ-ᅟ⺀-〾ぁ-㏿㐀-䶿一-鿿ꥠ-꥿가-힣豈-﫿︰-﹏＀-｠￠-￦]/;
+const columnsOf = char => (WIDE_CHARACTER.test(char) ? 2 : 1);
+function truncateToColumns(text, maxColumns) {
+  text = String(text ?? '');
+  let width = 0;
+  for (const char of text) width += columnsOf(char);
+  if (width <= maxColumns) return text;
+  let cut = '';
+  width = 0;
+  for (const char of text) {
+    const columns = columnsOf(char);
+    if (width + columns > maxColumns - 1) break;
+    cut += char;
+    width += columns;
+  }
+  return cut + '…';
+}
+
+// ---- numbers
+// a decimal number in the language's own notation ("1.5" → "1,5")
+const localizeDecimal = number => (TEXT.decimalSeparator === '.' ? String(number) : String(number).replace('.', TEXT.decimalSeparator));
+// a count and its noun: countOf(3, 'tool') → "3 tools" (the language sets the order)
+const countOf = (count, noun) => TEXT.count(count, TEXT.nouns[noun](count));
+// 1234 → "1.2k", 2500000 → "2.50M"
+function formatCompactNumber(number) {
+  if (number >= 1e6) return localizeDecimal((number / 1e6).toFixed(2)) + 'M';
+  if (number >= 1e3) return localizeDecimal((number / 1e3).toFixed(1)) + 'k';
+  return String(number ?? 0);
+}
+
+// ---- times
+const SECOND = 1000, MINUTE = 60 * SECOND, HOUR = 60 * MINUTE, DAY = 24 * HOUR;
+const UNITS = TEXT.units;
+const twoDigits = number => String(number).padStart(2, '0');
+
+const formatTime = ts => new Date(ts).toLocaleTimeString(TIME_LOCALE, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+// how long something took: 450ms, 3.2s, 3m 05s, 2h 07m
+function formatDuration(ms) {
+  if (ms == null || isNaN(ms)) return '';
+  if (ms < SECOND) return `${Math.round(ms)}${UNITS.ms}`;
+  if (ms < MINUTE) return `${localizeDecimal((ms / SECOND).toFixed(1))}${UNITS.s}`;
+  if (ms < HOUR) return `${Math.floor(ms / MINUTE)}${UNITS.m} ${twoDigits(Math.round(ms % MINUTE / SECOND))}${UNITS.s}`;
+  return `${Math.floor(ms / HOUR)}${UNITS.h} ${twoDigits(Math.floor(ms % HOUR / MINUTE))}${UNITS.m}`;
+}
+
+// how long ago, in one unit: 12s, 5m, 3h, 2d
+function formatAge(ms) {
+  if (ms < MINUTE) return `${Math.max(0, Math.round(ms / SECOND))}${UNITS.s}`;
+  if (ms < HOUR) return `${Math.floor(ms / MINUTE)}${UNITS.m}`;
+  if (ms < DAY) return `${Math.floor(ms / HOUR)}${UNITS.h}`;
+  return `${Math.floor(ms / DAY)}${UNITS.d}`;
+}
+
+// "5m ago", with hours and minutes under a day ("3h 12m ago")
+function formatAgo(ts) {
+  const ms = Date.now() - Date.parse(ts);
+  if (ms < HOUR) return TEXT.ago(formatAge(ms));
+  if (ms < DAY) return TEXT.ago(`${Math.floor(ms / HOUR)}${UNITS.h} ${Math.floor(ms % HOUR / MINUTE)}${UNITS.m}`);
+  return TEXT.ago(formatAge(ms));
+}

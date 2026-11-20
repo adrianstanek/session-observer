@@ -55,31 +55,72 @@
   <aside class="panel" id="detail"></aside>
 </section>
 
-<!-- Plain scripts sharing one global scope (no modules, no build). Order matters: a file uses names from the ones above it. -->
-<script src="dashboard/i18n.js"></script>
-<script src="dashboard/i18n-en.js"></script>
-<script src="dashboard/i18n-pl.js"></script>
-<script src="dashboard/i18n-es.js"></script>
-<script src="dashboard/i18n-it.js"></script>
-<script src="dashboard/i18n-de.js"></script>
-<script src="dashboard/i18n-pt.js"></script>
-<script src="dashboard/i18n-fr.js"></script>
-<script src="dashboard/i18n-ja.js"></script>
-<script src="dashboard/i18n-zh.js"></script>
-<script src="dashboard/i18n-ko.js"></script>
-<script src="dashboard/core.js"></script>
-<script src="dashboard/tech.js"></script>
-<script src="dashboard/model.js"></script>
-<script src="dashboard/stage.js"></script>
-<script src="dashboard/chat.js"></script>
-<script src="dashboard/route.js"></script>
-<script src="dashboard/panels.js"></script>
-<script src="dashboard/overview.js"></script>
-<script src="dashboard/detail-parts.js"></script>
-<script src="dashboard/code.js"></script>
-<script src="dashboard/details.js"></script>
-<script src="dashboard/context.js"></script>
-<script src="dashboard/app.js"></script>
+<!-- Plain scripts sharing one global scope (no modules, no build). Order matters: a file uses names from the ones above it.
+     building-blocks/ know nothing about the features; features/<feature>/ are grouped by function (model, render, controls);
+     app/ is the page around them and starts everything. -->
+<script src="dashboard/building-blocks/language/i18n.js"></script>
+<script src="dashboard/building-blocks/language/translations/en.js"></script>
+<script src="dashboard/building-blocks/language/translations/pl.js"></script>
+<script src="dashboard/building-blocks/language/translations/es.js"></script>
+<script src="dashboard/building-blocks/language/translations/it.js"></script>
+<script src="dashboard/building-blocks/language/translations/de.js"></script>
+<script src="dashboard/building-blocks/language/translations/pt.js"></script>
+<script src="dashboard/building-blocks/language/translations/fr.js"></script>
+<script src="dashboard/building-blocks/language/translations/ja.js"></script>
+<script src="dashboard/building-blocks/language/translations/zh.js"></script>
+<script src="dashboard/building-blocks/language/translations/ko.js"></script>
+<script src="dashboard/building-blocks/language/selected-language.js"></script>
+<script src="dashboard/building-blocks/dom.js"></script>
+<script src="dashboard/building-blocks/icons.js"></script>
+<script src="dashboard/building-blocks/format.js"></script>
+<script src="dashboard/building-blocks/tech-badges.js"></script>
+<script src="dashboard/building-blocks/code-highlight.js"></script>
+<script src="dashboard/building-blocks/json-view.js"></script>
+<script src="dashboard/building-blocks/card-parts.js"></script>
+<script src="dashboard/features/events/model/tool-groups.js"></script>
+<script src="dashboard/features/events/model/tool-techs.js"></script>
+<script src="dashboard/features/events/model/meaning.js"></script>
+<script src="dashboard/features/events/model/state.js"></script>
+<script src="dashboard/features/events/model/turns.js"></script>
+<script src="dashboard/features/events/model/activity.js"></script>
+<script src="dashboard/features/events/model/context-window.js"></script>
+<script src="dashboard/features/events/render/tool-io.js"></script>
+<script src="dashboard/features/events/render/context-badge.js"></script>
+<script src="dashboard/features/sessions/render.js"></script>
+<script src="dashboard/features/sessions/controls.js"></script>
+<script src="dashboard/features/filters/render.js"></script>
+<script src="dashboard/features/filters/controls.js"></script>
+<script src="dashboard/features/replay/model.js"></script>
+<script src="dashboard/features/replay/render.js"></script>
+<script src="dashboard/features/replay/controls.js"></script>
+<script src="dashboard/features/overview/render/page.js"></script>
+<script src="dashboard/features/overview/render/charts.js"></script>
+<script src="dashboard/features/overview/render/lists.js"></script>
+<script src="dashboard/features/overview/controls.js"></script>
+<script src="dashboard/features/route/model.js"></script>
+<script src="dashboard/features/route/render/draw.js"></script>
+<script src="dashboard/features/route/render/frame.js"></script>
+<script src="dashboard/features/chat/render.js"></script>
+<script src="dashboard/features/details/render/event-card.js"></script>
+<script src="dashboard/features/details/render/event-rows.js"></script>
+<script src="dashboard/features/details/render/event-cards.js"></script>
+<script src="dashboard/features/details/render/panel.js"></script>
+<script src="dashboard/features/details/controls.js"></script>
+<script src="dashboard/features/context/model.js"></script>
+<script src="dashboard/features/context/render/cards.js"></script>
+<script src="dashboard/features/context/render/prompt.js"></script>
+<script src="dashboard/features/context/render/usage.js"></script>
+<script src="dashboard/features/context/render/messages.js"></script>
+<script src="dashboard/features/context/render/view.js"></script>
+<script src="dashboard/features/context/export.js"></script>
+<script src="dashboard/features/context/controls.js"></script>
+<script src="dashboard/app/views.js"></script>
+<script src="dashboard/app/hover.js"></script>
+<script src="dashboard/app/view-controls.js"></script>
+<script src="dashboard/app/header.js"></script>
+<script src="dashboard/app/rendering.js"></script>
+<script src="dashboard/app/data.js"></script>
+<script src="dashboard/app/main.js"></script>
 <script>
 // Nothing loaded: the server on this port was started before the dashboard was split into files, and can't serve them.
 if (typeof boot !== 'function') {

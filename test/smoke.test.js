@@ -138,7 +138,8 @@ test('every stylesheet and script the dashboard asks for is served', async () =>
 });
 
 test('nothing else is served from the dashboard folder', async () => {
-  for (const p of ['/dashboard/nope.js', '/dashboard/', '/dashboard/..%2Fserver.js', '/dashboard/%2e%2e/server.js', '/dashboard/sub/core.js', '/dashboard/core.js.map', '/server.js']) {
+  for (const p of ['/dashboard/nope.js', '/dashboard/', '/dashboard/..%2Fserver.js', '/dashboard/%2e%2e/server.js', '/dashboard/sub/core.js', '/dashboard/core.js.map', '/server.js',
+    '/dashboard/features/..%2F..%2Fserver.js', '/dashboard/features/%2e%2e/%2e%2e/server.js', '/dashboard//app.js', '/dashboard/features/.js']) {
     assert.equal((await get(p)).status, 404, p);
   }
 });

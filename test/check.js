@@ -43,8 +43,8 @@ const html = fs.readFileSync(path.join(ROOT, 'server', 'dashboard.html'), 'utf8'
 // data: URIs (the inline tab icon) are not files
 const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]).filter(r => !r.startsWith('data:'));
 for (const r of refs) if (!fs.existsSync(path.join(ROOT, 'server', r))) fail(`server/dashboard.html: ${r} does not exist`);
-for (const f of fs.readdirSync(path.join(ROOT, 'server', 'dashboard'))) {
-  if (!refs.includes('dashboard/' + f)) fail(`server/dashboard/${f}: not loaded by server/dashboard.html`);
+for (const f of walk(path.join(ROOT, 'server', 'dashboard')).map(p => rel(p).slice('server/'.length))) {
+  if (!refs.includes(f)) fail(`server/${f}: not loaded by server/dashboard.html`);
 }
 // each script is strict on its own (they are separate files, so one 'use strict' no longer covers them all)
 for (const r of refs.filter(r => r.endsWith('.js'))) {
@@ -74,34 +74,34 @@ if (plugin.version !== released) {
 }
 
 // 6. Every dashboard language has exactly the English keys, each the same kind of value (text, function or group),
-//    and every function returns text. LANGS (the language menu) and the tables name the same languages.
+//    and every function returns text. LANGUAGE_NAMES (the language menu) and the tables name the same languages.
 {
-  const dir = path.join(ROOT, 'server', 'dashboard');
-  const tables = fs.readdirSync(dir).filter(f => /^i18n-[a-z]{2}\.js$/.test(f));
+  const dir = path.join(ROOT, 'server', 'dashboard', 'building-blocks', 'language');
+  const tables = fs.readdirSync(path.join(dir, 'translations')).filter(f => /^[a-z]{2}\.js$/.test(f)).map(f => 'translations/' + f);
   let got = null;
-  try { got = new Function(['i18n.js', ...tables].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\nreturn { TEXT, LANGS };')(); }
-  catch (e) { fail(`server/dashboard/i18n: the language tables do not load (${e.message})`); }
+  try { got = new Function(['i18n.js', ...tables].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\nreturn { TRANSLATIONS, LANGUAGE_NAMES };')(); }
+  catch (e) { fail(`server/dashboard/building-blocks/language: the language tables do not load (${e.message})`); }
   if (got) {
-    const { TEXT, LANGS } = got;
+    const { TRANSLATIONS, LANGUAGE_NAMES } = got;
     const kind = v => typeof v === 'function' ? 'function' : v && typeof v === 'object' ? 'group' : typeof v;
     const compare = (en, x, code, at = '') => {
       for (const [k, v] of Object.entries(en)) {
         const key = at + k;
-        if (!(k in x)) { fail(`i18n-${code}.js: missing "${key}"`); continue; }
-        if (kind(v) !== kind(x[k])) { fail(`i18n-${code}.js: "${key}" is a ${kind(x[k])}, English has a ${kind(v)}`); continue; }
+        if (!(k in x)) { fail(`translations/${code}.js: missing "${key}"`); continue; }
+        if (kind(v) !== kind(x[k])) { fail(`translations/${code}.js: "${key}" is a ${kind(x[k])}, English has a ${kind(v)}`); continue; }
         if (kind(v) === 'group') compare(v, x[k], code, key + '.');
         if (kind(v) === 'function') for (const n of [0, 1, 2, 5, 22]) {
           let r; try { r = x[k](n, n, n); } catch (e) { r = e; }
-          if (typeof r !== 'string' || !r) { fail(`i18n-${code}.js: "${key}"(${n}) does not return text`); break; }
+          if (typeof r !== 'string' || !r) { fail(`translations/${code}.js: "${key}"(${n}) does not return text`); break; }
         }
       }
-      for (const k of Object.keys(x)) if (!(k in en)) fail(`i18n-${code}.js: "${at + k}" is not in English`);
+      for (const k of Object.keys(x)) if (!(k in en)) fail(`translations/${code}.js: "${at + k}" is not in English`);
     };
-    for (const code of Object.keys(TEXT)) {
-      if (!LANGS[code]) fail(`i18n-${code}.js: language "${code}" is not in LANGS (server/dashboard/i18n.js)`);
-      compare(TEXT.en, TEXT[code], code);
+    for (const code of Object.keys(TRANSLATIONS)) {
+      if (!LANGUAGE_NAMES[code]) fail(`translations/${code}.js: language "${code}" is not in LANGUAGE_NAMES (building-blocks/language/i18n.js)`);
+      compare(TRANSLATIONS.en, TRANSLATIONS[code], code);
     }
-    for (const code of Object.keys(LANGS)) if (!TEXT[code]) fail(`server/dashboard/i18n.js: LANGS has "${code}" but there is no i18n-${code}.js`);
+    for (const code of Object.keys(LANGUAGE_NAMES)) if (!TRANSLATIONS[code]) fail(`building-blocks/language/i18n.js: LANGUAGE_NAMES has "${code}" but there is no translations/${code}.js`);
   }
 }
 
