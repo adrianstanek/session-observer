@@ -1,4 +1,5 @@
-// Model steps and token usage, read from each Claude Code session's transcript (Codex sessions: codex-model-steps.js).
+// Model steps and token usage, read from each Claude Code session's transcript. Codex sessions: their steps come from
+// a hook (codex-model-steps.js), and what the model wrote from Codex's session file (codex-rollout-texts.js).
 //
 // Hooks don't see individual model calls, so each assistant API response in the transcript (and in the subagent
 // transcripts) becomes a synthetic "ModelStep" event, and every block of text or thinking it wrote a "ModelText".
@@ -11,7 +12,8 @@ const { ingest, sessionSummary } = require('./sessions');
 const { endWaitsFromTranscript } = require('./needs-you');
 const { broadcast } = require('../../building-blocks/live-updates');
 const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
-const { CODEX, isCodexModelRequest, toCodexModelStep, addCodexUsage } = require('./codex-model-steps');
+const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps } = require('./codex-model-steps');
+const { codexRolloutTexts, resetCodexRolloutTexts } = require('./codex-rollout-texts');
 
 const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
@@ -24,17 +26,21 @@ const seenMessageIds = new Map();     // session id → Set(message id)
 const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
 const scheduledReads = new Map();     // session id → timer
 
-// a session whose transcript this file reads: Claude Code's, not Codex's
-const readsTranscript = session => !!session.transcript_path && session.agent !== CODEX;
+const readsTranscript = session => !!session.transcript_path;
+const isCodex = session => session.agent === CODEX;
 
 // takes an event into its session and, unless it came from the transcript itself, reads the transcript soon after.
-// A Codex model request becomes a ModelStep right here instead.
+// A Codex model request becomes a ModelStep right here (with the tool calls it started) instead.
 function ingestEvent(event) {
+  noteCodexEvent(event);
   const isCodexStep = isCodexModelRequest(event);
   if (isCodexStep) toCodexModelStep(event);
   const session = ingest(event);
-  if (isCodexStep) addCodexUsage(session, event);
-  else if (event.event !== 'ModelStep' && readsTranscript(session)) scheduleTranscriptRead(session);
+  if (isCodexStep) {
+    addCodexUsage(session, event);
+    if (event.data.msg_id) rememberStep(event.data.msg_id, event);
+  }
+  if (!event.synthetic && readsTranscript(session)) scheduleTranscriptRead(session);
   return session;
 }
 
@@ -58,6 +64,7 @@ const subagentDirOf = transcriptPath =>
 function transcriptFilesOf(session) {
   const mainTranscript = session.transcript_path;
   const files = [{ file: mainTranscript, isSubagent: false }];
+  if (isCodex(session)) return files; // (Codex keeps its subagents in rollouts of their own)
   const subagentDir = subagentDirOf(mainTranscript);
   try {
     for (const name of fs.readdirSync(subagentDir)) {
@@ -250,7 +257,8 @@ function readTranscripts(session) {
       if (!line) continue;
       let row;
       try { row = JSON.parse(line); } catch { continue; }
-      readTranscriptRow(session, row, isSubagent, seen, fresh);
+      if (isCodex(session)) ingestAll(codexRolloutTexts(session, row, id => stepByMessageId.get(id)), fresh);
+      else readTranscriptRow(session, row, isSubagent, seen, fresh);
     }
   }
   for (const event of fresh) broadcast('event', event);
@@ -262,6 +270,8 @@ function resetTranscriptState() {
   seenMessageIds.clear();
   stepByMessageId.clear();
   transcriptTails.clear();
+  resetCodexSteps();
+  resetCodexRolloutTexts();
 }
 
 module.exports = {

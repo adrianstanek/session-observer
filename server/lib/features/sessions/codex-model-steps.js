@@ -1,11 +1,46 @@
-// Model steps for Codex sessions. Codex reports every model request in a PostModelRequest hook event, so its
-// sessions need no transcript reading (Codex's transcript format is not a stable interface): each such event is
+// Model steps for Codex sessions. Codex reports every model request in a PostModelRequest hook event: each one is
 // turned into the same ModelStep the transcript reader makes for Claude Code, and its token counts are added up.
+// What the model wrote is not in the hook: codex-rollout-texts.js reads it from Codex's session file.
+//
+// Codex starts a response's tool calls while the response still streams, so their PreToolUse hooks come before the
+// PostModelRequest. The calls an agent started since its previous step are that step's: their tool_use_ids match the
+// hooks, and the step moves to just before the first of them, where the request was.
 'use strict';
 const { CODEX_CONTEXT_WINDOW } = require('../../building-blocks/config');
 
 const CODEX = 'codex';
 const isCodexModelRequest = event => event.agent === CODEX && event.event === 'PostModelRequest';
+
+// session id → agent id ('' for the main agent) → the PreToolUse events since that agent's last step
+const callsSinceStep = new Map();
+const agentKeyOf = data => (data.agent_id == null ? '' : String(data.agent_id));
+
+// remembers a Codex tool call until the model step that asked for it arrives; a new prompt starts afresh
+function noteCodexEvent(event) {
+  if (event.agent !== CODEX) return;
+  const data = event.data || {};
+  if (event.event === 'UserPromptSubmit' || event.event === 'SessionEnd') { callsSinceStep.delete(event.session_id); return; }
+  if (event.event !== 'PreToolUse' || !data.tool_name) return;
+  if (!callsSinceStep.has(event.session_id)) callsSinceStep.set(event.session_id, new Map());
+  const byAgent = callsSinceStep.get(event.session_id), key = agentKeyOf(data);
+  if (!byAgent.has(key)) byAgent.set(key, []);
+  byAgent.get(key).push({ name: data.tool_name, id: data.tool_use_id || null, ts: event.ts });
+}
+
+function takeCallsSinceStep(event) {
+  const byAgent = callsSinceStep.get(event.session_id), key = agentKeyOf(event.data || {});
+  const calls = byAgent?.get(key) || [];
+  byAgent?.delete(key);
+  return calls;
+}
+
+const resetCodexSteps = () => callsSinceStep.clear();
+
+// the step's time: just before its first tool call, when that came earlier
+function stepTime(ts, calls) {
+  const first = calls.map(call => Date.parse(call.ts)).filter(Number.isFinite).reduce((a, b) => Math.min(a, b), Infinity);
+  return first < Date.parse(ts) ? new Date(first - 1).toISOString() : ts;
+}
 
 const count = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
 
@@ -23,15 +58,17 @@ function tokensOf(usage) {
 // rewrites a Codex PostModelRequest event, in place, into a ModelStep (the request's own fields stay in data)
 function toCodexModelStep(event) {
   const data = event.data || {};
+  const calls = takeCallsSinceStep(event);
   event.event = 'ModelStep';
+  event.ts = stepTime(event.ts, calls);
   event.data = {
     ...data,
     model: data.model || null,
     stop_reason: data.status || null, // completed, failed or cancelled
     subagent: data.agent_id != null,
     agent_id: data.agent_id ?? null,
-    msg_id: null,
-    tools: [], tool_ids: [], // Codex doesn't say which tool calls a request asked for; they show up as their own events
+    msg_id: data.response_id || null, // what the model wrote carries the same id (codex-rollout-texts.js)
+    tools: calls.map(call => call.name), tool_ids: calls.map(call => call.id),
     tokens: tokensOf(data.token_usage),
   };
   return event;
@@ -52,4 +89,4 @@ function addCodexUsage(session, step) {
   session.context = { tokens: tokens.context, window, pct: Math.min(1, tokens.context / window), ts: step.ts };
 }
 
-module.exports = { CODEX, isCodexModelRequest, toCodexModelStep, addCodexUsage, tokensOf };
+module.exports = { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps, tokensOf };

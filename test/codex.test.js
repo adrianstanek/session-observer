@@ -113,6 +113,42 @@ test("a Codex model request becomes a model step with the request's tokens", asy
   assert.equal(session.context.window, 272000);
 });
 
+test('a Codex model step lists the tool calls it started, and comes before them', async () => {
+  const events = await getJson(`/api/events?session=${SESSION}`);
+  const [main, subagent] = events.filter(event => event.event === 'ModelStep');
+  const call = events.find(event => event.event === 'PreToolUse');
+  assert.deepEqual([main.data.tools, main.data.tool_ids], [['apply_patch'], ['call-1']], "the hook's own tool_use_id");
+  assert.ok(main.ts < call.ts, 'Codex sends PostModelRequest after the calls it started');
+  assert.deepEqual(subagent.data.tools, [], "the main agent's calls are not the subagent's");
+});
+
+test("what a Codex model wrote comes from Codex's session file, with its step's id", async () => {
+  const id = 'codex-live', rollout = path.join(DATA_DIR, 'live-rollout.jsonl');
+  const hook = (eventName, fields) => runHook(eventName,
+    { hook_event_name: eventName, session_id: id, cwd: '/work/app', model: 'gpt-5-codex', transcript_path: rollout, ...fields }, '--agent', 'codex');
+  fs.writeFileSync(rollout, '');
+  hook('UserPromptSubmit', { turn_id: 't1', prompt: 'look around' });
+  const now = () => new Date(Date.now() + 1000).toISOString();
+  const rows = [
+    { type: 'response_item', payload: { type: 'reasoning', summary: [{ type: 'summary_text', text: 'Check the folder first.' }], encrypted_content: 'x' } },
+    { type: 'response_item', payload: { type: 'reasoning', summary: [], encrypted_content: 'y' } },
+    { type: 'response_item', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Listing the files.' }] } },
+    { type: 'response_item', payload: { type: 'custom_tool_call', call_id: 'c1', name: 'exec', input: 'ls' } },
+    { type: 'token_usage_record', payload: { response_id: 'resp-1', usage: { input_tokens: 900, output_tokens: 40 } } },
+  ];
+  fs.appendFileSync(rollout, rows.map(row => JSON.stringify({ timestamp: now(), ...row }) + '\n').join(''));
+  hook('PostModelRequest', { turn_id: 't1', response_id: 'resp-1', status: 'completed', token_usage: { input_tokens: 900, output_tokens: 40 } });
+  const texts = await waitFor(async () => {
+    const list = (await getJson(`/api/events?session=${id}`)).filter(event => event.event === 'ModelText');
+    return list.length >= 2 && list;
+  });
+  assert.deepEqual(texts.map(event => [event.data.kind, event.data.text]),
+    [['thinking', 'Check the folder first.'], ['text', 'Listing the files.']], 'encrypted reasoning stays out');
+  assert.ok(texts.every(event => event.data.msg_id === 'resp-1' && event.agent === 'codex'));
+  const step = (await getJson(`/api/events?session=${id}`)).find(event => event.event === 'ModelStep');
+  assert.equal(step.data.msg_id, 'resp-1');
+});
+
 // ---- the Context view, from Codex's session file (the "rollout" transcript_path points to)
 const kinds = (...list) => ({ internal_chat_message_metadata_passthrough: { content_item_kinds: list } });
 const message = (role, texts, ...list) => ({ type: 'message', role, content: texts.map(text => ({ type: role === 'assistant' ? 'output_text' : 'input_text', text })), ...kinds(...list) });
