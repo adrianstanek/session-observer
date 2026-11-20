@@ -1,21 +1,21 @@
 'use strict';
 // Session Observer dashboard — Spanish (español).
-TEXT.es = (() => {
-  const w = (...a) => W('es', ...a);
+TRANSLATIONS.es = (() => {
+  const noun = (...forms) => pluralNoun('es', ...forms);
   return {
-    dec: ',',
-    count: (n, w) => `${n} ${w}`,
-    u: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' d' },
+    decimalSeparator: ',',
+    count: (number, noun) => `${number} ${noun}`,
+    units: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' d' },
     ago: x => `hace ${x}`,
-    w: {
-      tool: w('herramienta', 'herramientas'), toolCall: w('llamada a herramienta', 'llamadas a herramientas'), call: w('llamada', 'llamadas'),
-      step: w('paso', 'pasos'), modelStep: w('paso del modelo', 'pasos del modelo'), turn: w('turno', 'turnos'), problem: w('problema', 'problemas'),
-      edit: w('edición', 'ediciones'), read: w('lectura', 'lecturas'), run: w('ejecución', 'ejecuciones'), program: w('programa', 'programas'),
-      subagent: w('subagente', 'subagentes'), prompt: w('prompt', 'prompts'), skill: w('habilidad', 'habilidades'), plugin: w('plugin', 'plugins'),
-      mcpServer: w('servidor MCP', 'servidores MCP'), item: w('elemento', 'elementos'),
+    nouns: {
+      tool: noun('herramienta', 'herramientas'), toolCall: noun('llamada a herramienta', 'llamadas a herramientas'), call: noun('llamada', 'llamadas'),
+      step: noun('paso', 'pasos'), modelStep: noun('paso del modelo', 'pasos del modelo'), turn: noun('turno', 'turnos'), problem: noun('problema', 'problemas'),
+      edit: noun('edición', 'ediciones'), read: noun('lectura', 'lecturas'), run: noun('ejecución', 'ejecuciones'), program: noun('programa', 'programas'),
+      subagent: noun('subagente', 'subagentes'), prompt: noun('prompt', 'prompts'), skill: noun('habilidad', 'habilidades'), plugin: noun('plugin', 'plugins'),
+      mcpServer: noun('servidor MCP', 'servidores MCP'), item: noun('elemento', 'elementos'),
     },
-    st: { you: 'Tú', model: 'Modelo', files: 'Archivos', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Red', browser: 'Navegador', agents: 'Agentes', skills: 'Habilidades', context: 'Contexto', other: 'Otros' },
-    cat: {
+    groups: { you: 'Tú', model: 'Modelo', files: 'Archivos', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Red', browser: 'Navegador', agents: 'Agentes', skills: 'Habilidades', context: 'Contexto', other: 'Otros' },
+    categories: {
       model: 'Modelo', prompt: 'Prompt', tool: 'Herramienta', skill: 'Habilidad', question: 'Pregunta', subagent: 'Subagente',
       task: 'Tarea', mcp: 'MCP', permission: 'Permiso', error: 'Error', notification: 'Aviso',
       compact: 'Compactación', context: 'Contexto', lifecycle: 'Ciclo de vida', env: 'Entorno',
@@ -47,7 +47,7 @@ TEXT.es = (() => {
     expandTurn: 'Expandir este turno', collapseTurn: 'Contraer este turno', expand: 'Expandir', collapse: 'Contraer',
     noOutput: 'sin salida', input: 'Entrada', output: 'Salida', error: 'Error', prompt: 'Prompt',
 
-    ev: {
+    event: {
       calls: l => `llama a ${l}`, replied: 'respondió', thought: 'pensó', thinking: 'pensamiento', expanded: 'Expandido',
       answered: 'respondido', failed: 'falló', permission: 'Permiso', asked: 'solicitado', denied: 'Denegado', deniedLc: 'denegado',
       message: 'Mensaje', turn: 'Turno', done: 'hecho', turnFailed: 'Turno fallido', turnFailedLc: 'turno fallido',
@@ -59,11 +59,11 @@ TEXT.es = (() => {
       startedSession: 'iniciada', createdWorktree: 'creado', changedConfig: 'cambiada',
     },
 
-    sess: { ended: 'terminada', working: 'trabajando', live: 'activa', inactive: 'inactiva' },
+    sessionState: { ended: 'terminada', working: 'trabajando', live: 'activa', inactive: 'inactiva' },
     allActivity: 'Toda la actividad', everySession: 'todas las sesiones juntas', sessions: 'Sesiones', lastLbl: 'última:',
     ctxWindow: 'ventana de contexto', ctxShort: 'ctx', noSessions: 'No hay sesiones en este periodo.',
 
-    tile: {
+    tiles: {
       sessions: 'Sesiones', turns: 'Turnos', toolCalls: 'Llamadas a herramientas', modelSteps: 'Pasos del modelo', problems: 'Problemas',
       failedOrDenied: 'fallidas o denegadas', outputTokens: 'Tokens de salida', subagents: 'Subagentes', duration: 'Duración',
       context: 'Contexto', tokens: 'Tokens',
@@ -109,20 +109,20 @@ TEXT.es = (() => {
     final: 'final', partX: x => `parte ${x}`, configChanged: 'Configuración cambiada', dirAdded: 'Directorio añadido', viaX: x => `vía ${x}`,
     worktreeCreated: 'Worktree creado', worktreeRemoved: 'Worktree eliminado', cwdChanged: 'Directorio de trabajo cambiado',
     switchingModel: 'Cambiando de modelo', modelSwitched: 'Modelo cambiado', resendCost: x => `≈ ${x} $ para reenviar el contexto`, yes: 'sí', no: 'no',
-    kv: {
+    fields: {
       file: 'archivo', replaceAll: 'reemplazar todo', description: 'descripción', type: 'tipo', model: 'modelo', lines: 'líneas', status: 'estado',
       agent: 'agente', async: 'asíncrono', tasks: 'tareas', crons: 'crons', transcript: 'transcripción', directory: 'directorio', path: 'ruta',
       from: 'de', to: 'a', requested: 'solicitado', contextTokens: 'tokens de contexto', cacheWarm: 'caché caliente', cost: 'coste',
     },
     linesOf: (a, b, n) => `${a}–${b} de ${n}`, interruptedByUser: 'interrumpido manualmente', interrupted: 'interrumpido',
     applied: 'aplicado', appliedChanged: 'aplicado y luego cambiado a mano', noAnswers: 'sin respuestas',
-    note: {
+    notificationTypes: {
       idle_prompt: 'esperando tu respuesta', permission_prompt: 'necesita tu permiso', auth_success: 'sesión iniciada', auth_storage_failure: 'no se pudo guardar el inicio de sesión',
       elicitation_dialog: 'un servidor MCP pide datos', elicitation_url_dialog: 'un servidor MCP quiere que abras un enlace', elicitation_complete: 'datos para MCP listos', elicitation_response: 'respuesta enviada al MCP',
       agent_needs_input: 'un agente necesita tu respuesta', agent_completed: 'un agente terminó', plugin_notification: 'de un plugin',
       quota_auto_resume_fired: 'reanudado tras el límite de uso', quota_auto_resume_stale: 'reanudación automática omitida (caducada)', quota_auto_resume_disabled: 'la reanudación automática está desactivada',
     },
-    stopWhy: { tool_use: 'se detuvo para llamar a herramientas', end_turn: 'terminó su respuesta', max_tokens: 'alcanzó el límite de tokens de salida', stop_sequence: 'encontró una secuencia de parada', pause_turn: 'pausó un turno largo', refusal: 'se negó' },
+    stopReasons: { tool_use: 'se detuvo para llamar a herramientas', end_turn: 'terminó su respuesta', max_tokens: 'alcanzó el límite de tokens de salida', stop_sequence: 'encontró una secuencia de parada', pause_turn: 'pausó un turno largo', refusal: 'se negó' },
     noStopReason: 'sin motivo de parada (sigue escribiendo, o es una línea intermedia)',
     toolsAsked: 'Herramientas que pidió', matchedByOrder: '(emparejadas por orden; registro antiguo)', noHookEvent: 'sin evento de hook',
     toolNotLogged: 'Pidió una herramienta, pero la llamada aún no está en el registro.', whatItWrote: 'Lo que escribió',
@@ -136,7 +136,7 @@ TEXT.es = (() => {
     sentModel: 'se envía al modelo', notSent: 'no enviado', result: 'resultado', toolResult: 'resultado de herramienta',
     ownContext: x => `su propio contexto, ${x}`, afterCompaction: 'Tras la compactación', beforeFirstPrompt: 'Antes del primer prompt',
     showTurnInDetails: 'Mostrar este turno en Detalles', inDetails: 'en Detalles', detailsGo: 'Detalles ›',
-    instr: { User: 'global, ~/.claude', Project: 'proyecto', Local: 'local, fuera del repositorio', AutoMem: 'memoria automática', Managed: 'política gestionada' },
+    instructionKinds: { User: 'global, ~/.claude', Project: 'proyecto', Local: 'local, fuera del repositorio', AutoMem: 'memoria automática', Managed: 'política gestionada' },
     measuredNote: (first, cpt) => `Medido: la primera petición tenía ${first} tokens (prompt del sistema, herramientas, instrucciones, listados y el primer prompt). ${cpt
       ? `Los tamaños de las tarjetas usan la media de esta sesión: ${cpt} caracteres por token.` : 'Los tamaños de las tarjetas son estimaciones de unos 4 caracteres por token.'}`,
     systemPrompt: 'Prompt del sistema', charsN: x => `${x} caracteres`, toolDefs: 'Definiciones de herramientas', builtIn: 'Integradas',
@@ -149,7 +149,7 @@ TEXT.es = (() => {
     deferredSub: (n, loaded) => `${n} conocidas por nombre, ${loaded} cargadas`, failedX: x => `${x} fallaron`,
     deferredNote: 'Solo los nombres están en el contexto; la definición de una herramienta se carga con ToolSearch cuando hace falta. Los nombres resaltados ya se cargaron.',
     failedConnect: 'no se pudo conectar', loadedN: n => `${n} cargadas`, loadedLc: 'cargada', nameOnly: 'solo el nombre, se carga cuando hace falta',
-    cu: {
+    usageCategories: {
       sys: 'Prompt del sistema', tools: 'Herramientas del sistema', mcpt: 'Herramientas MCP', mcpi: 'Instrucciones de servidores MCP', mem: 'Archivos de memoria', skills: 'Habilidades',
       agents: 'Tipos de subagente', defer: 'Nombres de herramientas diferidas', msgs: 'Mensajes', msgsAll: 'Mensajes, prompt del sistema y herramientas',
     },

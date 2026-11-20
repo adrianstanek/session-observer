@@ -1,19 +1,19 @@
 'use strict';
 // Session Observer dashboard — Korean (한국어). Counts read as label then number ("도구 3"), as Korean dashboards do.
-TEXT.ko = (() => {
-  const w = x => W('ko', x);
+TRANSLATIONS.ko = (() => {
+  const noun = word => pluralNoun('ko', word);
   return {
-    dec: '.',
-    count: (n, w) => `${w} ${n}`,
-    u: { ms: 'ms', s: '초', m: '분', h: '시간', d: '일' },
+    decimalSeparator: '.',
+    count: (number, noun) => `${noun} ${number}`,
+    units: { ms: 'ms', s: '초', m: '분', h: '시간', d: '일' },
     ago: x => `${x} 전`,
-    w: {
-      tool: w('도구'), toolCall: w('도구 호출'), call: w('호출'), step: w('단계'), modelStep: w('모델 단계'),
-      turn: w('턴'), problem: w('문제'), edit: w('편집'), read: w('읽기'), run: w('실행'), program: w('프로그램'),
-      subagent: w('서브에이전트'), prompt: w('프롬프트'), skill: w('스킬'), plugin: w('플러그인'), mcpServer: w('MCP 서버'), item: w('항목'),
+    nouns: {
+      tool: noun('도구'), toolCall: noun('도구 호출'), call: noun('호출'), step: noun('단계'), modelStep: noun('모델 단계'),
+      turn: noun('턴'), problem: noun('문제'), edit: noun('편집'), read: noun('읽기'), run: noun('실행'), program: noun('프로그램'),
+      subagent: noun('서브에이전트'), prompt: noun('프롬프트'), skill: noun('스킬'), plugin: noun('플러그인'), mcpServer: noun('MCP 서버'), item: noun('항목'),
     },
-    st: { you: '나', model: '모델', files: '파일', shell: '셸', git: 'Git', mcp: 'MCP', network: '네트워크', browser: '브라우저', agents: '에이전트', skills: '스킬', context: '컨텍스트', other: '기타' },
-    cat: {
+    groups: { you: '나', model: '모델', files: '파일', shell: '셸', git: 'Git', mcp: 'MCP', network: '네트워크', browser: '브라우저', agents: '에이전트', skills: '스킬', context: '컨텍스트', other: '기타' },
+    categories: {
       model: '모델', prompt: '프롬프트', tool: '도구', skill: '스킬', question: '질문', subagent: '서브에이전트',
       task: '작업', mcp: 'MCP', permission: '권한', error: '오류', notification: '알림',
       compact: '압축', context: '컨텍스트', lifecycle: '수명 주기', env: '환경',
@@ -45,7 +45,7 @@ TEXT.ko = (() => {
     expandTurn: '이 턴 펼치기', collapseTurn: '이 턴 접기', expand: '펼치기', collapse: '접기',
     noOutput: '출력 없음', input: '입력', output: '출력', error: '오류', prompt: '프롬프트',
 
-    ev: {
+    event: {
       calls: l => `${l} 호출`, replied: '응답함', thought: '생각함', thinking: '생각', expanded: '확장됨',
       answered: '답변', failed: '실패', permission: '권한', asked: '요청', denied: '거부됨', deniedLc: '거부됨',
       message: '메시지', turn: '턴', done: '완료', turnFailed: '턴 실패', turnFailedLc: '턴 실패',
@@ -57,11 +57,11 @@ TEXT.ko = (() => {
       startedSession: '시작', createdWorktree: '생성됨', changedConfig: '변경됨',
     },
 
-    sess: { ended: '종료됨', working: '작업 중', live: '활성', inactive: '비활성' },
+    sessionState: { ended: '종료됨', working: '작업 중', live: '활성', inactive: '비활성' },
     allActivity: '전체 활동', everySession: '모든 세션 합계', sessions: '세션', lastLbl: '최근:',
     ctxWindow: '컨텍스트 창', ctxShort: 'ctx', noSessions: '이 기간에는 세션이 없습니다.',
 
-    tile: {
+    tiles: {
       sessions: '세션', turns: '턴', toolCalls: '도구 호출', modelSteps: '모델 단계', problems: '문제',
       failedOrDenied: '실패 또는 거부', outputTokens: '출력 토큰', subagents: '서브에이전트', duration: '소요 시간',
       context: '컨텍스트', tokens: '토큰',
@@ -107,20 +107,20 @@ TEXT.ko = (() => {
     final: '최종', partX: x => `부분 ${x}`, configChanged: '설정 변경됨', dirAdded: '디렉터리 추가됨', viaX: x => `${x} 경유`,
     worktreeCreated: '워크트리 생성됨', worktreeRemoved: '워크트리 제거됨', cwdChanged: '작업 디렉터리 변경됨',
     switchingModel: '모델 전환 중', modelSwitched: '모델 전환됨', resendCost: x => `컨텍스트 재전송에 약 $${x}`, yes: '예', no: '아니요',
-    kv: {
+    fields: {
       file: '파일', replaceAll: '모두 바꾸기', description: '설명', type: '종류', model: '모델', lines: '줄', status: '상태',
       agent: '에이전트', async: '비동기', tasks: '작업', crons: 'cron', transcript: '트랜스크립트', directory: '디렉터리', path: '경로',
       from: '이전', to: '이후', requested: '요청한 모델', contextTokens: '컨텍스트 토큰', cacheWarm: '캐시 유지', cost: '비용',
     },
     linesOf: (a, b, n) => `${a}–${b} / ${n}`, interruptedByUser: '사용자가 중단함', interrupted: '중단됨',
     applied: '적용됨', appliedChanged: '적용된 뒤 사용자가 변경함', noAnswers: '답변 없음',
-    note: {
+    notificationTypes: {
       idle_prompt: '입력을 기다리는 중', permission_prompt: '허가가 필요함', auth_success: '로그인됨', auth_storage_failure: '로그인 정보를 저장하지 못함',
       elicitation_dialog: 'MCP 서버가 입력을 요청함', elicitation_url_dialog: 'MCP 서버가 링크를 열어 달라고 요청함', elicitation_complete: 'MCP 입력 완료', elicitation_response: 'MCP 입력에 답변함',
       agent_needs_input: '에이전트가 입력을 기다림', agent_completed: '에이전트가 완료함', plugin_notification: '플러그인에서 보냄',
       quota_auto_resume_fired: '사용 한도 이후 재개됨', quota_auto_resume_stale: '자동 재개 건너뜀 (만료됨)', quota_auto_resume_disabled: '자동 재개가 꺼져 있음',
     },
-    stopWhy: { tool_use: '도구를 호출하려고 멈춤', end_turn: '응답을 마침', max_tokens: '출력 토큰 한도에 도달', stop_sequence: '중지 시퀀스에 도달', pause_turn: '긴 턴을 일시 정지함', refusal: '거부함' },
+    stopReasons: { tool_use: '도구를 호출하려고 멈춤', end_turn: '응답을 마침', max_tokens: '출력 토큰 한도에 도달', stop_sequence: '중지 시퀀스에 도달', pause_turn: '긴 턴을 일시 정지함', refusal: '거부함' },
     noStopReason: '중지 이유 없음 (작성 중이거나 중간 줄)',
     toolsAsked: '요청한 도구', matchedByOrder: '(순서로 매칭됨, 이전 로그)', noHookEvent: '훅 이벤트 없음',
     toolNotLogged: '도구를 요청했지만 호출이 아직 로그에 없습니다.', whatItWrote: '작성한 내용',
@@ -134,7 +134,7 @@ TEXT.ko = (() => {
     sentModel: '모델에 보냄', notSent: '보내지 않음', result: '결과', toolResult: '도구 결과',
     ownContext: x => `자체 컨텍스트, ${x}`, afterCompaction: '압축 이후', beforeFirstPrompt: '첫 프롬프트 이전',
     showTurnInDetails: '이 턴을 세부 정보에 표시', inDetails: '세부 정보에 표시됨', detailsGo: '세부 정보 ›',
-    instr: { User: '전역, ~/.claude', Project: '프로젝트', Local: '로컬, 커밋 안 됨', AutoMem: '자동 메모리', Managed: '관리 정책' },
+    instructionKinds: { User: '전역, ~/.claude', Project: '프로젝트', Local: '로컬, 커밋 안 됨', AutoMem: '자동 메모리', Managed: '관리 정책' },
     measuredNote: (first, cpt) => `실측: 첫 요청은 ${first} 토큰이었습니다(시스템 프롬프트, 도구, 지침, 목록, 첫 프롬프트). ${cpt
       ? `카드의 크기는 이 세션의 평균인 토큰당 ${cpt}자로 계산합니다.` : '카드의 크기는 토큰당 약 4자로 추정한 값입니다.'}`,
     systemPrompt: '시스템 프롬프트', charsN: x => `${x}자`, toolDefs: '도구 정의', builtIn: '기본 제공',
@@ -147,7 +147,7 @@ TEXT.ko = (() => {
     deferredSub: (n, loaded) => `이름만 알려짐 ${n}, 로드됨 ${loaded}`, failedX: x => `${x} 실패`,
     deferredNote: '컨텍스트에는 이름만 있습니다. 도구의 정의는 필요할 때 ToolSearch로 로드됩니다. 강조된 이름은 로드된 것입니다.',
     failedConnect: '연결 실패', loadedN: n => `로드됨 ${n}`, loadedLc: '로드됨', nameOnly: '이름만, 필요할 때 로드',
-    cu: {
+    usageCategories: {
       sys: '시스템 프롬프트', tools: '시스템 도구', mcpt: 'MCP 도구', mcpi: 'MCP 서버 지침', mem: '메모리 파일', skills: '스킬',
       agents: '서브에이전트 종류', defer: '지연 로드 도구 이름', msgs: '메시지', msgsAll: '메시지, 시스템 프롬프트, 도구',
     },

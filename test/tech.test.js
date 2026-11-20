@@ -1,5 +1,5 @@
 // Language / tool detection for the dashboard's badges (server/dashboard/tech.js). The dashboard's scripts are
-// plain browser scripts, so this evaluates tech.js after core.js (and the English text table core.js reads).
+// plain browser scripts, so this evaluates tech.js after core.js and format.js (and the English text table core.js reads).
 // Zero dependencies — run with `node --test test/tech.test.js`.
 'use strict';
 const { test } = require('node:test');
@@ -7,142 +7,145 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const src = f => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', f), 'utf8');
-const T = new Function(src('i18n.js') + '\n' + src('i18n-en.js') + '\n' + src('core.js') + '\n' + src('tech.js') + '\nreturn { TECH, TECH_SHAPE, TECH_EXT, TECH_CMD, TECH_FILE, fileTech, nameTech, shellSegments, progWord, techsOf, techOf, techMark, techIcon, techIcons };')();
+const source = file => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', file), 'utf8');
+const SCRIPTS = ['i18n.js', 'i18n-en.js', 'core.js', 'format.js', 'tech.js'];
+const EXPORTS = 'TECH_BADGES, BADGE_SHAPES, TECH_BY_EXTENSION, TECH_BY_PROGRAM, TECH_BY_FILE_NAME, techOfFile, techOfProgram, splitShellCommands, '
+  + 'programOfCommand, techsOfToolCall, firstTechOfToolCall, techBadgeMark, techBadgeIcon, techBadgeIcons';
+const dashboard = new Function(SCRIPTS.map(source).join('\n') + `\nreturn { ${EXPORTS} };`)();
 
-const sh = (command, tool = 'Bash') => T.techOf(tool, { command });
-const file = (file_path, tool = 'Edit') => T.techOf(tool, { file_path });
+const techOfCommand = (command, tool = 'Bash') => dashboard.firstTechOfToolCall(tool, { command });
+const techOfPath = (file_path, tool = 'Edit') => dashboard.firstTechOfToolCall(tool, { file_path });
 
 test('shell commands: the program being run', () => {
-  assert.equal(sh('node scripts/seed.js'), 'node');
-  assert.equal(sh("node -e 'console.log(1)'"), 'node');
-  assert.equal(sh('dotnet build -c Release'), 'dotnet');
-  assert.equal(sh('dotnet test && git status'), 'dotnet');
-  assert.equal(sh('npm test'), 'npm');
-  assert.equal(sh('npx tsc --noEmit'), 'npm');
-  assert.equal(sh('python3 -m pytest -q'), 'py');
-  assert.equal(sh('pip install -r requirements.txt'), 'py');
-  assert.equal(sh('docker compose up -d redis'), 'docker');
-  assert.equal(sh('./gradlew assembleDebug'), 'gradle');
-  assert.equal(sh('cargo build --release'), 'rs');
-  assert.equal(sh('go test ./...'), 'go');
-  assert.equal(sh('git status'), 'git');
-  assert.equal(sh('gh pr view 5'), 'github');
-  assert.equal(sh('kubectl get pods'), 'k8s');
+  assert.equal(techOfCommand('node scripts/seed.js'), 'node');
+  assert.equal(techOfCommand("node -e 'console.log(1)'"), 'node');
+  assert.equal(techOfCommand('dotnet build -c Release'), 'dotnet');
+  assert.equal(techOfCommand('dotnet test && git status'), 'dotnet');
+  assert.equal(techOfCommand('npm test'), 'npm');
+  assert.equal(techOfCommand('npx tsc --noEmit'), 'npm');
+  assert.equal(techOfCommand('python3 -m pytest -q'), 'py');
+  assert.equal(techOfCommand('pip install -r requirements.txt'), 'py');
+  assert.equal(techOfCommand('docker compose up -d redis'), 'docker');
+  assert.equal(techOfCommand('./gradlew assembleDebug'), 'gradle');
+  assert.equal(techOfCommand('cargo build --release'), 'rs');
+  assert.equal(techOfCommand('go test ./...'), 'go');
+  assert.equal(techOfCommand('git status'), 'git');
+  assert.equal(techOfCommand('gh pr view 5'), 'github');
+  assert.equal(techOfCommand('kubectl get pods'), 'k8s');
 });
 
 test('shell commands: what comes before the program is skipped', () => {
-  assert.equal(sh('cd api && dotnet test'), 'dotnet');
-  assert.equal(sh('cd /d/git/app; NODE_ENV=test node run.js'), 'node');
-  assert.equal(sh('sudo docker ps'), 'docker');
-  assert.equal(sh('timeout 30 node server.js'), 'node');
-  assert.equal(sh('cat data.json | jq .name'), 'json');
-  assert.equal(sh('"C:\\Program Files\\dotnet\\dotnet.exe" --info'), 'dotnet');
-  assert.equal(sh('/usr/local/bin/python3.12 app.py'), 'py');
-  assert.equal(sh('for f in *.cs; do dotnet format "$f"; done'), 'dotnet');
-  assert.equal(sh('./build.ps1 -Configuration Release'), 'ps');
-  assert.equal(sh('# build it\ndotnet build'), 'dotnet');
-  assert.equal(sh('JAVA_HOME="/d/JetBrains Rider 2024.2.7/jbr" ./gradlew test --console=plain 2>&1 | tail -30'), 'gradle');
-  assert.equal(sh('"$R/jbr/bin/java.exe" -version'), 'java');
-  assert.equal(sh('OUT=$(ls -d build) dotnet publish -o "$OUT"'), 'dotnet');
-  assert.equal(sh('X=$(dirname node) ; ls'), null);
+  assert.equal(techOfCommand('cd api && dotnet test'), 'dotnet');
+  assert.equal(techOfCommand('cd /d/git/app; NODE_ENV=test node run.js'), 'node');
+  assert.equal(techOfCommand('sudo docker ps'), 'docker');
+  assert.equal(techOfCommand('timeout 30 node server.js'), 'node');
+  assert.equal(techOfCommand('cat data.json | jq .name'), 'json');
+  assert.equal(techOfCommand('"C:\\Program Files\\dotnet\\dotnet.exe" --info'), 'dotnet');
+  assert.equal(techOfCommand('/usr/local/bin/python3.12 app.py'), 'py');
+  assert.equal(techOfCommand('for f in *.cs; do dotnet format "$f"; done'), 'dotnet');
+  assert.equal(techOfCommand('./build.ps1 -Configuration Release'), 'ps');
+  assert.equal(techOfCommand('# build it\ndotnet build'), 'dotnet');
+  assert.equal(techOfCommand('JAVA_HOME="/d/JetBrains Rider 2024.2.7/jbr" ./gradlew test --console=plain 2>&1 | tail -30'), 'gradle');
+  assert.equal(techOfCommand('"$R/jbr/bin/java.exe" -version'), 'java');
+  assert.equal(techOfCommand('OUT=$(ls -d build) dotnet publish -o "$OUT"'), 'dotnet');
+  assert.equal(techOfCommand('X=$(dirname node) ; ls'), null);
 });
 
 test('shell commands: names inside quotes, heredocs and arguments do not count', () => {
-  assert.equal(sh('echo "run npm install; then node app"'), null);
-  assert.equal(sh('ls -la && cat README.md'), null);
-  assert.equal(sh('grep -rn "dotnet" docs'), null);
-  assert.equal(sh("cat > notes.txt <<'EOF'\nnode is great; python too\nEOF"), null);
-  assert.equal(sh("python3 - <<'EOF'\nimport os; print(os.getcwd())\nEOF"), 'py');
-  assert.equal(sh('echo done 2>&1'), null);
-  assert.equal(sh(''), null);
-  assert.equal(sh(undefined), null);
+  assert.equal(techOfCommand('echo "run npm install; then node app"'), null);
+  assert.equal(techOfCommand('ls -la && cat README.md'), null);
+  assert.equal(techOfCommand('grep -rn "dotnet" docs'), null);
+  assert.equal(techOfCommand("cat > notes.txt <<'EOF'\nnode is great; python too\nEOF"), null);
+  assert.equal(techOfCommand("python3 - <<'EOF'\nimport os; print(os.getcwd())\nEOF"), 'py');
+  assert.equal(techOfCommand('echo done 2>&1'), null);
+  assert.equal(techOfCommand(''), null);
+  assert.equal(techOfCommand(undefined), null);
 });
 
 test('chained commands: every program in the chain, each once, in order', () => {
-  const all = (command, tool = 'Bash') => T.techsOf(tool, { command });
-  assert.deepEqual(all('cd api && npm ci && dotnet build && dotnet test'), ['npm', 'dotnet']);
-  assert.deepEqual(all('git stash && dotnet test; git stash pop'), ['git', 'dotnet']);
-  assert.deepEqual(all('npm run build && docker build -t app . && docker push app && kubectl rollout restart deploy/app'), ['npm', 'docker', 'k8s']);
-  assert.deepEqual(all('cat data.json | jq .name | node fmt.js'), ['json', 'node']);
-  assert.deepEqual(all('ls -la && cat README.md'), []);
-  assert.deepEqual(all('Get-ChildItem', 'PowerShell'), ['ps']);
-  assert.deepEqual(all('dotnet build; if ($?) { node post.js }', 'PowerShell'), ['dotnet', 'node']);
-  assert.deepEqual(T.techsOf('Edit', { file_path: 'src/Orders/OrderService.cs' }), ['cs']);
-  assert.deepEqual(T.techsOf('WebFetch', { url: 'https://example.com' }), []);
+  const allTechs = (command, tool = 'Bash') => dashboard.techsOfToolCall(tool, { command });
+  assert.deepEqual(allTechs('cd api && npm ci && dotnet build && dotnet test'), ['npm', 'dotnet']);
+  assert.deepEqual(allTechs('git stash && dotnet test; git stash pop'), ['git', 'dotnet']);
+  assert.deepEqual(allTechs('npm run build && docker build -t app . && docker push app && kubectl rollout restart deploy/app'), ['npm', 'docker', 'k8s']);
+  assert.deepEqual(allTechs('cat data.json | jq .name | node fmt.js'), ['json', 'node']);
+  assert.deepEqual(allTechs('ls -la && cat README.md'), []);
+  assert.deepEqual(allTechs('Get-ChildItem', 'PowerShell'), ['ps']);
+  assert.deepEqual(allTechs('dotnet build; if ($?) { node post.js }', 'PowerShell'), ['dotnet', 'node']);
+  assert.deepEqual(dashboard.techsOfToolCall('Edit', { file_path: 'src/Orders/OrderService.cs' }), ['cs']);
+  assert.deepEqual(dashboard.techsOfToolCall('WebFetch', { url: 'https://example.com' }), []);
   // the first one is what techOf gives (the badge a Route stop is drawn with)
-  assert.equal(sh('git stash && dotnet test'), 'git');
+  assert.equal(techOfCommand('git stash && dotnet test'), 'git');
   // badges in a row: at most three, then "+n"
-  assert.equal((T.techIcons(['npm', 'docker', 'k8s']).match(/<svg/g) || []).length, 3);
-  assert.match(T.techIcons(['npm', 'docker', 'k8s', 'git', 'node']), /class="tmore" title="Git, Node\.js">\+2<\/span>$/);
-  assert.equal(T.techIcons([]), '');
+  assert.equal((dashboard.techBadgeIcons(['npm', 'docker', 'k8s']).match(/<svg/g) || []).length, 3);
+  assert.match(dashboard.techBadgeIcons(['npm', 'docker', 'k8s', 'git', 'node']), /class="tmore" title="Git, Node\.js">\+2<\/span>$/);
+  assert.equal(dashboard.techBadgeIcons([]), '');
 });
 
 test('the PowerShell tool: its own badge unless the command runs a known program', () => {
-  assert.equal(sh('Get-ChildItem -Recurse', 'PowerShell'), 'ps');
-  assert.equal(sh('dotnet build; if ($?) { dotnet test }', 'PowerShell'), 'dotnet');
-  assert.equal(sh("$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet run", 'PowerShell'), 'dotnet');
-  assert.equal(sh('& "C:\\Program Files\\nodejs\\node.exe" -v', 'PowerShell'), 'node');
+  assert.equal(techOfCommand('Get-ChildItem -Recurse', 'PowerShell'), 'ps');
+  assert.equal(techOfCommand('dotnet build; if ($?) { dotnet test }', 'PowerShell'), 'dotnet');
+  assert.equal(techOfCommand("$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet run", 'PowerShell'), 'dotnet');
+  assert.equal(techOfCommand('& "C:\\Program Files\\nodejs\\node.exe" -v', 'PowerShell'), 'node');
 });
 
 test('files: the language by extension', () => {
-  assert.equal(file('D:\\git\\app\\src\\Orders\\OrderService.cs'), 'cs');
-  assert.equal(file('/home/me/app/src/index.ts'), 'ts');
-  assert.equal(file('src/App.tsx'), 'react');
-  assert.equal(file('app/src/main/java/Main.kt'), 'kt');
-  assert.equal(file('server/dashboard.html'), 'html');
-  assert.equal(file('scripts/hook.js'), 'js');
-  assert.equal(file('README.md'), 'md');
-  assert.equal(file('deploy/values.yaml'), 'yaml');
-  assert.equal(file('db/001_init.sql', 'Write'), 'sql');
-  assert.equal(file('notes.txt'), null);
-  assert.equal(file('LICENSE'), null);
-  assert.equal(file(undefined), null);
+  assert.equal(techOfPath('D:\\git\\app\\src\\Orders\\OrderService.cs'), 'cs');
+  assert.equal(techOfPath('/home/me/app/src/index.ts'), 'ts');
+  assert.equal(techOfPath('src/App.tsx'), 'react');
+  assert.equal(techOfPath('app/src/main/java/Main.kt'), 'kt');
+  assert.equal(techOfPath('server/dashboard.html'), 'html');
+  assert.equal(techOfPath('scripts/hook.js'), 'js');
+  assert.equal(techOfPath('README.md'), 'md');
+  assert.equal(techOfPath('deploy/values.yaml'), 'yaml');
+  assert.equal(techOfPath('db/001_init.sql', 'Write'), 'sql');
+  assert.equal(techOfPath('notes.txt'), null);
+  assert.equal(techOfPath('LICENSE'), null);
+  assert.equal(techOfPath(undefined), null);
 });
 
 test('files: names that say more than their extension', () => {
-  assert.equal(file('api/Api.csproj'), 'dotnet');
-  assert.equal(file('App.sln'), 'dotnet');
-  assert.equal(file('src/Api/appsettings.Development.json'), 'dotnet');
-  assert.equal(file('package.json'), 'npm');
-  assert.equal(file('tsconfig.build.json'), 'ts');
-  assert.equal(file('Dockerfile'), 'docker');
-  assert.equal(file('docker-compose.override.yml'), 'docker');
-  assert.equal(file('app/build.gradle.kts'), 'gradle');
-  assert.equal(file('Cargo.toml'), 'rs');
-  assert.equal(file('.github/workflows/ci.yml'), 'github');
-  assert.equal(file('.gitignore'), 'git');
+  assert.equal(techOfPath('api/Api.csproj'), 'dotnet');
+  assert.equal(techOfPath('App.sln'), 'dotnet');
+  assert.equal(techOfPath('src/Api/appsettings.Development.json'), 'dotnet');
+  assert.equal(techOfPath('package.json'), 'npm');
+  assert.equal(techOfPath('tsconfig.build.json'), 'ts');
+  assert.equal(techOfPath('Dockerfile'), 'docker');
+  assert.equal(techOfPath('docker-compose.override.yml'), 'docker');
+  assert.equal(techOfPath('app/build.gradle.kts'), 'gradle');
+  assert.equal(techOfPath('Cargo.toml'), 'rs');
+  assert.equal(techOfPath('.github/workflows/ci.yml'), 'github');
+  assert.equal(techOfPath('.gitignore'), 'git');
 });
 
 test('Glob and Grep: the language they look for', () => {
-  assert.equal(T.techOf('Glob', { pattern: 'src/**/*.cs' }), 'cs');
-  assert.equal(T.techOf('Glob', { pattern: '**/*.{ts,tsx}' }), 'ts');
-  assert.equal(T.techOf('Glob', { pattern: '**/*' }), null);
-  assert.equal(T.techOf('Grep', { pattern: 'TODO', glob: '*.py' }), 'py');
-  assert.equal(T.techOf('Grep', { pattern: 'fn main', type: 'rust' }), 'rs');
-  assert.equal(T.techOf('Grep', { pattern: 'x', path: 'server/dashboard.html' }), 'html');
-  assert.equal(T.techOf('Grep', { pattern: 'x', path: 'src' }), null);
+  assert.equal(dashboard.firstTechOfToolCall('Glob', { pattern: 'src/**/*.cs' }), 'cs');
+  assert.equal(dashboard.firstTechOfToolCall('Glob', { pattern: '**/*.{ts,tsx}' }), 'ts');
+  assert.equal(dashboard.firstTechOfToolCall('Glob', { pattern: '**/*' }), null);
+  assert.equal(dashboard.firstTechOfToolCall('Grep', { pattern: 'TODO', glob: '*.py' }), 'py');
+  assert.equal(dashboard.firstTechOfToolCall('Grep', { pattern: 'fn main', type: 'rust' }), 'rs');
+  assert.equal(dashboard.firstTechOfToolCall('Grep', { pattern: 'x', path: 'server/dashboard.html' }), 'html');
+  assert.equal(dashboard.firstTechOfToolCall('Grep', { pattern: 'x', path: 'src' }), null);
 });
 
 test('other tools have no badge', () => {
-  assert.equal(T.techOf('WebFetch', { url: 'https://nodejs.org/api/fs.js' }), null);
-  assert.equal(T.techOf('Agent', { description: 'check the node version' }), null);
-  assert.equal(T.techOf(undefined, {}), null);
+  assert.equal(dashboard.firstTechOfToolCall('WebFetch', { url: 'https://nodejs.org/api/fs.js' }), null);
+  assert.equal(dashboard.firstTechOfToolCall('Agent', { description: 'check the node version' }), null);
+  assert.equal(dashboard.firstTechOfToolCall(undefined, {}), null);
 });
 
 test('every id used by a table has a badge, and every badge draws', () => {
-  const ids = new Set([...Object.values(T.TECH_EXT), ...T.TECH_CMD.map(x => x[1]), ...T.TECH_FILE.map(x => x[1]), 'github', 'ps']);
-  for (const id of ids) assert.ok(T.TECH[id], `no badge for "${id}"`);
-  for (const [id, k] of Object.entries(T.TECH)) {
-    assert.equal(k.length, 5, id);
-    assert.ok(T.TECH_SHAPE[k[1]], `${id}: unknown shape ${k[1]}`);
-    const svg = T.techIcon(id);
+  const ids = new Set([...Object.values(dashboard.TECH_BY_EXTENSION), ...dashboard.TECH_BY_PROGRAM.map(([, id]) => id), ...dashboard.TECH_BY_FILE_NAME.map(([, id]) => id), 'github', 'ps']);
+  for (const id of ids) assert.ok(dashboard.TECH_BADGES[id], `no badge for "${id}"`);
+  for (const [id, badge] of Object.entries(dashboard.TECH_BADGES)) {
+    for (const field of ['name', 'shape', 'background', 'foreground', 'mark']) assert.ok(badge[field], `${id}: no ${field}`);
+    assert.ok(dashboard.BADGE_SHAPES[badge.shape], `${id}: unknown shape ${badge.shape}`);
+    const svg = dashboard.techBadgeIcon(id);
     assert.match(svg, /^<svg class="ic tech"[\s\S]*<\/svg>$/, id);
-    assert.ok(svg.includes(`<title>${k[0].replace(/&/g, '&amp;')}</title>`), id);
+    assert.ok(svg.includes(`<title>${badge.name.replace(/&/g, '&amp;')}</title>`), id);
   }
-  assert.equal(T.techIcon('nope'), '');
-  assert.equal(T.techIcon(null), '');
+  assert.equal(dashboard.techBadgeIcon('nope'), '');
+  assert.equal(dashboard.techBadgeIcon(null), '');
   // a monogram is escaped text, a glyph is passed through as SVG
-  assert.match(T.techMark('xml'), /&lt;&gt;<\/text>/);
-  assert.match(T.techMark('ps'), /^<g [^>]*><path /);
+  assert.match(dashboard.techBadgeMark('xml'), /&lt;&gt;<\/text>/);
+  assert.match(dashboard.techBadgeMark('ps'), /^<g [^>]*><path /);
 });

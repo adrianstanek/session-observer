@@ -1,22 +1,22 @@
 'use strict';
 // Session Observer dashboard — English, the reference table: every other language has exactly these keys (test/check.js).
-TEXT.en = (() => {
-  const w = (...a) => W('en', ...a);
+TRANSLATIONS.en = (() => {
+  const noun = (...forms) => pluralNoun('en', ...forms);
   return {
-    dec: '.', // decimal separator
-    count: (n, w) => `${n} ${w}`, // a count and its noun (Japanese and Korean put the noun first)
-    u: { ms: 'ms', s: 's', m: 'm', h: 'h', d: 'd' }, // duration units, written right after the number
+    decimalSeparator: '.', // decimal separator
+    count: (number, noun) => `${number} ${noun}`, // a count and its noun (Japanese and Korean put the noun first)
+    units: { ms: 'ms', s: 's', m: 'm', h: 'h', d: 'd' }, // duration units, written right after the number
     ago: x => `${x} ago`,
-    // nouns with a count in front: nw(3, 'tool') → "3 tools"
-    w: {
-      tool: w('tool', 'tools'), toolCall: w('tool call', 'tool calls'), call: w('call', 'calls'), step: w('step', 'steps'),
-      modelStep: w('model step', 'model steps'), turn: w('turn', 'turns'), problem: w('problem', 'problems'), edit: w('edit', 'edits'),
-      read: w('read', 'reads'), run: w('run', 'runs'), program: w('program', 'programs'), subagent: w('subagent', 'subagents'),
-      prompt: w('prompt', 'prompts'), skill: w('skill', 'skills'), plugin: w('plugin', 'plugins'), mcpServer: w('MCP server', 'MCP servers'),
-      item: w('item', 'items'),
+    // nouns with a count in front: countOf(3, 'tool') → "3 tools"
+    nouns: {
+      tool: noun('tool', 'tools'), toolCall: noun('tool call', 'tool calls'), call: noun('call', 'calls'), step: noun('step', 'steps'),
+      modelStep: noun('model step', 'model steps'), turn: noun('turn', 'turns'), problem: noun('problem', 'problems'), edit: noun('edit', 'edits'),
+      read: noun('read', 'reads'), run: noun('run', 'runs'), program: noun('program', 'programs'), subagent: noun('subagent', 'subagents'),
+      prompt: noun('prompt', 'prompts'), skill: noun('skill', 'skills'), plugin: noun('plugin', 'plugins'), mcpServer: noun('MCP server', 'MCP servers'),
+      item: noun('item', 'items'),
     },
-    st: { you: 'You', model: 'Model', files: 'Files', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Network', browser: 'Browser', agents: 'Agents', skills: 'Skills', context: 'Context', other: 'Other' },
-    cat: {
+    groups: { you: 'You', model: 'Model', files: 'Files', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Network', browser: 'Browser', agents: 'Agents', skills: 'Skills', context: 'Context', other: 'Other' },
+    categories: {
       model: 'Model', prompt: 'Prompt', tool: 'Tool', skill: 'Skill', question: 'Question', subagent: 'Subagent',
       task: 'Task', mcp: 'MCP', permission: 'Permission', error: 'Error', notification: 'Notice',
       compact: 'Compact', context: 'Context', lifecycle: 'Lifecycle', env: 'Env',
@@ -51,7 +51,7 @@ TEXT.en = (() => {
     noOutput: 'no output', input: 'Input', output: 'Output', error: 'Error', prompt: 'Prompt',
 
     // what an event is: [label, detail] in rows, tooltips and route stops
-    ev: {
+    event: {
       calls: l => `calls ${l}`, replied: 'replied', thought: 'thought', thinking: 'thinking', expanded: 'Expanded',
       answered: 'answered', failed: 'failed', permission: 'Permission', asked: 'asked', denied: 'Denied', deniedLc: 'denied',
       message: 'Message', turn: 'Turn', done: 'done', turnFailed: 'Turn failed', turnFailedLc: 'turn failed',
@@ -64,12 +64,12 @@ TEXT.en = (() => {
     },
 
     // sessions panel
-    sess: { ended: 'ended', working: 'working', live: 'live', inactive: 'inactive' },
+    sessionState: { ended: 'ended', working: 'working', live: 'live', inactive: 'inactive' },
     allActivity: 'All activity', everySession: 'every session combined', sessions: 'Sessions', lastLbl: 'last:',
     ctxWindow: 'context window', ctxShort: 'ctx', noSessions: 'No sessions in this range.',
 
     // overview
-    tile: {
+    tiles: {
       sessions: 'Sessions', turns: 'Turns', toolCalls: 'Tool calls', modelSteps: 'Model steps', problems: 'Problems',
       failedOrDenied: 'failed or denied', outputTokens: 'Output tokens', subagents: 'Subagents', duration: 'Duration',
       context: 'Context', tokens: 'Tokens',
@@ -119,20 +119,20 @@ TEXT.en = (() => {
     final: 'final', partX: x => `part ${x}`, configChanged: 'Config changed', dirAdded: 'Directory added', viaX: x => `via ${x}`,
     worktreeCreated: 'Worktree created', worktreeRemoved: 'Worktree removed', cwdChanged: 'Working directory changed',
     switchingModel: 'Switching model', modelSwitched: 'Model switched', resendCost: x => `≈ $${x} to re-send the context`, yes: 'yes', no: 'no',
-    kv: {
+    fields: {
       file: 'file', replaceAll: 'replace all', description: 'description', type: 'type', model: 'model', lines: 'lines', status: 'status',
       agent: 'agent', async: 'async', tasks: 'tasks', crons: 'crons', transcript: 'transcript', directory: 'directory', path: 'path',
       from: 'from', to: 'to', requested: 'requested', contextTokens: 'context tokens', cacheWarm: 'cache warm', cost: 'cost',
     },
     linesOf: (a, b, n) => `${a}–${b} of ${n}`, interruptedByUser: 'interrupted by the user', interrupted: 'interrupted',
     applied: 'applied', appliedChanged: 'applied, then changed by the user', noAnswers: 'no answers',
-    note: {
+    notificationTypes: {
       idle_prompt: 'waiting for your input', permission_prompt: 'needs your permission', auth_success: 'signed in', auth_storage_failure: 'could not store sign-in',
       elicitation_dialog: 'MCP server is asking for input', elicitation_url_dialog: 'MCP server wants you to open a link', elicitation_complete: 'MCP input done', elicitation_response: 'MCP input answered',
       agent_needs_input: 'an agent needs your input', agent_completed: 'an agent finished', plugin_notification: 'from a plugin',
       quota_auto_resume_fired: 'resumed after the usage limit', quota_auto_resume_stale: 'auto-resume skipped (stale)', quota_auto_resume_disabled: 'auto-resume is off',
     },
-    stopWhy: { tool_use: 'stopped to call tools', end_turn: 'finished its reply', max_tokens: 'hit the output token limit', stop_sequence: 'hit a stop sequence', pause_turn: 'paused a long-running turn', refusal: 'refused' },
+    stopReasons: { tool_use: 'stopped to call tools', end_turn: 'finished its reply', max_tokens: 'hit the output token limit', stop_sequence: 'hit a stop sequence', pause_turn: 'paused a long-running turn', refusal: 'refused' },
     noStopReason: 'no stop reason (still writing, or an intermediate line)',
     toolsAsked: 'Tools it asked for', matchedByOrder: '(matched by order; older log)', noHookEvent: 'no hook event',
     toolNotLogged: 'Asked for a tool, but the call isn\'t in the log yet.', whatItWrote: 'What it wrote',
@@ -147,7 +147,7 @@ TEXT.en = (() => {
     sentModel: 'sent to the model', notSent: 'not sent', result: 'result', toolResult: 'tool result',
     ownContext: x => `its own context, ${x}`, afterCompaction: 'After compaction', beforeFirstPrompt: 'Before the first prompt',
     showTurnInDetails: 'Show this turn in Details', inDetails: 'in Details', detailsGo: 'Details ›',
-    instr: { User: 'global, ~/.claude', Project: 'project', Local: 'local, not checked in', AutoMem: 'auto-memory', Managed: 'managed policy' },
+    instructionKinds: { User: 'global, ~/.claude', Project: 'project', Local: 'local, not checked in', AutoMem: 'auto-memory', Managed: 'managed policy' },
     measuredNote: (first, cpt) => `Measured: the first request was ${first} tokens (system prompt, tools, instructions, listings and the first prompt). ${cpt
       ? `Sizes on cards use this session's average of ${cpt} characters per token.` : 'Sizes on cards are estimates at about 4 characters per token.'}`,
     systemPrompt: 'System prompt', charsN: x => `${x} chars`, toolDefs: 'Tool definitions', builtIn: 'Built-in',
@@ -160,7 +160,7 @@ TEXT.en = (() => {
     deferredSub: (n, loaded) => `${n} known by name, ${loaded} loaded`, failedX: x => `${x} failed`,
     deferredNote: 'Only the names are in the context; a tool\'s definition loads through ToolSearch when needed. Highlighted names have been loaded.',
     failedConnect: 'failed to connect', loadedN: n => `${n} loaded`, loadedLc: 'loaded', nameOnly: 'name only, loads on demand',
-    cu: {
+    usageCategories: {
       sys: 'System prompt', tools: 'System tools', mcpt: 'MCP tools', mcpi: 'MCP server instructions', mem: 'Memory files', skills: 'Skills',
       agents: 'Subagent types', defer: 'Deferred tool names', msgs: 'Messages', msgsAll: 'Messages, system prompt and tools',
     },

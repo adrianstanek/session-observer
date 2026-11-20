@@ -74,15 +74,15 @@ if (plugin.version !== released) {
 }
 
 // 6. Every dashboard language has exactly the English keys, each the same kind of value (text, function or group),
-//    and every function returns text. LANGS (the language menu) and the tables name the same languages.
+//    and every function returns text. LANGUAGE_NAMES (the language menu) and the tables name the same languages.
 {
   const dir = path.join(ROOT, 'server', 'dashboard');
   const tables = fs.readdirSync(dir).filter(f => /^i18n-[a-z]{2}\.js$/.test(f));
   let got = null;
-  try { got = new Function(['i18n.js', ...tables].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\nreturn { TEXT, LANGS };')(); }
+  try { got = new Function(['i18n.js', ...tables].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\nreturn { TRANSLATIONS, LANGUAGE_NAMES };')(); }
   catch (e) { fail(`server/dashboard/i18n: the language tables do not load (${e.message})`); }
   if (got) {
-    const { TEXT, LANGS } = got;
+    const { TRANSLATIONS, LANGUAGE_NAMES } = got;
     const kind = v => typeof v === 'function' ? 'function' : v && typeof v === 'object' ? 'group' : typeof v;
     const compare = (en, x, code, at = '') => {
       for (const [k, v] of Object.entries(en)) {
@@ -97,11 +97,11 @@ if (plugin.version !== released) {
       }
       for (const k of Object.keys(x)) if (!(k in en)) fail(`i18n-${code}.js: "${at + k}" is not in English`);
     };
-    for (const code of Object.keys(TEXT)) {
-      if (!LANGS[code]) fail(`i18n-${code}.js: language "${code}" is not in LANGS (server/dashboard/i18n.js)`);
-      compare(TEXT.en, TEXT[code], code);
+    for (const code of Object.keys(TRANSLATIONS)) {
+      if (!LANGUAGE_NAMES[code]) fail(`i18n-${code}.js: language "${code}" is not in LANGUAGE_NAMES (server/dashboard/i18n.js)`);
+      compare(TRANSLATIONS.en, TRANSLATIONS[code], code);
     }
-    for (const code of Object.keys(LANGS)) if (!TEXT[code]) fail(`server/dashboard/i18n.js: LANGS has "${code}" but there is no i18n-${code}.js`);
+    for (const code of Object.keys(LANGUAGE_NAMES)) if (!TRANSLATIONS[code]) fail(`server/dashboard/i18n.js: LANGUAGE_NAMES has "${code}" but there is no i18n-${code}.js`);
   }
 }
 

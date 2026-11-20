@@ -1,19 +1,19 @@
 'use strict';
 // Session Observer dashboard — Chinese, Simplified (简体中文). Nouns carry their measure word: "3 个工具", "147 次工具调用".
-TEXT.zh = (() => {
-  const w = x => W('zh', x);
+TRANSLATIONS.zh = (() => {
+  const noun = word => pluralNoun('zh', word);
   return {
-    dec: '.',
-    count: (n, w) => `${n} ${w}`,
-    u: { ms: '毫秒', s: '秒', m: '分钟', h: '小时', d: '天' }, // no space before a unit, as Chinese writes them
+    decimalSeparator: '.',
+    count: (number, noun) => `${number} ${noun}`,
+    units: { ms: '毫秒', s: '秒', m: '分钟', h: '小时', d: '天' }, // no space before a unit, as Chinese writes them
     ago: x => `${x}前`,
-    w: {
-      tool: w('个工具'), toolCall: w('次工具调用'), call: w('次调用'), step: w('步'), modelStep: w('个模型步骤'),
-      turn: w('轮'), problem: w('个问题'), edit: w('次编辑'), read: w('次读取'), run: w('次运行'), program: w('个程序'),
-      subagent: w('个子代理'), prompt: w('条提示词'), skill: w('个技能'), plugin: w('个插件'), mcpServer: w('个 MCP 服务器'), item: w('项'),
+    nouns: {
+      tool: noun('个工具'), toolCall: noun('次工具调用'), call: noun('次调用'), step: noun('步'), modelStep: noun('个模型步骤'),
+      turn: noun('轮'), problem: noun('个问题'), edit: noun('次编辑'), read: noun('次读取'), run: noun('次运行'), program: noun('个程序'),
+      subagent: noun('个子代理'), prompt: noun('条提示词'), skill: noun('个技能'), plugin: noun('个插件'), mcpServer: noun('个 MCP 服务器'), item: noun('项'),
     },
-    st: { you: '你', model: '模型', files: '文件', shell: 'Shell', git: 'Git', mcp: 'MCP', network: '网络', browser: '浏览器', agents: '代理', skills: '技能', context: '上下文', other: '其他' },
-    cat: {
+    groups: { you: '你', model: '模型', files: '文件', shell: 'Shell', git: 'Git', mcp: 'MCP', network: '网络', browser: '浏览器', agents: '代理', skills: '技能', context: '上下文', other: '其他' },
+    categories: {
       model: '模型', prompt: '提示词', tool: '工具', skill: '技能', question: '提问', subagent: '子代理',
       task: '任务', mcp: 'MCP', permission: '权限', error: '错误', notification: '通知',
       compact: '压缩', context: '上下文', lifecycle: '生命周期', env: '环境',
@@ -45,7 +45,7 @@ TEXT.zh = (() => {
     expandTurn: '展开这一轮', collapseTurn: '折叠这一轮', expand: '展开', collapse: '折叠',
     noOutput: '无输出', input: '输入', output: '输出', error: '错误', prompt: '提示词',
 
-    ev: {
+    event: {
       calls: l => `调用 ${l}`, replied: '已回复', thought: '已思考', thinking: '思考', expanded: '已展开',
       answered: '已回答', failed: '失败', permission: '权限', asked: '请求', denied: '已拒绝', deniedLc: '已拒绝',
       message: '消息', turn: '轮次', done: '完成', turnFailed: '轮次失败', turnFailedLc: '轮次失败',
@@ -57,11 +57,11 @@ TEXT.zh = (() => {
       startedSession: '已开始', createdWorktree: '已创建', changedConfig: '已更改',
     },
 
-    sess: { ended: '已结束', working: '工作中', live: '活跃', inactive: '不活跃' },
+    sessionState: { ended: '已结束', working: '工作中', live: '活跃', inactive: '不活跃' },
     allActivity: '全部活动', everySession: '所有会话合计', sessions: '会话', lastLbl: '最近：',
     ctxWindow: '上下文窗口', ctxShort: '上下文', noSessions: '此时间范围内没有会话。',
 
-    tile: {
+    tiles: {
       sessions: '会话', turns: '轮次', toolCalls: '工具调用', modelSteps: '模型步骤', problems: '问题',
       failedOrDenied: '失败或被拒绝', outputTokens: '输出 token', subagents: '子代理', duration: '时长',
       context: '上下文', tokens: 'Token',
@@ -107,20 +107,20 @@ TEXT.zh = (() => {
     final: '最终', partX: x => `第 ${x} 部分`, configChanged: '配置已更改', dirAdded: '已添加目录', viaX: x => `通过 ${x}`,
     worktreeCreated: '已创建工作树', worktreeRemoved: '已移除工作树', cwdChanged: '工作目录已更改',
     switchingModel: '正在切换模型', modelSwitched: '已切换模型', resendCost: x => `重新发送上下文约需 $${x}`, yes: '是', no: '否',
-    kv: {
+    fields: {
       file: '文件', replaceAll: '全部替换', description: '描述', type: '类型', model: '模型', lines: '行', status: '状态',
       agent: '代理', async: '异步', tasks: '任务', crons: '定时任务', transcript: '记录文件', directory: '目录', path: '路径',
       from: '从', to: '到', requested: '请求的模型', contextTokens: '上下文 token', cacheWarm: '缓存已预热', cost: '费用',
     },
     linesOf: (a, b, n) => `${a}–${b}，共 ${n} 行`, interruptedByUser: '被用户中断', interrupted: '已中断',
     applied: '已应用', appliedChanged: '已应用，之后被用户修改', noAnswers: '没有回答',
-    note: {
+    notificationTypes: {
       idle_prompt: '等待你的输入', permission_prompt: '需要你的许可', auth_success: '已登录', auth_storage_failure: '无法保存登录信息',
       elicitation_dialog: 'MCP 服务器请求输入', elicitation_url_dialog: 'MCP 服务器希望你打开一个链接', elicitation_complete: 'MCP 输入完成', elicitation_response: '已回复 MCP 输入',
       agent_needs_input: '有代理需要你的输入', agent_completed: '有代理已完成', plugin_notification: '来自插件',
       quota_auto_resume_fired: '超出用量限制后已恢复', quota_auto_resume_stale: '已跳过自动恢复（已过期）', quota_auto_resume_disabled: '自动恢复已关闭',
     },
-    stopWhy: { tool_use: '停下来调用工具', end_turn: '完成了回复', max_tokens: '达到输出 token 上限', stop_sequence: '遇到停止序列', pause_turn: '暂停了一个长轮次', refusal: '拒绝了' },
+    stopReasons: { tool_use: '停下来调用工具', end_turn: '完成了回复', max_tokens: '达到输出 token 上限', stop_sequence: '遇到停止序列', pause_turn: '暂停了一个长轮次', refusal: '拒绝了' },
     noStopReason: '没有停止原因（仍在写，或是中间行）',
     toolsAsked: '请求的工具', matchedByOrder: '（按顺序匹配；旧日志）', noHookEvent: '没有钩子事件',
     toolNotLogged: '请求了工具，但调用还没有出现在日志中。', whatItWrote: '写下的内容',
@@ -134,7 +134,7 @@ TEXT.zh = (() => {
     sentModel: '发送给模型', notSent: '未发送', result: '结果', toolResult: '工具结果',
     ownContext: x => `独立的上下文，${x}`, afterCompaction: '压缩之后', beforeFirstPrompt: '第一条提示词之前',
     showTurnInDetails: '在详情中显示这一轮', inDetails: '已在详情中', detailsGo: '详情 ›',
-    instr: { User: '全局，~/.claude', Project: '项目', Local: '本地，未提交', AutoMem: '自动记忆', Managed: '托管策略' },
+    instructionKinds: { User: '全局，~/.claude', Project: '项目', Local: '本地，未提交', AutoMem: '自动记忆', Managed: '托管策略' },
     measuredNote: (first, cpt) => `实测：第一次请求为 ${first} 个 token（系统提示词、工具、指令、列表和第一条提示词）。${cpt
       ? `卡片上的大小按本会话平均每 token ${cpt} 个字符计算。` : '卡片上的大小按每 token 约 4 个字符估算。'}`,
     systemPrompt: '系统提示词', charsN: x => `${x} 个字符`, toolDefs: '工具定义', builtIn: '内置',
@@ -147,7 +147,7 @@ TEXT.zh = (() => {
     deferredSub: (n, loaded) => `已知名称 ${n} 个，已加载 ${loaded} 个`, failedX: x => `${x}失败`,
     deferredNote: '上下文中只有名称；工具的定义在需要时通过 ToolSearch 加载。高亮的名称已加载。',
     failedConnect: '连接失败', loadedN: n => `已加载 ${n} 个`, loadedLc: '已加载', nameOnly: '仅名称，按需加载',
-    cu: {
+    usageCategories: {
       sys: '系统提示词', tools: '系统工具', mcpt: 'MCP 工具', mcpi: 'MCP 服务器指令', mem: '记忆文件', skills: '技能',
       agents: '子代理类型', defer: '延迟工具名称', msgs: '消息', msgsAll: '消息、系统提示词和工具',
     },

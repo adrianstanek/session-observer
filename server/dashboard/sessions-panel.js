@@ -1,0 +1,101 @@
+'use strict';
+// Session Observer dashboard — the sessions panel: All activity, and each session in the range with a hover card.
+const LIVE_SESSION_MS = 30 * 60000; // a session with an event this recent counts as live
+
+// [state word, dot class]
+function sessionStatus(session) {
+  if (session.ended) return [TEXT.sessionState.ended, 'dot'];
+  if (session.busy) return [TEXT.sessionState.working, 'dot busy'];
+  if (Date.now() - Date.parse(session.last) < LIVE_SESSION_MS) return [TEXT.sessionState.live, 'dot on'];
+  return [TEXT.sessionState.inactive, 'dot'];
+}
+
+const sessionName = session => stripTags(session.title) || baseName(session.cwd) || session.id.slice(0, 8);
+
+// the sessions in the range that match the search (the selected one always), newest first
+function visibleSessions() {
+  const cutoff = rangeCutoffIso();
+  const matchesSearch = session => !state.searchText
+    || ((session.title || '') + ' ' + (session.cwd || '') + ' ' + session.id).toLowerCase().includes(state.searchText)
+    || state.scope === session.id;
+  return [...state.sessions.values()]
+    .filter(session => !cutoff || (session.last || '') >= cutoff)
+    .filter(matchesSearch)
+    .sort((a, b) => (b.last || '').localeCompare(a.last || ''));
+}
+
+function selectedRangeLabel() {
+  const option = elementById('range').selectedOptions[0];
+  return option ? option.textContent : '';
+}
+
+function sessionChipsHtml(session) {
+  return (session.cwd ? `<span class="chip" title="${escapeHtml(session.cwd)}">${iconSvg('files')}${escapeHtml(baseName(session.cwd) || '?')}</span>` : '')
+    + (session.model ? `<span class="chip">${escapeHtml(session.model)}</span>` : '')
+    + (session.subagents ? `<span class="chip">${iconSvg('agents')}${session.subagents}</span>` : '')
+    + (session.failures ? `<span class="chip"><span class="x">✕ ${session.failures}</span></span>` : '')
+    + (session.context ? `<span class="chip" title="${escapeHtml(TEXT.ctxWindow)}">${escapeHtml(TEXT.ctxShort)} ${Math.round(session.context.pct * 100)}%</span>` : '');
+}
+
+// The list shows only the state dot and the title; the rest is in a card that floats beside it on hover.
+function sessionCardHtml(session) {
+  const [status, dotClass] = sessionStatus(session);
+  const outputTokens = session.usage ? session.usage.output : 0;
+  const lastTool = !session.ended && session.lastTool
+    ? `<div class="meta">${escapeHtml(TEXT.lastLbl)} <b>${escapeHtml(toolDisplayName(session.lastTool.name))}</b> <span class="mono">${escapeHtml(shorten(session.lastTool.arg, 60))}</span></div>` : '';
+  const name = escapeHtml(sessionName(session));
+  const meta = `${session.last ? escapeHtml(formatAgo(session.last)) : ''} · ${escapeHtml(countOf(session.turns || 0, 'turn'))} · ${escapeHtml(countOf(session.toolCalls || 0, 'tool'))}`
+    + (outputTokens ? ` · ${escapeHtml(TEXT.outX(formatCompactNumber(outputTokens)))}` : '');
+  return `<div class="card ${session.id === state.scope ? 'sel' : ''}" data-id="${escapeHtml(session.id)}">
+        <div class="row1"><span class="${dotClass}" title="${status}"></span><span class="name">${name}</span></div>
+        <template class="sdet"><div class="row1"><span class="name">${name}</span><span class="state"><span class="${dotClass}"></span>${status}</span></div>
+        <div class="meta">${meta}</div>${lastTool}
+        <div class="chips">${sessionChipsHtml(session)}</div></template>
+      </div>`;
+}
+
+function renderSessions() {
+  const sessions = visibleSessions();
+  const panel = elementById('sessions'), scrollTop = panel.scrollTop;
+  panel.innerHTML = `
+    <div class="card ${state.scope === ALL_SESSIONS ? 'sel' : ''}" data-id="all">
+      <div class="row1"><span class="name">${escapeHtml(TEXT.allActivity)}</span></div>
+      <div class="meta">${escapeHtml(TEXT.everySession)}</div>
+    </div>
+    <div class="sect">${escapeHtml(TEXT.sessions)} <span>${sessions.length}</span></div>
+    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>`;
+  panel.scrollTop = scrollTop;
+  renderSessionHoverCard(); // the list was rebuilt: refresh (or hide) the hover card
+}
+
+// The hover card: one floating box beside the list (a box inside the list would be clipped by its scrolling).
+let hoveredSessionId = null;
+
+function sessionHoverCard() {
+  return elementById('sesstip') || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'sesstip' }));
+}
+
+function renderSessionHoverCard() {
+  const hoverCard = sessionHoverCard();
+  const card = hoveredSessionId && elementById('sessions').querySelector(`.card[data-id="${CSS.escape(hoveredSessionId)}"]`);
+  const details = card?.querySelector('template.sdet');
+  if (!details) {
+    hoverCard.style.display = 'none';
+    return;
+  }
+  hoverCard.innerHTML = details.innerHTML;
+  hoverCard.style.display = 'block';
+  const cardBox = card.getBoundingClientRect(), hoverBox = hoverCard.getBoundingClientRect();
+  hoverCard.style.left = Math.min(innerWidth - hoverBox.width - 8, cardBox.right + 8) + 'px';
+  hoverCard.style.top = Math.max(8, Math.min(innerHeight - hoverBox.height - 8, cardBox.top)) + 'px';
+}
+
+function hoverSession(sessionId) {
+  if (sessionId === hoveredSessionId) return;
+  hoveredSessionId = sessionId;
+  renderSessionHoverCard();
+}
+
+elementById('sessions').addEventListener('mouseover', event => hoverSession(event.target.closest('.sess-list .card')?.dataset.id ?? null));
+elementById('sessions').addEventListener('mouseleave', () => hoverSession(null));
+elementById('sessions').addEventListener('scroll', () => { if (hoveredSessionId) hoverSession(null); });

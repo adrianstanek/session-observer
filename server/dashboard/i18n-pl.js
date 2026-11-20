@@ -1,23 +1,23 @@
 'use strict';
 // Session Observer dashboard — Polish (polski).
-TEXT.pl = (() => {
-  const w = (...a) => W('pl', ...a);
+TRANSLATIONS.pl = (() => {
+  const noun = (...forms) => pluralNoun('pl', ...forms);
   return {
-    dec: ',',
-    count: (n, w) => `${n} ${w}`,
-    u: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' d' },
+    decimalSeparator: ',',
+    count: (number, noun) => `${number} ${noun}`,
+    units: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' d' },
     ago: x => `${x} temu`,
-    w: {
-      tool: w('narzędzie', 'narzędzia', 'narzędzi'), toolCall: w('wywołanie narzędzia', 'wywołania narzędzi', 'wywołań narzędzi'),
-      call: w('wywołanie', 'wywołania', 'wywołań'), step: w('krok', 'kroki', 'kroków'),
-      modelStep: w('krok modelu', 'kroki modelu', 'kroków modelu'), turn: w('tura', 'tury', 'tur'), problem: w('problem', 'problemy', 'problemów'),
-      edit: w('edycja', 'edycje', 'edycji'), read: w('odczyt', 'odczyty', 'odczytów'), run: w('uruchomienie', 'uruchomienia', 'uruchomień'),
-      program: w('program', 'programy', 'programów'), subagent: w('subagent', 'subagenci', 'subagentów'), prompt: w('prompt', 'prompty', 'promptów'),
-      skill: w('umiejętność', 'umiejętności', 'umiejętności'), plugin: w('wtyczka', 'wtyczki', 'wtyczek'),
-      mcpServer: w('serwer MCP', 'serwery MCP', 'serwerów MCP'), item: w('element', 'elementy', 'elementów'),
+    nouns: {
+      tool: noun('narzędzie', 'narzędzia', 'narzędzi'), toolCall: noun('wywołanie narzędzia', 'wywołania narzędzi', 'wywołań narzędzi'),
+      call: noun('wywołanie', 'wywołania', 'wywołań'), step: noun('krok', 'kroki', 'kroków'),
+      modelStep: noun('krok modelu', 'kroki modelu', 'kroków modelu'), turn: noun('tura', 'tury', 'tur'), problem: noun('problem', 'problemy', 'problemów'),
+      edit: noun('edycja', 'edycje', 'edycji'), read: noun('odczyt', 'odczyty', 'odczytów'), run: noun('uruchomienie', 'uruchomienia', 'uruchomień'),
+      program: noun('program', 'programy', 'programów'), subagent: noun('subagent', 'subagenci', 'subagentów'), prompt: noun('prompt', 'prompty', 'promptów'),
+      skill: noun('umiejętność', 'umiejętności', 'umiejętności'), plugin: noun('wtyczka', 'wtyczki', 'wtyczek'),
+      mcpServer: noun('serwer MCP', 'serwery MCP', 'serwerów MCP'), item: noun('element', 'elementy', 'elementów'),
     },
-    st: { you: 'Ty', model: 'Model', files: 'Pliki', shell: 'Powłoka', git: 'Git', mcp: 'MCP', network: 'Sieć', browser: 'Przeglądarka', agents: 'Agenci', skills: 'Umiejętności', context: 'Kontekst', other: 'Inne' },
-    cat: {
+    groups: { you: 'Ty', model: 'Model', files: 'Pliki', shell: 'Powłoka', git: 'Git', mcp: 'MCP', network: 'Sieć', browser: 'Przeglądarka', agents: 'Agenci', skills: 'Umiejętności', context: 'Kontekst', other: 'Inne' },
+    categories: {
       model: 'Model', prompt: 'Prompt', tool: 'Narzędzie', skill: 'Umiejętność', question: 'Pytanie', subagent: 'Subagent',
       task: 'Zadanie', mcp: 'MCP', permission: 'Uprawnienie', error: 'Błąd', notification: 'Powiadomienie',
       compact: 'Kompaktowanie', context: 'Kontekst', lifecycle: 'Cykl życia', env: 'Środowisko',
@@ -49,7 +49,7 @@ TEXT.pl = (() => {
     expandTurn: 'Rozwiń tę turę', collapseTurn: 'Zwiń tę turę', expand: 'Rozwiń', collapse: 'Zwiń',
     noOutput: 'brak wyniku', input: 'Wejście', output: 'Wynik', error: 'Błąd', prompt: 'Prompt',
 
-    ev: {
+    event: {
       calls: l => `wywołuje ${l}`, replied: 'odpowiedział', thought: 'myślał', thinking: 'myślenie', expanded: 'Rozwinięty',
       answered: 'odpowiedź', failed: 'błąd', permission: 'Uprawnienie', asked: 'prośba', denied: 'Odmowa', deniedLc: 'odmowa',
       message: 'Wiadomość', turn: 'Tura', done: 'gotowe', turnFailed: 'Tura nieudana', turnFailedLc: 'tura nieudana',
@@ -61,11 +61,11 @@ TEXT.pl = (() => {
       startedSession: 'start', createdWorktree: 'utworzono', changedConfig: 'zmieniono',
     },
 
-    sess: { ended: 'zakończona', working: 'pracuje', live: 'aktywna', inactive: 'nieaktywna' },
+    sessionState: { ended: 'zakończona', working: 'pracuje', live: 'aktywna', inactive: 'nieaktywna' },
     allActivity: 'Cała aktywność', everySession: 'wszystkie sesje razem', sessions: 'Sesje', lastLbl: 'ostatnio:',
     ctxWindow: 'okno kontekstu', ctxShort: 'kont.', noSessions: 'Brak sesji w tym zakresie.',
 
-    tile: {
+    tiles: {
       sessions: 'Sesje', turns: 'Tury', toolCalls: 'Wywołania narzędzi', modelSteps: 'Kroki modelu', problems: 'Problemy',
       failedOrDenied: 'nieudane lub odrzucone', outputTokens: 'Tokeny wyjściowe', subagents: 'Subagenci', duration: 'Czas trwania',
       context: 'Kontekst', tokens: 'Tokeny',
@@ -111,20 +111,20 @@ TEXT.pl = (() => {
     final: 'końcowa', partX: x => `część ${x}`, configChanged: 'Konfiguracja zmieniona', dirAdded: 'Dodano katalog', viaX: x => `przez ${x}`,
     worktreeCreated: 'Utworzono worktree', worktreeRemoved: 'Usunięto worktree', cwdChanged: 'Zmieniono katalog roboczy',
     switchingModel: 'Zmiana modelu', modelSwitched: 'Model zmieniony', resendCost: x => `≈ ${x} $ za ponowne wysłanie kontekstu`, yes: 'tak', no: 'nie',
-    kv: {
+    fields: {
       file: 'plik', replaceAll: 'zamień wszystkie', description: 'opis', type: 'typ', model: 'model', lines: 'wiersze', status: 'status',
       agent: 'agent', async: 'asynchronicznie', tasks: 'zadania', crons: 'crony', transcript: 'transkrypt', directory: 'katalog', path: 'ścieżka',
       from: 'z', to: 'do', requested: 'żądany', contextTokens: 'tokeny kontekstu', cacheWarm: 'cache ciepły', cost: 'koszt',
     },
     linesOf: (a, b, n) => `${a}–${b} z ${n}`, interruptedByUser: 'przerwane ręcznie', interrupted: 'przerwane',
     applied: 'zastosowano', appliedChanged: 'zastosowano, potem zmieniono ręcznie', noAnswers: 'brak odpowiedzi',
-    note: {
+    notificationTypes: {
       idle_prompt: 'czeka na Twoją odpowiedź', permission_prompt: 'potrzebuje Twojego pozwolenia', auth_success: 'zalogowano', auth_storage_failure: 'nie udało się zapisać logowania',
       elicitation_dialog: 'serwer MCP prosi o dane', elicitation_url_dialog: 'serwer MCP prosi o otwarcie linku', elicitation_complete: 'dane dla MCP gotowe', elicitation_response: 'udzielono odpowiedzi MCP',
       agent_needs_input: 'agent potrzebuje Twojej odpowiedzi', agent_completed: 'agent skończył', plugin_notification: 'od wtyczki',
       quota_auto_resume_fired: 'wznowiono po limicie użycia', quota_auto_resume_stale: 'pominięto automatyczne wznowienie (nieaktualne)', quota_auto_resume_disabled: 'automatyczne wznawianie wyłączone',
     },
-    stopWhy: { tool_use: 'zatrzymał się, by wywołać narzędzia', end_turn: 'zakończył odpowiedź', max_tokens: 'osiągnął limit tokenów wyjściowych', stop_sequence: 'trafił na sekwencję stop', pause_turn: 'wstrzymał długą turę', refusal: 'odmówił' },
+    stopReasons: { tool_use: 'zatrzymał się, by wywołać narzędzia', end_turn: 'zakończył odpowiedź', max_tokens: 'osiągnął limit tokenów wyjściowych', stop_sequence: 'trafił na sekwencję stop', pause_turn: 'wstrzymał długą turę', refusal: 'odmówił' },
     noStopReason: 'brak powodu zatrzymania (wciąż pisze albo to wiersz pośredni)',
     toolsAsked: 'Narzędzia, o które poprosił', matchedByOrder: '(dopasowane po kolejności; starszy log)', noHookEvent: 'brak zdarzenia hooka',
     toolNotLogged: 'Poprosił o narzędzie, ale wywołania nie ma jeszcze w logu.', whatItWrote: 'Co napisał',
@@ -138,7 +138,7 @@ TEXT.pl = (() => {
     sentModel: 'wysłane do modelu', notSent: 'nie wysłane', result: 'wynik', toolResult: 'wynik narzędzia',
     ownContext: x => `własny kontekst, ${x}`, afterCompaction: 'Po kompaktowaniu', beforeFirstPrompt: 'Przed pierwszym promptem',
     showTurnInDetails: 'Pokaż tę turę w Szczegółach', inDetails: 'w Szczegółach', detailsGo: 'Szczegóły ›',
-    instr: { User: 'globalne, ~/.claude', Project: 'projekt', Local: 'lokalne, poza repozytorium', AutoMem: 'auto-pamięć', Managed: 'zasady zarządzane' },
+    instructionKinds: { User: 'globalne, ~/.claude', Project: 'projekt', Local: 'lokalne, poza repozytorium', AutoMem: 'auto-pamięć', Managed: 'zasady zarządzane' },
     measuredNote: (first, cpt) => `Zmierzone: pierwsze zapytanie miało ${first} tokenów (prompt systemowy, narzędzia, instrukcje, listy i pierwszy prompt). ${cpt
       ? `Rozmiary na kartach używają średniej tej sesji: ${cpt} znaków na token.` : 'Rozmiary na kartach są szacunkowe, ok. 4 znaki na token.'}`,
     systemPrompt: 'Prompt systemowy', charsN: x => `${x} znaków`, toolDefs: 'Definicje narzędzi', builtIn: 'Wbudowane',
@@ -151,7 +151,7 @@ TEXT.pl = (() => {
     deferredSub: (n, loaded) => `znane z nazwy: ${n}, wczytane: ${loaded}`, failedX: x => `${x} – błąd`,
     deferredNote: 'W kontekście są tylko nazwy; definicja narzędzia wczytuje się przez ToolSearch, gdy jest potrzebna. Wyróżnione nazwy zostały wczytane.',
     failedConnect: 'błąd połączenia', loadedN: n => `wczytane: ${n}`, loadedLc: 'wczytane', nameOnly: 'tylko nazwa, wczytuje się na żądanie',
-    cu: {
+    usageCategories: {
       sys: 'Prompt systemowy', tools: 'Narzędzia systemowe', mcpt: 'Narzędzia MCP', mcpi: 'Instrukcje serwerów MCP', mem: 'Pliki pamięci', skills: 'Umiejętności',
       agents: 'Typy subagentów', defer: 'Nazwy odroczonych narzędzi', msgs: 'Wiadomości', msgsAll: 'Wiadomości, prompt systemowy i narzędzia',
     },

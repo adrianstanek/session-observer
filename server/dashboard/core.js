@@ -1,11 +1,15 @@
 'use strict';
-// Session Observer dashboard — constants (icons, tool groups, event categories) and small helpers.
+// Session Observer dashboard — the chosen language, constants (icons, tool groups, event categories), and small
+// DOM and storage helpers.
 // ---------------------------------------------------------------- language
 // the text table every view reads (i18n.js and the i18n-<code>.js tables load before this file)
-const LANG = pickLang(), TX = textFor(LANG);
+const LANGUAGE = pickLanguage();
+const TEXT = textTableFor(LANGUAGE);
 // times in the chosen language, in the browser's regional variant of it when it has one (en-GB: 24 h, en-US: AM/PM)
-const TIME_LOCALE = (typeof navigator !== 'undefined' && (navigator.languages || []).find(l => String(l).toLowerCase().startsWith(LANG))) || LANG;
+const TIME_LOCALE = browserLanguages().find(tag => String(tag).toLowerCase().startsWith(LANGUAGE)) || LANGUAGE;
+
 // ---------------------------------------------------------------- constants
+// line icons in a 24×24 box, by tool group (and a few more)
 const ICONS = {
   you: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
   model: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
@@ -22,31 +26,33 @@ const ICONS = {
   core: '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>',
   turn: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/>',
 };
-const STATIONS = ['you', 'model', 'files', 'shell', 'git', 'mcp', 'network', 'browser', 'agents', 'skills', 'context', 'other']
-  .map(id => ({ id, label: TX.st[id] }));
-const ST = Object.fromEntries(STATIONS.map(s => [s.id, s]));
-const CATS = Object.fromEntries(['model', 'prompt', 'tool', 'skill', 'question', 'subagent', 'task', 'mcp', 'permission', 'error', 'notification',
-  'compact', 'context', 'lifecycle', 'env'].map(k => [k, TX.cat[k]]));
-const CAT_COLOR = { model: 'model', prompt: 'you', tool: 'files', skill: 'skills', question: 'you', subagent: 'agents', task: 'other', mcp: 'mcp', permission: 'git', error: 'err', notification: 'agents', compact: 'context', context: 'context', lifecycle: 'other', env: 'other' };
+// The tool groups ("stations" of the map): what an event works with. Each has an icon and a colour (--s-<id> in CSS).
+const TOOL_GROUPS = ['you', 'model', 'files', 'shell', 'git', 'mcp', 'network', 'browser', 'agents', 'skills', 'context', 'other']
+  .map(id => ({ id, label: TEXT.groups[id] }));
+const TOOL_GROUP_BY_ID = Object.fromEntries(TOOL_GROUPS.map(group => [group.id, group]));
+// event categories (set by the server), with their labels in the chosen language
+const CATEGORY_LABELS = Object.fromEntries(['model', 'prompt', 'tool', 'skill', 'question', 'subagent', 'task', 'mcp', 'permission',
+  'error', 'notification', 'compact', 'context', 'lifecycle', 'env'].map(category => [category, TEXT.categories[category]]));
+// the tool group whose colour a category's chip uses ('err' is the error colour)
+const CATEGORY_COLOR = {
+  model: 'model', prompt: 'you', tool: 'files', skill: 'skills', question: 'you', subagent: 'agents', task: 'other', mcp: 'mcp',
+  permission: 'git', error: 'err', notification: 'agents', compact: 'context', context: 'context', lifecycle: 'other', env: 'other',
+};
 // hidden from the Details list: MessageDisplay repeats the model's text, PostToolBatch repeats the tool rows
-const FEED_HIDE = new Set(['MessageDisplay', 'PostToolBatch']);
+const HIDDEN_IN_EVENT_LIST = new Set(['MessageDisplay', 'PostToolBatch']);
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'NotebookRead', 'Glob', 'Grep', 'LS']);
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'KillShell', 'KillBash', 'Monitor']);
+const SUBAGENT_CALL_TOOLS = new Set(['Agent', 'Task']); // the tool calls that start a subagent
 
 // ---------------------------------------------------------------- helpers
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const short = (s, n = 160) => { s = String(s ?? '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
-const dec = s => TX.dec === '.' ? String(s) : String(s).replace('.', TX.dec); // a decimal number in the language's own notation
-const nw = (n, k) => TX.count(n, TX.w[k](n)); // a count and its noun: nw(3, 'tool') → "3 tools" (the language sets the order)
-const fmtTime = ts => new Date(ts).toLocaleTimeString(TIME_LOCALE, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-const U = TX.u;
-const fmtDur = ms => ms == null || isNaN(ms) ? '' : ms < 1000 ? `${Math.round(ms)}${U.ms}` : ms < 60000 ? `${dec((ms / 1000).toFixed(1))}${U.s}` : ms < 3600000 ? `${Math.floor(ms / 60000)}${U.m} ${String(Math.round(ms % 60000 / 1000)).padStart(2, '0')}${U.s}` : `${Math.floor(ms / 3600000)}${U.h} ${String(Math.floor(ms % 3600000 / 60000)).padStart(2, '0')}${U.m}`;
-const fmtAgo = ts => { const ms = Date.now() - Date.parse(ts); if (ms < 60000) return TX.ago(`${Math.max(0, Math.round(ms / 1000))}${U.s}`); if (ms < 3600000) return TX.ago(`${Math.floor(ms / 60000)}${U.m}`); if (ms < 86400000) return TX.ago(`${Math.floor(ms / 3600000)}${U.h} ${Math.floor(ms % 3600000 / 60000)}${U.m}`); return TX.ago(`${Math.floor(ms / 86400000)}${U.d}`); };
-const fmtN = n => n >= 1e6 ? dec((n / 1e6).toFixed(2)) + 'M' : n >= 1e3 ? dec((n / 1e3).toFixed(1)) + 'k' : String(n ?? 0);
-const clean = s => String(s ?? '').replace(/<\/?[a-z][\w-]*(?:\s[^>]*)?>/gi, ' ').replace(/\s+/g, ' ').trim();
-const base = p => String(p || '').split(/[\\/]/).filter(Boolean).pop() || p || '';
-const spaced = s => String(s || '').replace(/_/g, ' '); // hook enum values (user_settings, add_dir…) as words
-const icon = (id, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
-const tms = ev => ev._t ?? (ev._t = Date.parse(ev.ts));
-const ls = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+const elementById = id => document.getElementById(id);
+const iconSvg = (id, className = 'ic') => `<svg class="${className}" viewBox="0 0 24 24">${ICONS[id] || ICONS.other}</svg>`;
+// an event's time in ms, parsed once
+const eventTime = event => event._t ?? (event._t = Date.parse(event.ts));
+const isSubagentCall = toolName => SUBAGENT_CALL_TOOLS.has(toolName);
+
+// localStorage that never throws (private windows, blocked storage)
+const storage = {
+  get(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch { /* ignore */ } },
+};

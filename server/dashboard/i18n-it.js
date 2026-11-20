@@ -1,21 +1,21 @@
 'use strict';
 // Session Observer dashboard — Italian (italiano).
-TEXT.it = (() => {
-  const w = (...a) => W('it', ...a);
+TRANSLATIONS.it = (() => {
+  const noun = (...forms) => pluralNoun('it', ...forms);
   return {
-    dec: ',',
-    count: (n, w) => `${n} ${w}`,
-    u: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' g' },
+    decimalSeparator: ',',
+    count: (number, noun) => `${number} ${noun}`,
+    units: { ms: ' ms', s: ' s', m: ' min', h: ' h', d: ' g' },
     ago: x => `${x} fa`,
-    w: {
-      tool: w('strumento', 'strumenti'), toolCall: w('chiamata a strumento', 'chiamate a strumenti'), call: w('chiamata', 'chiamate'),
-      step: w('passo', 'passi'), modelStep: w('passo del modello', 'passi del modello'), turn: w('turno', 'turni'), problem: w('problema', 'problemi'),
-      edit: w('modifica', 'modifiche'), read: w('lettura', 'letture'), run: w('esecuzione', 'esecuzioni'), program: w('programma', 'programmi'),
-      subagent: w('subagente', 'subagenti'), prompt: w('prompt', 'prompt'), skill: w('skill', 'skill'), plugin: w('plugin', 'plugin'),
-      mcpServer: w('server MCP', 'server MCP'), item: w('elemento', 'elementi'),
+    nouns: {
+      tool: noun('strumento', 'strumenti'), toolCall: noun('chiamata a strumento', 'chiamate a strumenti'), call: noun('chiamata', 'chiamate'),
+      step: noun('passo', 'passi'), modelStep: noun('passo del modello', 'passi del modello'), turn: noun('turno', 'turni'), problem: noun('problema', 'problemi'),
+      edit: noun('modifica', 'modifiche'), read: noun('lettura', 'letture'), run: noun('esecuzione', 'esecuzioni'), program: noun('programma', 'programmi'),
+      subagent: noun('subagente', 'subagenti'), prompt: noun('prompt', 'prompt'), skill: noun('skill', 'skill'), plugin: noun('plugin', 'plugin'),
+      mcpServer: noun('server MCP', 'server MCP'), item: noun('elemento', 'elementi'),
     },
-    st: { you: 'Tu', model: 'Modello', files: 'File', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Rete', browser: 'Browser', agents: 'Agenti', skills: 'Skill', context: 'Contesto', other: 'Altro' },
-    cat: {
+    groups: { you: 'Tu', model: 'Modello', files: 'File', shell: 'Shell', git: 'Git', mcp: 'MCP', network: 'Rete', browser: 'Browser', agents: 'Agenti', skills: 'Skill', context: 'Contesto', other: 'Altro' },
+    categories: {
       model: 'Modello', prompt: 'Prompt', tool: 'Strumento', skill: 'Skill', question: 'Domanda', subagent: 'Subagente',
       task: 'Attività', mcp: 'MCP', permission: 'Permesso', error: 'Errore', notification: 'Avviso',
       compact: 'Compattazione', context: 'Contesto', lifecycle: 'Ciclo di vita', env: 'Ambiente',
@@ -47,7 +47,7 @@ TEXT.it = (() => {
     expandTurn: 'Espandi questo turno', collapseTurn: 'Comprimi questo turno', expand: 'Espandi', collapse: 'Comprimi',
     noOutput: 'nessun output', input: 'Input', output: 'Output', error: 'Errore', prompt: 'Prompt',
 
-    ev: {
+    event: {
       calls: l => `chiama ${l}`, replied: 'ha risposto', thought: 'ha ragionato', thinking: 'ragionamento', expanded: 'Espanso',
       answered: 'risposta', failed: 'fallito', permission: 'Permesso', asked: 'richiesto', denied: 'Negato', deniedLc: 'negato',
       message: 'Messaggio', turn: 'Turno', done: 'fatto', turnFailed: 'Turno fallito', turnFailedLc: 'turno fallito',
@@ -59,11 +59,11 @@ TEXT.it = (() => {
       startedSession: 'avviata', createdWorktree: 'creato', changedConfig: 'modificata',
     },
 
-    sess: { ended: 'terminata', working: 'al lavoro', live: 'attiva', inactive: 'inattiva' },
+    sessionState: { ended: 'terminata', working: 'al lavoro', live: 'attiva', inactive: 'inattiva' },
     allActivity: 'Tutta l\'attività', everySession: 'tutte le sessioni insieme', sessions: 'Sessioni', lastLbl: 'ultimo:',
     ctxWindow: 'finestra di contesto', ctxShort: 'ctx', noSessions: 'Nessuna sessione in questo periodo.',
 
-    tile: {
+    tiles: {
       sessions: 'Sessioni', turns: 'Turni', toolCalls: 'Chiamate a strumenti', modelSteps: 'Passi del modello', problems: 'Problemi',
       failedOrDenied: 'falliti o negati', outputTokens: 'Token in uscita', subagents: 'Subagenti', duration: 'Durata',
       context: 'Contesto', tokens: 'Token',
@@ -109,20 +109,20 @@ TEXT.it = (() => {
     final: 'finale', partX: x => `parte ${x}`, configChanged: 'Configurazione modificata', dirAdded: 'Cartella aggiunta', viaX: x => `tramite ${x}`,
     worktreeCreated: 'Worktree creato', worktreeRemoved: 'Worktree rimosso', cwdChanged: 'Cartella di lavoro cambiata',
     switchingModel: 'Cambio di modello', modelSwitched: 'Modello cambiato', resendCost: x => `≈ ${x} $ per reinviare il contesto`, yes: 'sì', no: 'no',
-    kv: {
+    fields: {
       file: 'file', replaceAll: 'sostituisci tutto', description: 'descrizione', type: 'tipo', model: 'modello', lines: 'righe', status: 'stato',
       agent: 'agente', async: 'asincrono', tasks: 'attività', crons: 'cron', transcript: 'trascrizione', directory: 'cartella', path: 'percorso',
       from: 'da', to: 'a', requested: 'richiesto', contextTokens: 'token di contesto', cacheWarm: 'cache calda', cost: 'costo',
     },
     linesOf: (a, b, n) => `${a}–${b} di ${n}`, interruptedByUser: 'interrotto manualmente', interrupted: 'interrotto',
     applied: 'applicato', appliedChanged: 'applicato, poi modificato a mano', noAnswers: 'nessuna risposta',
-    note: {
+    notificationTypes: {
       idle_prompt: 'in attesa di una tua risposta', permission_prompt: 'serve il tuo permesso', auth_success: 'accesso effettuato', auth_storage_failure: 'impossibile salvare l\'accesso',
       elicitation_dialog: 'un server MCP chiede dei dati', elicitation_url_dialog: 'un server MCP vuole che tu apra un link', elicitation_complete: 'dati per MCP pronti', elicitation_response: 'dati per MCP inviati',
       agent_needs_input: 'un agente ha bisogno di una tua risposta', agent_completed: 'un agente ha finito', plugin_notification: 'da un plugin',
       quota_auto_resume_fired: 'ripreso dopo il limite di utilizzo', quota_auto_resume_stale: 'ripresa automatica saltata (scaduta)', quota_auto_resume_disabled: 'la ripresa automatica è disattivata',
     },
-    stopWhy: { tool_use: 'si è fermato per chiamare strumenti', end_turn: 'ha finito la risposta', max_tokens: 'ha raggiunto il limite di token in uscita', stop_sequence: 'ha incontrato una sequenza di stop', pause_turn: 'ha messo in pausa un turno lungo', refusal: 'si è rifiutato' },
+    stopReasons: { tool_use: 'si è fermato per chiamare strumenti', end_turn: 'ha finito la risposta', max_tokens: 'ha raggiunto il limite di token in uscita', stop_sequence: 'ha incontrato una sequenza di stop', pause_turn: 'ha messo in pausa un turno lungo', refusal: 'si è rifiutato' },
     noStopReason: 'nessun motivo di stop (sta ancora scrivendo, o è una riga intermedia)',
     toolsAsked: 'Strumenti richiesti', matchedByOrder: '(abbinati per ordine; log più vecchio)', noHookEvent: 'nessun evento di hook',
     toolNotLogged: 'Ha chiesto uno strumento, ma la chiamata non è ancora nel log.', whatItWrote: 'Cosa ha scritto',
@@ -136,7 +136,7 @@ TEXT.it = (() => {
     sentModel: 'inviato al modello', notSent: 'non inviato', result: 'risultato', toolResult: 'risultato dello strumento',
     ownContext: x => `contesto proprio, ${x}`, afterCompaction: 'Dopo la compattazione', beforeFirstPrompt: 'Prima del primo prompt',
     showTurnInDetails: 'Mostra questo turno nei Dettagli', inDetails: 'nei Dettagli', detailsGo: 'Dettagli ›',
-    instr: { User: 'globale, ~/.claude', Project: 'progetto', Local: 'locale, fuori dal repository', AutoMem: 'memoria automatica', Managed: 'criterio gestito' },
+    instructionKinds: { User: 'globale, ~/.claude', Project: 'progetto', Local: 'locale, fuori dal repository', AutoMem: 'memoria automatica', Managed: 'criterio gestito' },
     measuredNote: (first, cpt) => `Misurato: la prima richiesta era di ${first} token (prompt di sistema, strumenti, istruzioni, elenchi e il primo prompt). ${cpt
       ? `Le dimensioni sulle schede usano la media di questa sessione: ${cpt} caratteri per token.` : 'Le dimensioni sulle schede sono stime a circa 4 caratteri per token.'}`,
     systemPrompt: 'Prompt di sistema', charsN: x => `${x} caratteri`, toolDefs: 'Definizioni degli strumenti', builtIn: 'Integrati',
@@ -149,7 +149,7 @@ TEXT.it = (() => {
     deferredSub: (n, loaded) => `${n} noti per nome, ${loaded} caricati`, failedX: x => `${x} falliti`,
     deferredNote: 'Nel contesto ci sono solo i nomi; la definizione di uno strumento si carica tramite ToolSearch quando serve. I nomi evidenziati sono stati caricati.',
     failedConnect: 'connessione fallita', loadedN: n => `${n} caricati`, loadedLc: 'caricato', nameOnly: 'solo il nome, si carica quando serve',
-    cu: {
+    usageCategories: {
       sys: 'Prompt di sistema', tools: 'Strumenti di sistema', mcpt: 'Strumenti MCP', mcpi: 'Istruzioni dei server MCP', mem: 'File di memoria', skills: 'Skill',
       agents: 'Tipi di subagente', defer: 'Nomi degli strumenti differiti', msgs: 'Messaggi', msgsAll: 'Messaggi, prompt di sistema e strumenti',
     },

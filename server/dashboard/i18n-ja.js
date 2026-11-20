@@ -1,19 +1,19 @@
 'use strict';
 // Session Observer dashboard — Japanese (日本語). Counts read as label then number ("ツール 3"), as Japanese dashboards do.
-TEXT.ja = (() => {
-  const w = x => W('ja', x);
+TRANSLATIONS.ja = (() => {
+  const noun = word => pluralNoun('ja', word);
   return {
-    dec: '.',
-    count: (n, w) => `${w} ${n}`,
-    u: { ms: 'ms', s: '秒', m: '分', h: '時間', d: '日' },
+    decimalSeparator: '.',
+    count: (number, noun) => `${noun} ${number}`,
+    units: { ms: 'ms', s: '秒', m: '分', h: '時間', d: '日' },
     ago: x => `${x}前`,
-    w: {
-      tool: w('ツール'), toolCall: w('ツール呼び出し'), call: w('呼び出し'), step: w('ステップ'), modelStep: w('モデルステップ'),
-      turn: w('ターン'), problem: w('問題'), edit: w('編集'), read: w('読み取り'), run: w('実行'), program: w('プログラム'),
-      subagent: w('サブエージェント'), prompt: w('プロンプト'), skill: w('スキル'), plugin: w('プラグイン'), mcpServer: w('MCP サーバー'), item: w('項目'),
+    nouns: {
+      tool: noun('ツール'), toolCall: noun('ツール呼び出し'), call: noun('呼び出し'), step: noun('ステップ'), modelStep: noun('モデルステップ'),
+      turn: noun('ターン'), problem: noun('問題'), edit: noun('編集'), read: noun('読み取り'), run: noun('実行'), program: noun('プログラム'),
+      subagent: noun('サブエージェント'), prompt: noun('プロンプト'), skill: noun('スキル'), plugin: noun('プラグイン'), mcpServer: noun('MCP サーバー'), item: noun('項目'),
     },
-    st: { you: 'あなた', model: 'モデル', files: 'ファイル', shell: 'シェル', git: 'Git', mcp: 'MCP', network: 'ネットワーク', browser: 'ブラウザ', agents: 'エージェント', skills: 'スキル', context: 'コンテキスト', other: 'その他' },
-    cat: {
+    groups: { you: 'あなた', model: 'モデル', files: 'ファイル', shell: 'シェル', git: 'Git', mcp: 'MCP', network: 'ネットワーク', browser: 'ブラウザ', agents: 'エージェント', skills: 'スキル', context: 'コンテキスト', other: 'その他' },
+    categories: {
       model: 'モデル', prompt: 'プロンプト', tool: 'ツール', skill: 'スキル', question: '質問', subagent: 'サブエージェント',
       task: 'タスク', mcp: 'MCP', permission: '権限', error: 'エラー', notification: 'お知らせ',
       compact: '圧縮', context: 'コンテキスト', lifecycle: 'ライフサイクル', env: '環境',
@@ -45,7 +45,7 @@ TEXT.ja = (() => {
     expandTurn: 'このターンを展開', collapseTurn: 'このターンを折りたたむ', expand: '展開', collapse: '折りたたむ',
     noOutput: '出力なし', input: '入力', output: '出力', error: 'エラー', prompt: 'プロンプト',
 
-    ev: {
+    event: {
       calls: l => `${l} を呼び出し`, replied: '返答', thought: '思考した', thinking: '思考', expanded: '展開',
       answered: '回答', failed: '失敗', permission: '権限', asked: '確認', denied: '拒否', deniedLc: '拒否',
       message: 'メッセージ', turn: 'ターン', done: '完了', turnFailed: 'ターン失敗', turnFailedLc: 'ターン失敗',
@@ -57,11 +57,11 @@ TEXT.ja = (() => {
       startedSession: '開始', createdWorktree: '作成', changedConfig: '変更',
     },
 
-    sess: { ended: '終了', working: '作業中', live: 'アクティブ', inactive: '非アクティブ' },
+    sessionState: { ended: '終了', working: '作業中', live: 'アクティブ', inactive: '非アクティブ' },
     allActivity: 'すべてのアクティビティ', everySession: '全セッションの合計', sessions: 'セッション', lastLbl: '直近:',
     ctxWindow: 'コンテキストウィンドウ', ctxShort: 'ctx', noSessions: 'この期間のセッションはありません。',
 
-    tile: {
+    tiles: {
       sessions: 'セッション', turns: 'ターン', toolCalls: 'ツール呼び出し', modelSteps: 'モデルステップ', problems: '問題',
       failedOrDenied: '失敗または拒否', outputTokens: '出力トークン', subagents: 'サブエージェント', duration: '所要時間',
       context: 'コンテキスト', tokens: 'トークン',
@@ -107,20 +107,20 @@ TEXT.ja = (() => {
     final: '最終', partX: x => `パート ${x}`, configChanged: '設定変更', dirAdded: 'ディレクトリ追加', viaX: x => `${x} 経由`,
     worktreeCreated: 'ワークツリー作成', worktreeRemoved: 'ワークツリー削除', cwdChanged: '作業ディレクトリ変更',
     switchingModel: 'モデル切替中', modelSwitched: 'モデル切替済み', resendCost: x => `コンテキスト再送に約 $${x}`, yes: 'はい', no: 'いいえ',
-    kv: {
+    fields: {
       file: 'ファイル', replaceAll: 'すべて置換', description: '説明', type: '種類', model: 'モデル', lines: '行', status: '状態',
       agent: 'エージェント', async: '非同期', tasks: 'タスク', crons: 'cron', transcript: 'トランスクリプト', directory: 'ディレクトリ', path: 'パス',
       from: '変更前', to: '変更後', requested: '要求', contextTokens: 'コンテキストトークン', cacheWarm: 'キャッシュ有効', cost: 'コスト',
     },
     linesOf: (a, b, n) => `${a}–${b} / ${n}`, interruptedByUser: 'ユーザーが中断', interrupted: '中断',
     applied: '適用済み', appliedChanged: '適用後、ユーザーが変更', noAnswers: '回答なし',
-    note: {
+    notificationTypes: {
       idle_prompt: '入力を待っています', permission_prompt: '許可が必要です', auth_success: 'サインイン完了', auth_storage_failure: 'サインイン情報を保存できませんでした',
       elicitation_dialog: 'MCP サーバーが入力を求めています', elicitation_url_dialog: 'MCP サーバーがリンクを開くよう求めています', elicitation_complete: 'MCP への入力完了', elicitation_response: 'MCP への入力に回答',
       agent_needs_input: 'エージェントが入力を求めています', agent_completed: 'エージェントが完了しました', plugin_notification: 'プラグインから',
       quota_auto_resume_fired: '使用制限の後に再開', quota_auto_resume_stale: '自動再開をスキップ（期限切れ）', quota_auto_resume_disabled: '自動再開はオフです',
     },
-    stopWhy: { tool_use: 'ツールを呼ぶために停止', end_turn: '返答を完了', max_tokens: '出力トークンの上限に到達', stop_sequence: '停止シーケンスに到達', pause_turn: '長いターンを一時停止', refusal: '拒否' },
+    stopReasons: { tool_use: 'ツールを呼ぶために停止', end_turn: '返答を完了', max_tokens: '出力トークンの上限に到達', stop_sequence: '停止シーケンスに到達', pause_turn: '長いターンを一時停止', refusal: '拒否' },
     noStopReason: '停止理由なし（書き込み中、または途中の行）',
     toolsAsked: '要求したツール', matchedByOrder: '（順番で対応付け。古いログ）', noHookEvent: 'フックイベントなし',
     toolNotLogged: 'ツールを要求しましたが、呼び出しはまだログにありません。', whatItWrote: '書いた内容',
@@ -134,7 +134,7 @@ TEXT.ja = (() => {
     sentModel: 'モデルに送信', notSent: '未送信', result: '結果', toolResult: 'ツールの結果',
     ownContext: x => `独自のコンテキスト、${x}`, afterCompaction: '圧縮の後', beforeFirstPrompt: '最初のプロンプトの前',
     showTurnInDetails: 'このターンを詳細に表示', inDetails: '詳細に表示中', detailsGo: '詳細 ›',
-    instr: { User: 'グローバル、~/.claude', Project: 'プロジェクト', Local: 'ローカル、未コミット', AutoMem: '自動メモリ', Managed: '管理ポリシー' },
+    instructionKinds: { User: 'グローバル、~/.claude', Project: 'プロジェクト', Local: 'ローカル、未コミット', AutoMem: '自動メモリ', Managed: '管理ポリシー' },
     measuredNote: (first, cpt) => `実測: 最初のリクエストは ${first} トークンでした（システムプロンプト、ツール、指示、一覧、最初のプロンプト）。${cpt
       ? `カードのサイズはこのセッションの平均 ${cpt} 文字/トークンで計算しています。` : 'カードのサイズは約 4 文字/トークンでの推定です。'}`,
     systemPrompt: 'システムプロンプト', charsN: x => `${x} 文字`, toolDefs: 'ツール定義', builtIn: '組み込み',
@@ -147,7 +147,7 @@ TEXT.ja = (() => {
     deferredSub: (n, loaded) => `名前のみ既知 ${n}、読み込み済み ${loaded}`, failedX: x => `${x} が失敗`,
     deferredNote: 'コンテキストにあるのは名前だけです。ツールの定義は必要なときに ToolSearch で読み込まれます。強調表示の名前は読み込み済みです。',
     failedConnect: '接続失敗', loadedN: n => `読み込み済み ${n}`, loadedLc: '読み込み済み', nameOnly: '名前のみ、必要時に読み込み',
-    cu: {
+    usageCategories: {
       sys: 'システムプロンプト', tools: 'システムツール', mcpt: 'MCP ツール', mcpi: 'MCP サーバーの指示', mem: 'メモリファイル', skills: 'スキル',
       agents: 'サブエージェントの種類', defer: '遅延ツールの名前', msgs: 'メッセージ', msgsAll: 'メッセージ、システムプロンプト、ツール',
     },
