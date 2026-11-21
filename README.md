@@ -108,7 +108,32 @@ On first use, open /hooks in Codex and trust the Session Observer hooks. The das
 - **The sessions are not merged.** Claude Code and Codex sessions share a dashboard, but each keeps its own transcript and session identity.
 - **Codex hooks need trust.** Trust them once in Codex with /hooks. The CLI script preserves your other hooks, but its paths point to this clone.
 - **Context sizes are estimates.** Transcript formats and token counts differ by agent. Codex's rollout format is undocumented and may change; encrypted reasoning text cannot be recovered by the dashboard.
-- **The server is local.** It binds to 127.0.0.1 by default. The event log contains prompts, commands and tool output in plain text.
+
+## Privacy and stored data
+
+Session Observer writes hook events to `~/.claude/session-observer/events.jsonl`. This plain-text file can contain prompts, commands and tool output. The server binds to `127.0.0.1` by default and reads Claude transcripts or Codex rollouts locally when needed. Treat the event log as sensitive.
+
+To clear Observer's event history, stop the server and delete `events.jsonl` from the configured data directory (`~/.claude/session-observer` by default). This does not delete the original Claude or Codex transcripts.
+
+## Troubleshooting
+
+- **No sessions appear:** start a new Claude Code or Codex session after installing. For Codex, open `/hooks` and trust Session Observer; for Codex CLI, rerun `node scripts/setup-codex.js` if you moved the repository.
+- **The dashboard does not open:** start it with `node server/server.js`. If port 4777 is already in use, start it on another port:
+
+  ~~~powershell
+  $env:OBSERVER_PORT=4778; node server/server.js
+  ~~~
+
+  In Command Prompt, use `set OBSERVER_PORT=4778&& node server/server.js`.
+- **Events appear, but transcript details are missing:** transcript and context views read the source app's local transcript or rollout. Confirm the file is available to the same user running the dashboard.
+
+## Uninstall
+
+- **Claude Code:** open `/plugin` and uninstall Session Observer from the installed plugins.
+- **Codex desktop:** remove Session Observer from the app's plugin manager.
+- **Codex CLI:** from the repository, run `node scripts/setup-codex.js --remove` before deleting or moving the clone. This removes only Session Observer hooks and keeps your other hooks.
+
+To remove saved Observer events as well, stop the server and delete `events.jsonl` as described above.
 
 ## Use
 
