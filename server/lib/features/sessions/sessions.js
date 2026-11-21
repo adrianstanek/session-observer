@@ -20,10 +20,10 @@ function newSession(id) {
     usage: { input: 0, output: 0, cache_read: 0, cache_write: 0, turns: 0, models: {} },
     context: null,
     needsYou: [],     // what it waits on you for: [{ kind: permission | question | mcp, tool, text, since, agentId }]
-    subagentList: [], // [{ id, type, description, started, ended }]
+    subagentList: [], // [{ id, type, description, background, started, ended }]
     events: [],
     pendingToolStarts: new Map(), // tool_use_id → when the call started (ms), until its result arrives
-    subagentDescriptionsWaiting: [], // what each subagent call asked, until its SubagentStart
+    subagentDescriptionsWaiting: [], // what each subagent call asked, and whether it runs in the background, until its SubagentStart
   };
 }
 

@@ -2,10 +2,17 @@
 // MCP server asking for input. Each wait ends when its own answer arrives (the tool's result, the elicitation's
 // result), or when the turn ends one way or another (Stop, an interrupt, a new prompt, the session ending).
 // A call refused at its prompt, and an interrupt, send no hook at all: the transcript shows them (endWaitsFromTranscript).
+//
+// Claude Code's PermissionRequest carries no tool_use_id. Such a permission is tied to the call it asks about: the
+// latest PreToolUse of the same agent, tool and input that has no result yet. Its wait then ends with that call's
+// result, and another call that finishes meanwhile (one run in parallel) leaves it alone. A permission with no such
+// call gets a key of its own from its tool and input, and ends with a result of that same tool and input.
 'use strict';
+const crypto = require('crypto');
 const { QUESTION_TOOLS } = require('./event-categories');
 
 const WAITS_KEPT_MAX = 10;
+const CALLS_KEPT_MAX = 50;
 const TEXT_MAX = 300;
 const ENDS_EVERY_WAIT = new Set(['UserPromptSubmit', 'Stop', 'StopFailure', 'SessionEnd']);
 const ANSWERS_A_TOOL = new Set(['PostToolUse', 'PostToolUseFailure', 'PermissionDenied']);
@@ -32,6 +39,40 @@ function addWait(session, wait) {
 
 const removeWaits = (session, matches) => { session.needsYou = session.needsYou.filter(wait => !matches(wait)); };
 
+// the same input gives the same key, whatever the order of its fields
+function stableJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + stableJson(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value ?? null);
+}
+const callKey = (agentId, tool, input) =>
+  crypto.createHash('sha1').update(stableJson([agentId ?? null, tool || null, input ?? null])).digest('hex').slice(0, 16);
+
+// calls without a result yet, per session, so a permission asked without a call id can find its call
+const openCalls = new WeakMap(); // session → [{ id, key }]
+const openCallsOf = session => {
+  if (!openCalls.has(session)) openCalls.set(session, []);
+  return openCalls.get(session);
+};
+
+function noteOpenCall(session, data) {
+  const calls = openCallsOf(session);
+  calls.push({ id: data.tool_use_id, key: callKey(data.agent_id, data.tool_name, data.tool_input) });
+  if (calls.length > CALLS_KEPT_MAX) calls.splice(0, calls.length - CALLS_KEPT_MAX);
+}
+
+const closeOpenCall = (session, toolUseId) => openCalls.set(session, openCallsOf(session).filter(call => call.id !== toolUseId));
+
+// the key of a permission's wait: its own call id, the id of the call it asks about, or its tool and input
+function permissionKey(session, data) {
+  if (data.tool_use_id) return 'tool:' + data.tool_use_id;
+  const key = callKey(data.agent_id, data.tool_name, data.tool_input);
+  const call = openCallsOf(session).findLast(candidate => candidate.key === key);
+  return call ? 'tool:' + call.id : 'permission:' + key;
+}
+
 function waitFields(event, data) {
   return { since: event.ts, agentId: data.agent_id ?? null, agentType: data.agent_type ?? null };
 }
@@ -46,8 +87,10 @@ function trackNeedsYou(session, event, data) {
   }
   if (ENDS_EVERY_WAIT.has(name)) {
     session.needsYou = [];
+    if (name === 'SessionEnd') openCalls.delete(session);
     return;
   }
+  if (name === 'PreToolUse' && toolUseId) noteOpenCall(session, data);
   if (name === 'SubagentStop' && data.agent_id != null) {
     removeWaits(session, wait => wait.agentId === data.agent_id);
     return;
@@ -56,7 +99,7 @@ function trackNeedsYou(session, event, data) {
     addWait(session, { key: 'tool:' + (toolUseId || event.seq), kind: 'question', tool: data.tool_name, text: clip(questionText(data.tool_input)), ...waitFields(event, data) });
   } else if (name === 'PermissionRequest' && !QUESTION_TOOLS.has(data.tool_name)) {
     // (Claude Code asks permission for AskUserQuestion too: its question is already the wait)
-    addWait(session, { key: 'tool:' + (toolUseId || 'permission'), kind: 'permission', tool: data.tool_name || null, text: clip(callArgument(data.tool_input)), ...waitFields(event, data) });
+    addWait(session, { key: permissionKey(session, data), kind: 'permission', tool: data.tool_name || null, text: clip(callArgument(data.tool_input)), ...waitFields(event, data) });
   } else if (name === 'Elicitation') {
     addWait(session, { key: 'elicitation:' + (data.server_name || ''), kind: 'mcp', tool: data.server_name || null, text: clip(data.message), ...waitFields(event, data) });
   } else if (name === 'ElicitationResult') {
@@ -65,11 +108,13 @@ function trackNeedsYou(session, event, data) {
     // Claude Code's own "needs your permission" notice, for when no PermissionRequest came first
     addWait(session, { key: 'notification', kind: 'permission', tool: null, text: clip(data.message), ...waitFields(event, data) });
   } else if (ANSWERS_A_TOOL.has(name)) {
-    // a tool's result answers its own wait, and a permission asked without a call id (the permission was given or
-    // refused: the call has finished)
+    // a tool's result answers its own wait (the permission was given or refused: the call has finished), and a
+    // permission asked for this tool and input with no call to tie it to
     const sameAgent = wait => wait.agentId === (data.agent_id ?? null);
-    removeWaits(session, wait => (toolUseId && wait.key === 'tool:' + toolUseId)
-      || ((wait.key === 'tool:permission' || wait.key === 'notification') && sameAgent(wait)));
+    const ownKey = 'permission:' + callKey(data.agent_id, data.tool_name, data.tool_input);
+    if (toolUseId) closeOpenCall(session, toolUseId);
+    removeWaits(session, wait => (toolUseId && wait.key === 'tool:' + toolUseId) || wait.key === ownKey
+      || (wait.key === 'notification' && sameAgent(wait)));
   }
 }
 
@@ -84,7 +129,7 @@ function endWaitsFromTranscript(session, { ts, toolUseId = null, agentId = null,
     return;
   }
   removeWaits(session, wait => beganBefore(wait) && ((toolUseId && wait.key === 'tool:' + toolUseId)
-    || ((wait.key === 'tool:permission' || wait.key === 'notification') && sameAgent(wait))));
+    || (wait.key === 'notification' && sameAgent(wait))));
 }
 
 module.exports = { trackNeedsYou, endWaitsFromTranscript };

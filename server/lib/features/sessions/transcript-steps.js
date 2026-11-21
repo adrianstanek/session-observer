@@ -19,12 +19,14 @@ const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking 
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
 const READ_DELAY_MS = 700;            // a burst of hook events triggers one read
 const WAITING_READ_MS = 1500;         // while a session waits on you: no hook may come, so the transcript is read again
+const WAITING_READ_IDLE_MAX_MS = 30 * 60000; // ...until neither a hook nor the transcript has shown anything for this long
 const INTERRUPTED = '[Request interrupted by user'; // the line Claude Code writes when you interrupt or refuse a call
 
 const transcriptTails = new Map();    // transcript file → FileTail
 const seenMessageIds = new Map();     // session id → Set(message id)
 const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
 const scheduledReads = new Map();     // session id → timer
+const transcriptWrittenAt = new Map(); // session id → the newest line's timestamp read from its transcripts (ms)
 
 const readsTranscript = session => !!session.transcript_path;
 const isCodex = session => session.agent === CODEX;
@@ -248,6 +250,12 @@ function readTranscriptRow(session, row, isSubagentFile, seen, fresh) {
   ingestAll(texts, fresh);
 }
 
+// (the line's own time, not the time it was read: a restart reads old transcripts again, and they are no sign of life)
+function noteTranscriptTime(session, row) {
+  const writtenAt = Date.parse(row?.timestamp);
+  if (writtenAt > (transcriptWrittenAt.get(session.id) || 0)) transcriptWrittenAt.set(session.id, writtenAt);
+}
+
 function readTranscripts(session) {
   if (!readsTranscript(session)) return;
   const seen = seenIdsOf(session.id);
@@ -257,19 +265,29 @@ function readTranscripts(session) {
       if (!line) continue;
       let row;
       try { row = JSON.parse(line); } catch { continue; }
+      noteTranscriptTime(session, row);
       if (isCodex(session)) ingestAll(codexRolloutTexts(session, row, id => stepByMessageId.get(id)), fresh);
       else readTranscriptRow(session, row, isSubagent, seen, fresh);
     }
   }
   for (const event of fresh) broadcast('event', event);
   broadcast('session', sessionSummary(session));
-  if (session.needsYou.length && !session.ended) scheduleTranscriptRead(session, WAITING_READ_MS);
+  scheduleReread(session);
+}
+
+// a call refused at its prompt sends no hook: the transcript is read again while the session waits on you, until it
+// has gone quiet (a session closed while it waits sends nothing more, and must not be read forever)
+function scheduleReread(session) {
+  if (session.ended || !session.needsYou.length) return;
+  const lastSign = Math.max(Date.parse(session.last) || 0, transcriptWrittenAt.get(session.id) || 0);
+  if (Date.now() - lastSign <= WAITING_READ_IDLE_MAX_MS) scheduleTranscriptRead(session, WAITING_READ_MS);
 }
 
 function resetTranscriptState() {
   seenMessageIds.clear();
   stepByMessageId.clear();
   transcriptTails.clear();
+  transcriptWrittenAt.clear();
   resetCodexSteps();
   resetCodexRolloutTexts();
 }
