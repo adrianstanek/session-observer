@@ -17,6 +17,15 @@ async function deleteSessionFromDashboard(button) {
   }
 }
 
+async function loadOlderSessions(button) {
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/history/older', { method: 'POST' });
+    if (response.ok) state.history = await response.json(); // the server also sends reset, which reloads the sessions
+  } catch { /* server down */ }
+  button.disabled = false;
+}
+
 function initSessionsControls() {
   elementById('sessions').onclick = event => {
     const deleteButton = event.target.closest('[data-delete-session]');
@@ -25,6 +34,8 @@ function initSessionsControls() {
       event.stopPropagation();
       return deleteSessionFromDashboard(deleteButton);
     }
+    const olderButton = event.target.closest('[data-load-older]');
+    if (olderButton) return loadOlderSessions(olderButton);
     const card = event.target.closest('.card');
     if (card) selectScope(card.dataset.id);
   };

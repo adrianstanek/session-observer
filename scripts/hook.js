@@ -86,8 +86,9 @@ async function main() {
   };
 
   // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
-  fs.mkdirSync(SESSION_LOG_DIR, { recursive: true, mode: 0o700 });
-  const logFile = sessionLogPath(SESSION_LOG_DIR, event.session_id);
+  // one folder per UTC day, one file per session in it
+  const logFile = sessionLogPath(SESSION_LOG_DIR, event.session_id, event.ts);
+  fs.mkdirSync(path.dirname(logFile), { recursive: true, mode: 0o700 });
   fs.appendFileSync(logFile, JSON.stringify(event) + '\n', { mode: 0o600 });
 
   if (event.event === 'SessionStart') await ensureServer();

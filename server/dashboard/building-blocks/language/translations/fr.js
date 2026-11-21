@@ -34,6 +34,8 @@ TRANSLATIONS.fr = (() => {
     clearLog: 'Vider le journal', clearLogTitle: 'Supprimer le journal d’événements local', clearConfirm: 'Supprimer tous les événements enregistrés ?',
     deleteSessionTitle: 'Supprimer cette session et ses données enregistrées',
     deleteSessionConfirm: name => `Supprimer « ${name} » et ses données enregistrées dans Session Observer ? Le transcript original de l’application sera conservé. Cette action est irréversible.`,
+    loadOlderSessions: day => `Charger les sessions avant le ${day}`,
+    loadOlderTitle: 'Des jours plus anciens sont enregistrés mais pas encore chargés',
     range: 'Période', range1h: 'dernière heure', range6h: '6 dernières h', range24h: '24 dernières h', range7d: '7 derniers jours', rangeAll: 'tout',
     search: 'Rechercher', searchPh: 'prompts, réponses, commandes, chemins, erreurs…',
     group: 'Groupe d’outils', groupTitle: 'Quelle partie de la carte : Fichiers, Shell, Git, MCP…', allGroups: 'tous les groupes', agent: 'Agent', allAgents: 'tous les agents', agentTitle: 'Afficher les sessions de Claude Code, de Codex ou des deux',

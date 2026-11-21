@@ -61,6 +61,13 @@ function sessionCardHtml(session) {
       </div>`;
 }
 
+// older day folders stay on disk until asked for
+function olderSessionsHtml() {
+  const { loadedFrom, olderDays } = state.history;
+  if (!loadedFrom || !olderDays) return '';
+  return `<button class="load-older" type="button" data-load-older title="${escapeHtml(TEXT.loadOlderTitle)}">${escapeHtml(TEXT.loadOlderSessions(loadedFrom))}</button>`;
+}
+
 function renderSessions() {
   // the agent filter shows once there is more than one agent to choose from (or one is chosen)
   elementById('agentFilter').style.display = seesSeveralAgents() || state.agent ? '' : 'none';
@@ -72,7 +79,7 @@ function renderSessions() {
       <div class="meta">${escapeHtml(TEXT.everySession)}</div>
     </div>
     <div class="sect">${escapeHtml(TEXT.sessions)} <span>${sessions.length}</span></div>
-    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>`;
+    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>${olderSessionsHtml()}`;
   panel.scrollTop = scrollTop;
   renderSessionHoverCard(); // the list was rebuilt: refresh (or hide) the hover card
 }

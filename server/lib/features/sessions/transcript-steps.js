@@ -25,7 +25,6 @@ const transcriptTails = new Map();    // transcript file → FileTail
 const seenMessageIds = new Map();     // session id → Set(message id)
 const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
 const scheduledReads = new Map();     // session id → timer
-let eventSink = () => {};
 
 const readsTranscript = session => !!session.transcript_path;
 const isCodex = session => session.agent === CODEX;
@@ -37,7 +36,6 @@ function ingestEvent(event) {
   const isCodexStep = isCodexModelRequest(event);
   if (isCodexStep) toCodexModelStep(event);
   const session = ingest(event);
-  if (event.synthetic) eventSink(event);
   if (isCodexStep) {
     addCodexUsage(session, event);
     if (event.data.msg_id) rememberStep(event.data.msg_id, event);
@@ -178,12 +176,7 @@ function addLateToolCalls(messageId, toolCalls, fresh) {
     step.data.tools.push(call.name);
     knownIds.push(call.id);
   }
-  eventSink(step);
   fresh.push(step);
-}
-
-function setEventSink(sink) {
-  eventSink = typeof sink === 'function' ? sink : () => {};
 }
 
 function ingestAll(events, fresh) {
@@ -293,5 +286,5 @@ function clearSessionState(sessionId, session) {
 }
 
 module.exports = {
-  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, clearSessionState, subagentDirOf, setEventSink,
+  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, clearSessionState, subagentDirOf,
 };

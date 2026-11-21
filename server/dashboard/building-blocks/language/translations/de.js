@@ -34,6 +34,8 @@ TRANSLATIONS.de = (() => {
     clearLog: 'Log leeren', clearLogTitle: 'Das lokale Ereignislog löschen', clearConfirm: 'Alle aufgezeichneten Ereignisse löschen?',
     deleteSessionTitle: 'Diese Sitzung und ihre gespeicherten Daten löschen',
     deleteSessionConfirm: name => `„${name}“ und die gespeicherten Session-Observer-Daten löschen? Das originale App-Transkript bleibt erhalten. Dies kann nicht rückgängig gemacht werden.`,
+    loadOlderSessions: day => `Sitzungen vor dem ${day} laden`,
+    loadOlderTitle: 'Ältere Tage sind gespeichert, aber noch nicht geladen',
     range: 'Zeitraum', range1h: 'letzte 1 h', range6h: 'letzte 6 h', range24h: 'letzte 24 h', range7d: 'letzte 7 Tage', rangeAll: 'alles',
     search: 'Suche', searchPh: 'Prompts, Antworten, Befehle, Pfade, Fehler…',
     group: 'Tool-Gruppe', groupTitle: 'Welcher Teil der Karte: Dateien, Shell, Git, MCP…', allGroups: 'alle Gruppen', agent: 'Agent', allAgents: 'alle Agenten', agentTitle: 'Sitzungen von Claude Code, von Codex oder von beiden anzeigen',

@@ -138,8 +138,9 @@ function connectLiveUpdates() {
 
 async function loadSessions() {
   try {
-    const sessions = await (await fetch('/api/sessions')).json();
+    const [sessions, history] = await Promise.all([fetch('/api/sessions'), fetch('/api/history')].map(async request => (await request).json()));
     state.sessions = new Map(sessions.map(session => [session.id, session]));
+    state.history = history;
   } catch { /* server down */ }
 }
 

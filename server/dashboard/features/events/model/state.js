@@ -5,6 +5,7 @@ const DEFAULT_RANGE_MS = 24 * 60 * 60 * 1000; // the time range shown until anot
 
 const state = {
   sessions: new Map(),      // session id → summary from the server
+  history: { loadedFrom: null, olderDays: 0 }, // the oldest day folder the server has loaded, and how many are older
   events: [],               // the events in scope, oldest first
   scope: ALL_SESSIONS,      // a session id, or ALL_SESSIONS
   selectedTurnKey: null,    // the turn the Details panel shows

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { PORT, SESSION_LOG_DIR, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
 const guard = require('./request-guard');
-const { sessions, sessionSummary } = require('../sessions/sessions');
+const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/sessions');
 const { sessionContext } = require('../context/session-context');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
 
@@ -76,13 +76,13 @@ function sessionsNewestFirst() {
   return [...sessions.values()].map(sessionSummary).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
 }
 
-function serveEvents(response, url, eventStore) {
+function serveEvents(response, url) {
   const sessionId = url.searchParams.get('session');
   const since = url.searchParams.get('since') || null;
-  if (sessionId === ALL_SESSIONS) return sendJson(response, 200, eventStore.all(since));
+  if (sessionId === ALL_SESSIONS) return sendJson(response, 200, eventsOfAllSessions(since));
   const session = sessions.get(sessionId);
   if (!session) return sendError(response, 404, 'unknown session');
-  sendJson(response, 200, eventStore.forSession(sessionId, since));
+  sendJson(response, 200, since ? session.events.filter(event => event.ts >= since) : session.events);
 }
 
 function serveContext(response, url) {
@@ -95,15 +95,16 @@ function serveContext(response, url) {
   }
 }
 
-// GET routes by path; the clear-log POST is handled on its own
-function createRequestHandler({ clearLog, deleteSession, eventStore }) {
+// GET routes by path; the clear-log and load-older POSTs and the session DELETE are handled on their own
+function createRequestHandler({ clearLog, deleteSession, logHistory, loadOlderDays }) {
   const routes = {
     '/': (request, response) => serveDashboardPage(response),
     '/index.html': (request, response) => serveDashboardPage(response),
     '/favicon.ico': (request, response) => { response.writeHead(204); response.end(); },
     '/api/health': (request, response) => sendJson(response, 200, { ok: true, version: VERSION, port: PORT, log: SESSION_LOG_DIR, sessions: sessions.size }),
     '/api/sessions': (request, response) => sendJson(response, 200, sessionsNewestFirst()),
-    '/api/events': (request, response, url) => serveEvents(response, url, eventStore),
+    '/api/events': (request, response, url) => serveEvents(response, url),
+    '/api/history': (request, response) => sendJson(response, 200, logHistory()),
     '/api/context': (request, response, url) => serveContext(response, url),
     '/api/stream': (request, response) => addClient(request, response, { version: VERSION }),
   };
@@ -123,6 +124,9 @@ function createRequestHandler({ clearLog, deleteSession, eventStore }) {
       clearLog();
       broadcast('reset', {});
       return sendJson(response, 200, { ok: true });
+    }
+    if (url.pathname === '/api/history/older' && request.method === 'POST') {
+      try { return sendJson(response, 200, loadOlderDays()); } catch (error) { return sendError(response, 500, String(error.message || error)); }
     }
     const deleteMatch = request.method === 'DELETE' && url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
     if (deleteMatch) {

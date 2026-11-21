@@ -11,8 +11,9 @@ const HOST = process.env.OBSERVER_HOST || '127.0.0.1'; // local only by default
 const DATA_DIR = process.env.OBSERVER_DATA_DIR || path.join(os.homedir(), '.claude', 'session-observer');
 const LOG_FILE = path.join(DATA_DIR, 'events.jsonl');
 const SESSION_LOG_DIR = path.join(DATA_DIR, 'sessions');
-const LEGACY_LOG_MIGRATION_FILE = path.join(DATA_DIR, '.session-log-migrated');
-const DATABASE_FILE = path.join(DATA_DIR, 'events.sqlite');
+const DELETED_SESSIONS_FILE = path.join(DATA_DIR, 'deleted-sessions.jsonl');
+// days of session folders read at start, today included; the dashboard can load older ones (0: every day)
+const LOAD_DAYS = (days => (Number.isFinite(days) && days >= 0 ? Math.floor(days) : 7))(Number(process.env.OBSERVER_LOAD_DAYS || 7));
 
 const MAX_EVENTS_PER_SESSION = Number(process.env.OBSERVER_MAX_EVENTS || 5000);
 const MAX_ALL_EVENTS = Number(process.env.OBSERVER_MAX_ALL_EVENTS || 10000);
@@ -41,7 +42,7 @@ function readPluginVersion() {
 const VERSION = readPluginVersion();
 
 module.exports = {
-  PORT, HOST, DATA_DIR, LOG_FILE, SESSION_LOG_DIR, LEGACY_LOG_MIGRATION_FILE, DATABASE_FILE,
+  PORT, HOST, DATA_DIR, LOG_FILE, SESSION_LOG_DIR, DELETED_SESSIONS_FILE, LOAD_DAYS,
   MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS, CONTEXT_WINDOW, CODEX_CONTEXT_WINDOW, CONTEXT_FIELD_MAX,
   TOKEN, EXTRA_ALLOWED_HOSTS, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR, VERSION,
 };

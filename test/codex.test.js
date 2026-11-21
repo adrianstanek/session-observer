@@ -78,8 +78,9 @@ after(async () => {
 });
 
 test('the hook marks Codex events, and Claude Code events without --agent stay Claude', () => {
-  const log = fs.readdirSync(path.join(DATA_DIR, 'sessions')).filter(name => name.endsWith('.jsonl'))
-    .flatMap(name => fs.readFileSync(path.join(DATA_DIR, 'sessions', name), 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)));
+  const sessionLogs = path.join(DATA_DIR, 'sessions');
+  const log = fs.readdirSync(sessionLogs).flatMap(day => fs.readdirSync(path.join(sessionLogs, day)).map(name => path.join(sessionLogs, day, name)))
+    .flatMap(file => fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)));
   assert.ok(log.filter(event => event.session_id === SESSION).every(event => event.agent === 'codex'));
   assert.equal(log.find(event => event.session_id === 'claude-sess-1').agent, 'claude');
 });

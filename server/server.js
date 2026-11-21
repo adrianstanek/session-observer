@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 // session-observer dashboard server. Zero dependencies.
-// Tails ~/.claude/session-observer/sessions/*.jsonl, keeps sessions in memory, reads model steps and token usage from
+// Tails ~/.claude/session-observer/sessions/<day>/*.jsonl, keeps sessions in memory, reads model steps and token usage from
 // each session's transcript, serves the dashboard and pushes live updates over Server-Sent Events.
 // The parts live in server/lib (building-blocks/ and features/); this file loads the log and starts listening.
 'use strict';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { PORT, HOST, DATA_DIR, LOG_FILE, SESSION_LOG_DIR, LEGACY_LOG_MIGRATION_FILE, TOKEN } = require('./lib/building-blocks/config');
-const { EventStore } = require('./lib/building-blocks/event-store');
-const { sessionLogPath, migrateLegacyLog, LEGACY_OFFSET_FIELD } = require('./lib/building-blocks/session-logs');
+const { PORT, HOST, DATA_DIR, LOG_FILE, SESSION_LOG_DIR, DELETED_SESSIONS_FILE, LOAD_DAYS, TOKEN } = require('./lib/building-blocks/config');
+const {
+  MIGRATED_FIELD, today, addDays, listDays, sessionFilesInDay, filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted,
+  migrateLegacyLog,
+} = require('./lib/building-blocks/session-logs');
 const { LOOPBACK_NAMES, WILDCARD_ADDRESSES } = require('./lib/features/web/request-guard');
 const { FileTail } = require('./lib/building-blocks/file-tail');
 const { sessions, sessionSummary } = require('./lib/features/sessions/sessions');
@@ -23,67 +25,133 @@ const PING_MS = 15000;
 const BUSY_TRANSCRIPT_POLL_MS = 2000;
 
 // ---------- the event log ----------
-const logTails = new Map();
+// sessions/<day>/<session hash>.jsonl: only the last LOAD_DAYS day folders are read at start, and older ones when the
+// dashboard asks. A session found in a loaded day is read whole, its earlier days too, so its state is complete.
+const ALL_DAYS = '0000-00-00';
+const firstLoadedDay = () => (LOAD_DAYS ? addDays(today(), 1 - LOAD_DAYS) : ALL_DAYS);
+const COPY_FIELDS = [MIGRATED_FIELD, '_session_observer_legacy_offset'];
+const logTails = new Map(); // file → FileTail
 const legacyTail = new FileTail(LOG_FILE);
-let eventStore;
+let loadedFrom = firstLoadedDay();
+let deletedSessions = new Map();
+let lastReadError = '';
 
-function readNewLogEvents() {
-  const touchedSessions = new Set();
-  const indexedEvents = [];
-  for (const name of fs.readdirSync(SESSION_LOG_DIR)) {
-    if (!/^[a-f0-9]{64}[.]jsonl$/.test(name)) continue;
-    const file = path.join(SESSION_LOG_DIR, name);
-    let tail = logTails.get(file);
-    if (!tail) { tail = new FileTail(file); logTails.set(file, tail); }
-    for (const { line, offset } of tail.readNewRecords()) {
-      if (!line.trim()) continue;
-      let event;
-      try { event = JSON.parse(line); } catch { continue; }
-      delete event[LEGACY_OFFSET_FIELD];
-      touchedSessions.add(transcripts.ingestEvent(event));
-      indexedEvents.push({ event, key: `${name}:${offset}`, fileKey: name, offset });
+function parseEvent(line) {
+  if (!line.trim()) return null;
+  let event;
+  try { event = JSON.parse(line); } catch { return null; }
+  if (!event || typeof event !== 'object' || Array.isArray(event)) return null;
+  for (const field of COPY_FIELDS) delete event[field];
+  return event;
+}
+
+function readFile(file, fresh) {
+  let tail = logTails.get(file);
+  if (!tail) { tail = new FileTail(file); logTails.set(file, tail); }
+  for (const { line } of tail.readNewRecords()) {
+    const event = parseEvent(line);
+    if (!event) continue;
+    transcripts.ingestEvent(event);
+    fresh.push(event);
+  }
+}
+
+// a session file seen for the first time: its earlier days go first, so its events arrive in order
+function readSessionFile(days, day, name, fresh) {
+  const file = path.join(SESSION_LOG_DIR, day, name);
+  if (!logTails.has(file)) {
+    for (const earlier of days) {
+      if (earlier >= day) break;
+      const earlierFile = path.join(SESSION_LOG_DIR, earlier, name);
+      if (!logTails.has(earlierFile) && fs.existsSync(earlierFile)) readFile(earlierFile, fresh);
     }
   }
-  // Older installed hooks may keep appending to the former combined log until their plugin is updated.
-  for (const { line, offset } of legacyTail.readNewRecords()) {
-    if (!line.trim()) continue;
-    let event;
-    try { event = JSON.parse(line); } catch { continue; }
-    const session = transcripts.ingestEvent(event);
-    touchedSessions.add(session);
-    indexedEvents.push({ event, key: `legacy:${offset}`, fileKey: 'legacy', offset });
+  readFile(file, fresh);
+}
+
+function readNewLogEvents() {
+  const fresh = [];
+  try {
+    const days = listDays(SESSION_LOG_DIR);
+    for (const day of days) {
+      if (day < loadedFrom) continue;
+      for (const name of sessionFilesInDay(SESSION_LOG_DIR, day)) readSessionFile(days, day, name, fresh);
+    }
+    // Older installed hooks may keep appending to the former combined log until their plugin is updated; the next
+    // start moves those lines into the day folders.
+    for (const { line } of legacyTail.readNewRecords()) {
+      const event = parseEvent(line);
+      if (!event || isDeleted(deletedSessions, event)) continue;
+      transcripts.ingestEvent(event);
+      fresh.push(event);
+    }
+    lastReadError = '';
+  } catch (error) {
+    // a polling error must not stop the server: report it once, and try again on the next tick
+    const message = String(error?.message || error);
+    if (message !== lastReadError) console.error('session-observer: reading the event log failed:', message);
+    lastReadError = message;
   }
-  eventStore.addMany(indexedEvents);
-  for (const { event } of indexedEvents) broadcast('event', event);
-  for (const session of touchedSessions) broadcast('session', sessionSummary(session));
+  const touched = new Set();
+  for (const event of fresh) {
+    broadcast('event', event);
+    const session = sessions.get(event.session_id);
+    if (session) touched.add(session);
+  }
+  for (const session of touched) broadcast('session', sessionSummary(session));
+  return fresh.length;
+}
+
+// what is loaded, and whether older days are left
+function logHistory() {
+  const older = listDays(SESSION_LOG_DIR).filter(day => day < loadedFrom);
+  return { loadedFrom: loadedFrom === ALL_DAYS ? null : loadedFrom, olderDays: older.length, loadDays: LOAD_DAYS };
+}
+
+// the next LOAD_DAYS day folders (that exist) before the loaded ones
+function loadOlderDays() {
+  const older = listDays(SESSION_LOG_DIR).filter(day => day < loadedFrom);
+  if (!older.length) return logHistory();
+  const known = new Set(sessions.keys());
+  loadedFrom = LOAD_DAYS ? older[Math.max(0, older.length - LOAD_DAYS)] : ALL_DAYS;
+  readNewLogEvents();
+  transcripts.cancelScheduledReads();
+  for (const session of sessions.values()) {
+    if (known.has(session.id)) continue;
+    try { transcripts.readTranscripts(session); } catch { /* ignore */ }
+  }
+  broadcast('reset', {});
+  return logHistory();
 }
 
 function clearLog() {
   try { fs.writeFileSync(LOG_FILE, ''); } catch { /* ignore */ }
   for (const name of fs.readdirSync(SESSION_LOG_DIR)) {
-    if (/^[a-f0-9]{64}[.]jsonl$/.test(name)) {
-      try { fs.unlinkSync(path.join(SESSION_LOG_DIR, name)); } catch { /* ignore */ }
-    }
+    try { fs.rmSync(path.join(SESSION_LOG_DIR, name), { recursive: true, force: true }); } catch { /* ignore */ }
   }
-  eventStore.clear();
+  try { fs.writeFileSync(DELETED_SESSIONS_FILE, ''); } catch { /* ignore */ }
+  deletedSessions = new Map();
   sessions.clear();
   transcripts.resetTranscriptState();
   clearTranscriptRowsCache();
   logTails.clear();
   legacyTail.reset();
+  loadedFrom = firstLoadedDay();
 }
 
 function reloadAfterSessionDelete(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return false;
-  const file = sessionLogPath(SESSION_LOG_DIR, sessionId);
-  try { fs.unlinkSync(file); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  logTails.delete(file);
-  eventStore.deleteSession(sessionId);
+  readNewLogEvents(); // take in what was appended just before this delete, so it isn't read again afterwards
+  for (const file of filesOfSession(SESSION_LOG_DIR, sessionId)) {
+    try { fs.unlinkSync(file); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    logTails.delete(file);
+  }
+  // its lines in the former combined log are skipped when that log is imported
+  recordDeletedSession(DELETED_SESSIONS_FILE, deletedSessions, sessionId);
   transcripts.clearSessionState(sessionId, session);
   clearTranscriptRowsCache(session);
   sessions.delete(sessionId);
-  readNewLogEvents(); // pick up other session files that were appended just before this delete
   broadcast('reset', {});
   return true;
 }
@@ -95,7 +163,8 @@ function protectDataDir() {
   try { fs.chmodSync(LOG_FILE, 0o600); } catch { /* not there yet */ }
   fs.mkdirSync(SESSION_LOG_DIR, { recursive: true, mode: 0o700 });
   try { fs.chmodSync(SESSION_LOG_DIR, 0o700); } catch { /* ignore */ }
-  migrateLegacyLog({ legacyFile: LOG_FILE, sessionDirectory: SESSION_LOG_DIR, markerFile: LEGACY_LOG_MIGRATION_FILE });
+  deletedSessions = readDeletedSessions(DELETED_SESSIONS_FILE);
+  migrateLegacyLog({ legacyFile: LOG_FILE, sessionDirectory: SESSION_LOG_DIR, deleted: deletedSessions });
 }
 
 // everything already in the log, then every transcript once, before any page is told about changes
@@ -126,14 +195,12 @@ function warnIfReachableFromOtherMachines() {
 
 // ---------- start ----------
 protectDataDir();
-eventStore = new EventStore();
-transcripts.setEventSink(event => eventStore.addSynthetic(event));
 loadExistingEvents();
 setInterval(readNewLogEvents, LOG_POLL_MS);
 setInterval(pingClients, PING_MS);
 setInterval(pollBusyTranscripts, BUSY_TRANSCRIPT_POLL_MS);
 
-const server = http.createServer(createRequestHandler({ clearLog, deleteSession: reloadAfterSessionDelete, eventStore }));
+const server = http.createServer(createRequestHandler({ clearLog, deleteSession: reloadAfterSessionDelete, logHistory, loadOlderDays }));
 server.on('error', error => {
   if (error.code === 'EADDRINUSE') process.exit(0); // another instance already serves the dashboard
   console.error(error);

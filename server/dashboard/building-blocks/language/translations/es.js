@@ -34,6 +34,8 @@ TRANSLATIONS.es = (() => {
     clearLog: 'Borrar registro', clearLogTitle: 'Eliminar el registro local de eventos', clearConfirm: '¿Eliminar todos los eventos registrados?',
     deleteSessionTitle: 'Eliminar esta sesión y sus datos guardados',
     deleteSessionConfirm: name => `¿Eliminar “${name}” y sus datos guardados de Session Observer? El transcript original de la aplicación se conservará. Esta acción no se puede deshacer.`,
+    loadOlderSessions: day => `Cargar sesiones anteriores al ${day}`,
+    loadOlderTitle: 'Hay días anteriores guardados que aún no se han cargado',
     range: 'Periodo', range1h: 'última 1 h', range6h: 'últimas 6 h', range24h: 'últimas 24 h', range7d: 'últimos 7 días', rangeAll: 'todo',
     search: 'Buscar', searchPh: 'prompts, respuestas, comandos, rutas, errores…',
     group: 'Grupo de herramientas', groupTitle: 'Qué parte del mapa: Archivos, Shell, Git, MCP…', allGroups: 'todos los grupos', agent: 'Agente', allAgents: 'todos los agentes', agentTitle: 'Mostrar sesiones de Claude Code, de Codex o de ambos',
