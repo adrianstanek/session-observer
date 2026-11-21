@@ -38,7 +38,7 @@ async function boot() {
       scheduleRender('map', 'mid');
     }, RESIZE_SETTLE_MS);
   });
-  setView(new URLSearchParams(location.search).get('layout') || storage.get(SETTING_KEYS.layout, 'home'));
+  setView(new URLSearchParams(location.search).get('layout') || storage.get(SETTING_KEYS.layout, 'home'), 'replace');
   await loadSessions();
   state.scope = sessionFromAddress() || state.scope;
   await loadScope();

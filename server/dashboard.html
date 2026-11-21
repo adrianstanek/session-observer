@@ -20,7 +20,7 @@
   <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
 </header>
 
-<section class="panel filters">
+<section class="panel filters" id="filters">
   <label><span data-t="range">Range</span>
     <select id="range">
       <option value="3600000" data-t="range1h">last 1 h</option>
@@ -31,11 +31,11 @@
     </select>
   </label>
   <label class="search"><span data-t="search">Search</span><input type="search" id="q" data-t-ph="searchPh" placeholder="prompts, replies, commands, paths, errors…"></label>
-  <label data-t-title="groupTitle" title="Which part of the map: Files, Shell, Git, MCP…"><span data-t="group">Tool group</span><select id="station"></select></label>
+  <label id="groupFilter" data-t-title="groupTitle" title="Which part of the map: Files, Shell, Git, MCP…"><span data-t="group">Tool group</span><select id="station"></select></label>
   <label id="agentFilter" style="display:none" data-t-title="agentTitle" title="Show sessions from Claude Code, Codex or both"><span data-t="agent">Agent</span>
     <select id="agent"><option value="" data-t="allAgents">all agents</option><option value="claude">Claude Code</option><option value="codex">Codex</option></select>
   </label>
-  <label class="check"><input type="checkbox" id="problems"> <span data-t="onlyProblems">only problems</span></label>
+  <label class="check" id="problemsFilter"><input type="checkbox" id="problems"> <span data-t="onlyProblems">only problems</span></label>
   <button id="clearFilters" style="margin-bottom:1px" data-t="resetFilters">Reset filters</button>
 </section>
 

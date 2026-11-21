@@ -1,5 +1,7 @@
 // The sessions held in memory: each one's events and running totals, updated as events arrive.
 'use strict';
+const fs = require('fs');
+const path = require('path');
 const { MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS } = require('../../building-blocks/config');
 const { categoryOf, SUBAGENT_TOOLS } = require('./event-categories');
 const { trackNeedsYou } = require('./needs-you');
@@ -143,10 +145,41 @@ function ingest(event) {
   return session;
 }
 
+// Return a browser link only when the local project has a GitHub origin.
+function githubRepository(cwd) {
+  if (!cwd) return null;
+  let directory = path.resolve(cwd);
+  while (true) {
+    let gitDirectory = path.join(directory, '.git');
+    try {
+      if (fs.statSync(gitDirectory).isFile()) {
+        const pointer = fs.readFileSync(gitDirectory, 'utf8').match(/^gitdir:\s*(.+)$/m);
+        if (!pointer) return null;
+        gitDirectory = path.resolve(directory, pointer[1].trim());
+      }
+      const config = fs.readFileSync(path.join(gitDirectory, 'config'), 'utf8');
+      const originSection = config.match(/^\[remote \"origin\"\]([^[]*)/m);
+      const urlMatch = originSection && originSection[1].match(/^\s*url\s*=\s*(.+)\s*$/m);
+      if (!urlMatch) return null;
+      const remote = urlMatch[1].trim().replace(/^git@github\.com:/i, 'https://github.com/').replace(/\.git$/i, '');
+      const url = new URL(remote);
+      if (url.hostname.toLowerCase() !== 'github.com') return null;
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      return url.href.replace(/\/$/, '');
+    } catch { /* try the parent when this folder is not a readable checkout */ }
+    const parent = path.dirname(directory);
+    if (parent === directory) return null;
+    directory = parent;
+  }
+}
+
 // what the API sends for a session: everything but its events and the calls in flight
 function sessionSummary(session) {
   const { events, pendingToolStarts, subagentDescriptionsWaiting, ...fields } = session;
-  return { ...fields, eventCount: events.length, running: pendingToolStarts.size };
+  return { ...fields, repositoryUrl: githubRepository(fields.cwd), eventCount: events.length, running: pendingToolStarts.size };
 }
 
 const byTimeThenSeq = (a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a.seq - b.seq);

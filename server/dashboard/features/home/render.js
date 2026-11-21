@@ -4,6 +4,7 @@
 const WAIT_TEXT_MAX = 160;
 const SUBAGENT_DESCRIPTION_MAX = 90;
 const HOME_DOT = { needsYou: 'dot need', working: 'dot busy', yourTurn: 'dot on', inactive: 'dot', ended: 'dot' };
+const homeExpandedProjects = new Set();
 
 const homeSessionName = session => stripTags(session.title) || baseName(session.cwd) || session.id.slice(0, 8);
 const homeAgentTag = session => `<span class="agent-tag agent-${agentKey(session.agent)}">${escapeHtml(agentName(session.agent))}</span>`;
@@ -25,11 +26,13 @@ function waitHtml(wait) {
 // one card per session waiting on you, with everything it waits for
 function needsYouHtml(sessions) {
   const waiting = sessionsNeedingYou(sessions);
+  if (!waiting.length) {
+    return `<section class="hsec hneeds hneeds-empty"><span class="hclear-icon" aria-hidden="true">✓</span><span class="muted">${escapeHtml(TEXT.home.allClear)}</span></section>`;
+  }
   const cards = waiting.map(session => `<button class="hneed" ${openAttributes(session)}>
       <div class="hrow"><span class="dot need"></span><b class="hname">${escapeHtml(homeSessionName(session))}</b>${homeAgentTag(session)}<span class="muted hpath">${escapeHtml(baseName(session.cwd) || '')}</span></div>
       ${session.needsYou.map(waitHtml).join('')}</button>`).join('');
-  return `<section class="hsec hneeds ${waiting.length ? 'on' : ''}"><h3>${iconSvg('you')} ${escapeHtml(TEXT.home.needsYou)}${waiting.length ? ` <span class="hcount">${waiting.length}</span>` : ''}</h3>
-    ${cards || `<div class="muted">${escapeHtml(TEXT.home.allClear)}</div>`}</section>`;
+  return `<section class="hsec hneeds on"><h3>${iconSvg('you')} ${escapeHtml(TEXT.home.needsYou)} <span class="hcount">${waiting.length}</span></h3>${cards}</section>`;
 }
 
 function subagentRowHtml(subagent) {
@@ -46,17 +49,27 @@ function sessionRowHtml(session) {
   const lastTool = activity === 'working' && session.lastTool
     ? `<span class="muted mono hlast">${escapeHtml(toolDisplayName(session.lastTool.name))} ${escapeHtml(shorten(session.lastTool.arg, 60))}</span>` : '';
   const children = subagents.map(subagentRowHtml).join('') + (folded ? `<li class="hsub muted">${escapeHtml(TEXT.home.more(folded))}</li>` : '');
+  const name = homeSessionName(session);
   return `<li class="hsess act-${activity} ${session.id === state.scope ? 'sel' : ''}">
-      <div class="hrow" ${openAttributes(session)}><span class="${HOME_DOT[activity]}"></span><span class="hname">${escapeHtml(homeSessionName(session))}</span>${homeAgentTag(session)}
-        <span class="hstate">${escapeHtml(TEXT.sessionState[activity])}</span>${lastTool}<span class="grow"></span>
-        <span class="muted">${escapeHtml(countOf(session.turns || 0, 'turn'))}${session.last ? ' · ' + escapeHtml(formatAgo(session.last)) : ''}</span></div>
+      <button class="hsess-main" type="button" ${openAttributes(session)}><span class="${HOME_DOT[activity]}"></span>
+        <span class="hsess-content"><span class="hsess-title"><span class="hname" title="${escapeHtml(name)}">${escapeHtml(name)}</span>${homeAgentTag(session)}<span class="hstate">${escapeHtml(TEXT.sessionState[activity])}</span></span>
+        <span class="hsess-meta">${escapeHtml(countOf(session.turns || 0, 'turn'))}${session.last ? ` · ${escapeHtml(formatAgo(session.last))}` : ''}${lastTool}</span></span></button>
       ${children ? `<ul>${children}</ul>` : ''}</li>`;
 }
 
 function projectHtml(project) {
   const name = baseName(project.path) || project.path || '?';
-  return `<li class="hproj"><div class="hrow">${iconSvg('files')}<b>${escapeHtml(name)}</b><span class="muted mono hpath" title="${escapeHtml(project.path)}">${escapeHtml(project.path)}</span></div>
-    <ul>${project.sessions.map(sessionRowHtml).join('')}</ul></li>`;
+  const current = project.sessions.filter(session => !['inactive', 'ended'].includes(sessionActivity(session)));
+  const past = project.sessions.filter(session => ['inactive', 'ended'].includes(sessionActivity(session)));
+  const projectId = projectKey(project.path);
+  const openPast = state.searchText || past.some(session => session.id === state.scope) || homeExpandedProjects.has(projectId) ? ' open' : '';
+  const archived = past.length
+    ? `<li class="harchive"><details data-home-project="${escapeHtml(projectId)}"${openPast}><summary>${escapeHtml(TEXT.home.more(past.length))}</summary><ul>${past.map(sessionRowHtml).join('')}</ul></details></li>`
+    : '';
+  const repository = project.sessions.find(session => session.repositoryUrl)?.repositoryUrl;
+  const repoLink = repository ? `<a class="hrepo" href="${escapeHtml(repository)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(TEXT.home.openRepository)}">GitHub ↗</a>` : '';
+  return `<li class="hproj"><div class="hrow">${iconSvg('files')}<b>${escapeHtml(name)}</b><span class="muted mono hpath" title="${escapeHtml(project.path)}">${escapeHtml(project.path)}</span>${repoLink}</div>
+    <ul>${current.map(sessionRowHtml).join('')}${archived}</ul></li>`;
 }
 
 function homeViewHtml() {
@@ -64,5 +77,5 @@ function homeViewHtml() {
   const tree = sessions.length
     ? `<ul class="htree">${projectTree(sessions).map(projectHtml).join('')}</ul>`
     : `<div class="cempty">${escapeHtml(TEXT.home.noSessions)}</div>`;
-  return `<div class="home">${needsYouHtml(sessions)}<section class="hsec">${tree}</section></div>`;
+  return `<div class="home">${needsYouHtml(sessions)}<section class="hsec hsessions"><div class="home-heading"><h2>${escapeHtml(TEXT.sessions)}</h2><span class="muted">${sessions.length}</span></div>${tree}</section></div>`;
 }

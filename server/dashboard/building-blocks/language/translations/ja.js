@@ -62,7 +62,7 @@ TRANSLATIONS.ja = (() => {
     home: {
       needsYou: '対応待ち', allClear: '今は対応待ちのものはありません。',
       permission: t => (t ? `${t} の使用許可` : '許可が必要'), question: 'あなたへの質問', mcp: s => `${s || 'MCP サーバー'} が入力を求めています`,
-      inSubagent: t => `サブエージェント ${t} 内`, noSessions: 'この期間のセッションはありません。', done: '完了', more: n => `ほか ${n} 件`, open: 'このセッションを開く',
+      inSubagent: t => `サブエージェント ${t} 内`, noSessions: 'この期間のセッションはありません。', done: '完了', more: n => `ほか ${n} 件`, open: 'このセッションを開く', openRepository: 'GitHub リポジトリを開く',
     },
     allActivity: 'すべてのアクティビティ', everySession: '全セッションの合計', sessions: 'セッション', lastLbl: '直近:',
     ctxWindow: 'コンテキストウィンドウ', ctxShort: 'ctx', noSessions: 'この期間のセッションはありません。',

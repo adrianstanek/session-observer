@@ -11,15 +11,23 @@ let lastViewDrawAt = 0;
 let lastViewHtml = '';
 let contextTurnShown = null; // the selected turn the Context view last scrolled to
 
-function setView(id) {
+function setView(id, historyMode = 'push') {
   if (!VIEWS.some(view => view.id === id)) id = 'home';
+  if (historyMode !== 'none') {
+    const address = new URL(location.href);
+    if (address.searchParams.get('layout') !== id) {
+      address.searchParams.set('layout', id);
+      const relativeAddress = address.pathname + address.search + address.hash;
+      history[historyMode + 'State'](null, '', relativeAddress);
+    }
+  }
   state.view = id;
   storage.set(SETTING_KEYS.layout, id);
   document.querySelector('.stage').dataset.layout = id;
+  elementById('filters').dataset.layout = id;
+  elementById('panels').dataset.layout = id;
   elementById('layouts').innerHTML = VIEWS.map(view =>
     `<button role="tab" aria-selected="${view.id === id}" data-layout="${view.id}" class="${view.id === id ? 'cur' : ''}">${view.label}</button>`).join('');
-  viewBox().innerHTML = '';
-  lastViewHtml = '';
   viewNeedsDrawing = true;
   activityChanged = true;
   renderDetails(); // Details follows the Context view's order
