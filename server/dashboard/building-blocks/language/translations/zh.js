@@ -62,7 +62,7 @@ TRANSLATIONS.zh = (() => {
     home: {
       needsYou: '等你处理', allClear: '目前没有需要你处理的事项。',
       permission: t => (t ? `请求使用 ${t} 的权限` : '需要权限'), question: '给你的问题', mcp: s => `${s || 'MCP 服务器'} 请求输入`,
-      inSubagent: t => `在子代理 ${t} 中`, noSessions: '此时间范围内没有会话。', done: '已完成', more: n => `另有 ${n} 个`, open: '打开此会话', openRepository: '打开 GitHub 仓库',
+      inSubagent: t => `在子代理 ${t} 中`, noSessions: '此时间范围内没有会话。', done: '已完成', more: n => `另有 ${n} 个`, open: '打开此会话',
     },
     allActivity: '全部活动', everySession: '所有会话合计', sessions: '会话', lastLbl: '最近：',
     ctxWindow: '上下文窗口', ctxShort: '上下文', noSessions: '此时间范围内没有会话。',

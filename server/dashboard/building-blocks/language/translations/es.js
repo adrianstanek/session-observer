@@ -64,7 +64,7 @@ TRANSLATIONS.es = (() => {
     home: {
       needsYou: 'Te espera', allClear: 'Ahora mismo nada te espera.',
       permission: t => (t ? `Permiso para usar ${t}` : 'Hace falta permiso'), question: 'Pregunta para ti', mcp: s => `${s || 'Un servidor MCP'} pide datos`,
-      inSubagent: t => `en el subagente ${t}`, noSessions: 'No hay sesiones en este intervalo.', done: 'terminado', more: n => `+${n} más`, open: 'Abrir esta sesión', openRepository: 'Abrir repositorio de GitHub',
+      inSubagent: t => `en el subagente ${t}`, noSessions: 'No hay sesiones en este intervalo.', done: 'terminado', more: n => `+${n} más`, open: 'Abrir esta sesión',
     },
     allActivity: 'Toda la actividad', everySession: 'todas las sesiones juntas', sessions: 'Sesiones', lastLbl: 'última:',
     ctxWindow: 'ventana de contexto', ctxShort: 'ctx', noSessions: 'No hay sesiones en este periodo.',

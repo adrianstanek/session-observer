@@ -66,9 +66,7 @@ function projectHtml(project) {
   const archived = past.length
     ? `<li class="harchive"><details data-home-project="${escapeHtml(projectId)}"${openPast}><summary>${escapeHtml(TEXT.home.more(past.length))}</summary><ul>${past.map(sessionRowHtml).join('')}</ul></details></li>`
     : '';
-  const repository = project.sessions.find(session => session.repositoryUrl)?.repositoryUrl;
-  const repoLink = repository ? `<a class="hrepo" href="${escapeHtml(repository)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(TEXT.home.openRepository)}">GitHub ↗</a>` : '';
-  return `<li class="hproj"><div class="hrow">${iconSvg('files')}<b>${escapeHtml(name)}</b><span class="muted mono hpath" title="${escapeHtml(project.path)}">${escapeHtml(project.path)}</span>${repoLink}</div>
+  return `<li class="hproj"><div class="hrow">${iconSvg('files')}<b>${escapeHtml(name)}</b><span class="muted mono hpath" title="${escapeHtml(project.path)}">${escapeHtml(project.path)}</span></div>
     <ul>${current.map(sessionRowHtml).join('')}${archived}</ul></li>`;
 }
 
