@@ -92,7 +92,7 @@ or click the header to open that turn in Details.
 ```
 Claude Code ──(33 async hooks)──────────────┐
                                             ▼
-Codex ──(13 async hooks, --agent codex)──▶ scripts/hook.js ──▶ ~/.claude/session-observer/events.jsonl
+Codex ──(14 async hooks, --agent codex)──▶ scripts/hook.js ──▶ ~/.claude/session-observer/events.jsonl
                                                                          │ (tailed)
                                              browser ◀──SSE── server/server.js (127.0.0.1:4777)
 ```
@@ -214,7 +214,7 @@ hooks. The first Codex session then starts the dashboard on <http://localhost:47
 
 What differs from Claude Code:
 
-- **Model steps** come from Codex's `PostModelRequest` hook (one per model request, with its token counts). Each
+- **Model steps** come from Codex's `PostModelRequest` hook (with its token counts); `PreModelRequest` events are also recorded, including retries. Each
   step lists the tool calls it started (Codex sends their `PreToolUse` while the response still streams).
 - **What the model wrote** (its replies, and its reasoning when Codex kept a summary of it) is read live from Codex's
   session file, as for Claude Code's transcript, and shows on the Route, in the Chat and in Details. Reasoning without
