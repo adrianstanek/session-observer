@@ -15,7 +15,6 @@ const DEFAULT_AGENT = 'claude'; // events logged before the hook named its agent
 function newSession(id) {
   return {
     id, agent: DEFAULT_AGENT, cwd: null, started: null, last: null, ended: false, endReason: null,
-    processId: null, focusProcessIds: null,
     model: null, permission_mode: null, transcript_path: null, source: null,
     title: null, turns: 0, busy: false, subagents: 0, lastTool: null, promptAt: null,
     counts: {}, tools: {}, skills: {}, mcp: {}, agents: {},
@@ -128,11 +127,6 @@ function ingest(event) {
   event.category = categoryOf(event);
   const data = event.data || {};
   const session = sessionFor(event.session_id);
-  if (Number.isSafeInteger(event.process_id) && event.process_id > 0) session.processId = event.process_id;
-  if (Array.isArray(event.focus_process_ids)) {
-    const ids = event.focus_process_ids.filter(id => Number.isSafeInteger(id) && id > 4);
-    if (ids.length) session.focusProcessIds = [...new Set(ids)];
-  }
   // every event says which agent it is from: the hook's own, or its session's (for events made from a transcript)
   if (event.agent) session.agent = event.agent;
   else event.agent = session.agent;
@@ -185,7 +179,7 @@ function githubRepository(cwd) {
 // what the API sends for a session: everything but its events and the calls in flight
 function sessionSummary(session) {
   const { events, pendingToolStarts, subagentDescriptionsWaiting, ...fields } = session;
-  return { ...fields, focusSupported: process.platform === 'win32', repositoryUrl: githubRepository(fields.cwd), eventCount: events.length, running: pendingToolStarts.size };
+  return { ...fields, repositoryUrl: githubRepository(fields.cwd), eventCount: events.length, running: pendingToolStarts.size };
 }
 
 const byTimeThenSeq = (a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a.seq - b.seq);

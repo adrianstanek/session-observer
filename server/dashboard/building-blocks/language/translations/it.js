@@ -66,7 +66,7 @@ TRANSLATIONS.it = (() => {
     home: {
       needsYou: 'Ti aspetta', allClear: 'Al momento niente ti aspetta.',
       permission: t => (t ? `Permesso di usare ${t}` : 'Serve un permesso'), question: 'Domanda per te', mcp: s => `${s || 'Un server MCP'} chiede un input`,
-      inSubagent: t => `nel subagente ${t}`, noSessions: 'Nessuna sessione in questo intervallo.', done: 'finito', more: n => `+${n} altri`, open: 'Apri questa sessione', focus: 'Attiva la finestra dell’app', openRepository: 'Apri il repository GitHub',
+      inSubagent: t => `nel subagente ${t}`, noSessions: 'Nessuna sessione in questo intervallo.', done: 'finito', more: n => `+${n} altri`, open: 'Apri questa sessione', openRepository: 'Apri il repository GitHub',
     },
     allActivity: 'Tutta l\'attività', everySession: 'tutte le sessioni insieme', sessions: 'Sessioni', lastLbl: 'ultimo:',
     ctxWindow: 'finestra di contesto', ctxShort: 'ctx', noSessions: 'Nessuna sessione in questo periodo.',

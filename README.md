@@ -107,7 +107,6 @@ On first use, open /hooks in Codex and trust the Session Observer hooks. The das
 ## Tricky details
 
 - **Hooks stay out of the way.** The hook writes events quickly, swallows errors and exits successfully so it does not block the coding session.
-- **Return to the agent that needs you.** On Windows, a Focus app window button on a waiting session brings its app or console window forward when Windows can identify it. Existing sessions need a new input request after this version is installed before focus is available.
 - **Remove one session's Observer data.** Use its × button on Home or in the session list to delete its JSONL file and SQLite index rows. If the agent is still running, later events can create a new entry. Its original Claude Code or Codex transcript is not deleted.
 - **The sessions are not merged.** Claude Code and Codex sessions share a dashboard, but each keeps its own transcript and session identity.
 - **Codex hooks need trust.** Trust them once in Codex with /hooks. The CLI script preserves your other hooks, but its paths point to this clone.

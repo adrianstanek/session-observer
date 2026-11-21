@@ -7,7 +7,6 @@ const guard = require('./request-guard');
 const { sessions, sessionSummary } = require('../sessions/sessions');
 const { sessionContext } = require('../context/session-context');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
-const { focusProcess } = require('./focus-window');
 
 const ALL_SESSIONS = 'all'; // the session id in /api/events?session= that asks for every session's events
 const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
@@ -96,18 +95,6 @@ function serveContext(response, url) {
   }
 }
 
-async function focusSession(response, url) {
-  const session = sessions.get(url.searchParams.get('session'));
-  if (!session) return sendError(response, 404, 'unknown session');
-  if (!Array.isArray(session.focusProcessIds) || !session.focusProcessIds.length) return sendError(response, 409, 'focus data is unavailable until this session requests input again');
-  try {
-    await focusProcess(session.focusProcessIds || session.processId);
-    sendJson(response, 200, { ok: true });
-  } catch (error) {
-    sendError(response, 501, String(error.message || error));
-  }
-}
-
 // GET routes by path; the clear-log POST is handled on its own
 function createRequestHandler({ clearLog, deleteSession, eventStore }) {
   const routes = {
@@ -148,7 +135,6 @@ function createRequestHandler({ clearLog, deleteSession, eventStore }) {
         return sendError(response, 500, String(error.message || error));
       }
     }
-    if (url.pathname === '/api/focus' && request.method === 'POST') return focusSession(response, url);
     const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : null;
     if (route) return route(request, response, url);
     sendError(response, 404, 'not found');

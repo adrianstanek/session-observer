@@ -34,7 +34,6 @@ function needsYouHtml(sessions) {
         <div class="hrow"><span class="dot need"></span><b class="hname">${escapeHtml(homeSessionName(session))}</b>${homeAgentTag(session)}<span class="muted hpath">${escapeHtml(baseName(session.cwd) || '')}</span></div>
         ${session.needsYou.map(waitHtml).join('')}
       </button>
-      ${session.focusSupported && session.focusProcessIds?.length ? `<button class="hfocus" type="button" data-focus-session="${escapeHtml(session.id)}">${escapeHtml(TEXT.home.focus)}</button>` : ''}
     </div>`).join('');
   return `<section class="hsec hneeds on"><h3>${iconSvg('you')} ${escapeHtml(TEXT.home.needsYou)} <span class="hcount">${waiting.length}</span></h3>${cards}</section>`;
 }
