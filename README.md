@@ -76,6 +76,51 @@ sequenceDiagram
   D->>S: GET /api/sessions, /api/events, /api/history
 ~~~
 
+#### How a session stays in one file
+
+The hook moves a session's file forward to today instead of starting a new one. Three parts work together.
+
+**1. The hook moves the file.** Before appending, `sessionLogForAppend` in `server/lib/building-blocks/session-logs.js` (called by `scripts/hook.js`) picks the file:
+
+```
+target = sessions/<today>/<hash>.jsonl
+if target exists               → append there           (every event after the day's first)
+else look in earlier day folders, newest first:
+  found sessions/<older>/<hash>.jsonl
+    → rename it to target, then append there
+    → remove <older>/ if it is now empty
+not found anywhere             → create target          (a new session)
+```
+
+~~~mermaid
+sequenceDiagram
+  participant H as hook.js
+  participant Old as sessions/2026-11-20/3f9a.jsonl
+  participant New as sessions/2026-11-21/3f9a.jsonl
+  Note over H: first event of session A on the 21st
+  H->>New: exists? no
+  H->>Old: exists? yes
+  H->>New: rename Old to New (same bytes)
+  H->>New: append the event
+  Note over H: later events on the 21st
+  H->>New: exists? yes, append
+~~~
+
+Only a session's first event of a day costs extra: up to one existence check per day folder, plus one rename. Every later event that day finds today's file on the first check.
+
+Claude Code can fire several hooks at once:
+- **Two hooks race to move the file.** The rename that loses fails, finds the file already at the target, and appends there.
+- **The rename is refused.** On Windows, this can happen while another process has the file open. The hook appends to the file where it is, so the session still has one file, and the next event tries the move again.
+
+**2. The server follows a moved file.** `server/server.js` tracks each session file by its name (the session hash), not by its full path. On every poll, it finds where that name now lives, in the newest loaded day folder:
+- **Same path as before:** it reads the new bytes.
+- **New path, old path gone:** the hook moved the file. The bytes are the same, so the server points its reader at the new path and keeps its read position. Nothing is read twice.
+- **A name it hasn't seen:** it reads the file from the start.
+
+**3. The import also writes one file per session.** When the server copies the former combined `events.jsonl` into the day folders, it groups lines by session. Each session goes into the file it already has, or into a new file in the folder of the day of its last event. A session in the old log that ran from the 1st to the 2nd ends up in a single file under `2026-01-02/`.
+
+**Fallback.** A session can still end up in two folders, for example if a move keeps being refused, or if an earlier build of this layout wrote the files. The server then reads the older file first and the newer one after it, so the session's events stay in order.
+
 **What a start reads.** The server reads the day folders from the last `OBSERVER_LOAD_DAYS` days (7 by default, today included). Because a session's file sits in the folder of its last active day, this covers every session active in those days, however long ago it started. Older day folders stay on disk until **Load sessions before …** in the session list loads the next batch. The dashboard's time range still filters what it shows, so pick a longer range to see older sessions.
 
 ~~~mermaid
