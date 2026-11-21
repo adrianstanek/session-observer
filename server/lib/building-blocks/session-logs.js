@@ -1,4 +1,5 @@
-// The event log on disk: one folder per UTC day, one JSONL file per session in it, named by a hash of the session id.
+// The event log on disk: one JSONL file per session, named by a hash of the session id, in the folder of the UTC day
+// the session was last active.
 // Also the import from the former combined log and the list of deleted sessions.
 'use strict';
 const crypto = require('crypto');
@@ -27,10 +28,31 @@ const readNames = directory => { try { return fs.readdirSync(directory); } catch
 const listDays = directory => readNames(directory).filter(name => DAY_PATTERN.test(name)).sort();
 const sessionFilesInDay = (directory, day) => readNames(path.join(directory, day)).filter(name => FILE_PATTERN.test(name));
 
-// every file of one session, oldest day first
-function filesOfSession(directory, sessionId) {
+// every file with this name, oldest day first: one, unless an earlier build split the session over several days
+const filesNamed = (directory, name, days = listDays(directory)) =>
+  days.map(day => path.join(directory, day, name)).filter(file => fs.existsSync(file));
+const filesOfSession = (directory, sessionId) => filesNamed(directory, sessionLogName(sessionId));
+
+// The file to append a session's event to. A session lives in one file, in the folder of the day it was last active:
+// its first event of a new day moves the file from the earlier day's folder into today's.
+function sessionLogForAppend(directory, sessionId, ts) {
   const name = sessionLogName(sessionId);
-  return listDays(directory).map(day => path.join(directory, day, name)).filter(file => fs.existsSync(file));
+  const target = path.join(directory, dayOf(ts), name);
+  if (fs.existsSync(target)) return target;
+  fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
+  for (const day of listDays(directory).reverse()) {
+    const earlier = path.join(directory, day, name);
+    if (earlier === target || !fs.existsSync(earlier)) continue;
+    try {
+      fs.renameSync(earlier, target);
+    } catch {
+      // another hook moved it first (then it is at target), or the move is refused for now: append where it is
+      return fs.existsSync(target) || !fs.existsSync(earlier) ? target : earlier;
+    }
+    try { fs.rmdirSync(path.dirname(earlier)); } catch { /* the day still holds other sessions */ }
+    return target;
+  }
+  return target;
 }
 
 function appendLine(file, event) {
@@ -88,7 +110,18 @@ function* linesOf(data) {
   }
 }
 
-// copies each line of one source file into its session's day file, then removes the source
+// a session's one file: the one it already has, or a new one in the folder of the day it was last active
+function importDestinations(sessionDirectory, events) {
+  const lastTs = new Map();
+  for (const event of events) if (!(lastTs.get(event.session_id) >= event.ts)) lastTs.set(event.session_id, event.ts);
+  const destinations = new Map();
+  for (const [sessionId, ts] of lastTs) {
+    destinations.set(sessionId, filesOfSession(sessionDirectory, sessionId).at(-1) || sessionLogPath(sessionDirectory, sessionId, ts));
+  }
+  return events.map(event => destinations.get(event.session_id));
+}
+
+// copies each line of one source file into its session's file, then removes the source
 function importFile(source, { sessionDirectory, deleted, resumed }) {
   let data;
   try { data = fs.readFileSync(source); } catch { return 0; }
@@ -104,7 +137,7 @@ function importFile(source, { sessionDirectory, deleted, resumed }) {
     event[MIGRATED_FIELD] = `${label}:${offset}`;
     events.push(event);
   }
-  const destinations = events.map(event => sessionLogPath(sessionDirectory, event.session_id, event.ts));
+  const destinations = importDestinations(sessionDirectory, events);
   const done = resumed ? copiedTags(sessionDirectory, new Set(destinations)) : new Set();
   let copied = 0;
   events.forEach((event, index) => {
@@ -142,6 +175,6 @@ function migrateLegacyLog({ legacyFile, sessionDirectory, deleted = new Map() })
 }
 
 module.exports = {
-  MIGRATED_FIELD, sessionLogKey, sessionLogName, sessionLogPath, today, dayOf, addDays, listDays, sessionFilesInDay,
-  filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted, migrateLegacyLog,
+  MIGRATED_FIELD, sessionLogKey, sessionLogName, sessionLogPath, sessionLogForAppend, today, dayOf, addDays, listDays,
+  sessionFilesInDay, filesNamed, filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted, migrateLegacyLog,
 };

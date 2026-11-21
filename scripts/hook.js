@@ -9,7 +9,7 @@ const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
 const net = require('net');
-const { sessionLogPath } = require('../server/lib/building-blocks/session-logs');
+const { sessionLogForAppend } = require('../server/lib/building-blocks/session-logs');
 
 const DATA_DIR = process.env.OBSERVER_DATA_DIR || path.join(os.homedir(), '.claude', 'session-observer');
 const SESSION_LOG_DIR = path.join(DATA_DIR, 'sessions');
@@ -86,9 +86,8 @@ async function main() {
   };
 
   // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
-  // one folder per UTC day, one file per session in it
-  const logFile = sessionLogPath(SESSION_LOG_DIR, event.session_id, event.ts);
-  fs.mkdirSync(path.dirname(logFile), { recursive: true, mode: 0o700 });
+  // one file per session, in the folder of the UTC day it was last active (moved there by its first event of the day)
+  const logFile = sessionLogForAppend(SESSION_LOG_DIR, event.session_id, event.ts);
   fs.appendFileSync(logFile, JSON.stringify(event) + '\n', { mode: 0o600 });
 
   if (event.event === 'SessionStart') await ensureServer();

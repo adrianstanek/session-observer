@@ -46,13 +46,13 @@ Both integrations append each event to a JSONL file for its session inside a fol
 
 ### Event storage
 
-Each hook call appends one line to `sessions/<YYYY-MM-DD>/<sha256(session_id)>.jsonl`. The day comes from the event's UTC timestamp. The hash keeps any session id safe to use as a file name. A session that runs past midnight has one file in each day folder, all with the same name.
+Each hook call appends one line to `sessions/<YYYY-MM-DD>/<sha256(session_id)>.jsonl`. The hash keeps any session id safe to use as a file name. **A session is never split:** it has exactly one file, in the folder of the UTC day it was last active. When a session sends its first event of a new day, the hook moves its file from the earlier day's folder into today's before appending. It also removes the earlier folder if that leaves it empty.
 
 ```
 ~/.claude/session-observer/
   sessions/
-    2026-11-20/3f9a….jsonl     ← session A, first day
-    2026-11-21/3f9a….jsonl     ← session A, after midnight
+    2026-11-14/0d2e….jsonl     ← session C, last active on the 14th
+    2026-11-21/3f9a….jsonl     ← session A, started on the 20th, moved here by its first event on the 21st
     2026-11-21/b71c….jsonl     ← session B
   deleted-sessions.jsonl       ← ids and times of deleted sessions
   events.jsonl                 ← only while an older plugin's hook still writes here
@@ -67,29 +67,29 @@ sequenceDiagram
   participant M as In-memory sessions
   participant D as Dashboard
   A->>H: hook event (stdin JSON)
-  H->>F: append one line to today's file, exit 0
+  H->>F: first event today? move the file from its earlier day
+  H->>F: append one line, exit 0
   S->>F: list loaded day folders, read bytes after each file's offset
-  Note over S,F: A file seen for the first time pulls in<br/>the same session's earlier days first
+  Note over S,F: A known file found in a newer folder was moved:<br/>same bytes, so its read offset is kept
   S->>M: ingest (status, needs-you, totals)
   S-->>D: SSE "event" and "session"
   D->>S: GET /api/sessions, /api/events, /api/history
 ~~~
 
-**What a start reads.** The server reads the day folders from the last `OBSERVER_LOAD_DAYS` days (7 by default, today included). When it finds a session in one of them, it also reads that session's files from earlier days, so a long-running or resumed session is complete. Older day folders stay on disk until **Load sessions before …** in the session list loads the next batch. The dashboard's time range still filters what it shows, so pick a longer range to see older sessions.
+**What a start reads.** The server reads the day folders from the last `OBSERVER_LOAD_DAYS` days (7 by default, today included). Because a session's file sits in the folder of its last active day, this covers every session active in those days, however long ago it started. Older day folders stay on disk until **Load sessions before …** in the session list loads the next batch. The dashboard's time range still filters what it shows, so pick a longer range to see older sessions.
 
 ~~~mermaid
 flowchart TD
   Start([server start]) --> Import[Move events.jsonl and its unfinished imports into day folders, skipping deleted sessions]
   Import --> Window[Read day folders from the last OBSERVER_LOAD_DAYS days]
-  Window --> Pull[For each session found there, read its files from earlier days too]
-  Pull --> Ready([serve the dashboard])
+  Window --> Ready([serve the dashboard])
   Ready -->|POST /api/history/older| Older[Read the next batch of older day folders]
   Older --> Ready
 ~~~
 
-**The import from the former combined log.** At every start, the server renames `events.jsonl` to `events.<time>.migrating`, then copies each line into its session's day file. Renaming first means a hook from an older plugin that appends meanwhile starts a new `events.jsonl`, and no line is lost. Each copied line carries its source and byte offset, so an interrupted import resumes without copying a line twice. Until the next start, the server also tails the new `events.jsonl`.
+**The import from the former combined log.** At every start, the server renames `events.jsonl` to `events.<time>.migrating`, then copies each line into its session's one file: the file the session already has, or a new one in the folder of the day of its last event. Renaming first means a hook from an older plugin that appends meanwhile starts a new `events.jsonl`, and no line is lost. Each copied line carries its source and byte offset, so an interrupted import resumes without copying a line twice. Until the next start, the server also tails the new `events.jsonl`.
 
-**Deleting a session** (× in the dashboard, `DELETE /api/sessions/<id>`) removes its file from every day folder and drops its in-memory state. It also appends the id and the time to `deleted-sessions.jsonl`. An older plugin's hook may have written that session to `events.jsonl`; the import skips those lines, so the session does not come back after a restart. Events of the same id written after the delete start a new entry.
+**Deleting a session** (× in the dashboard, `DELETE /api/sessions/<id>`) removes its file and drops its in-memory state. It also appends the id and the time to `deleted-sessions.jsonl`. An older plugin's hook may have written that session to `events.jsonl`; the import skips those lines, so the session does not come back after a restart. Events of the same id written after the delete start a new entry.
 
 #### Alternatives considered
 
@@ -102,7 +102,8 @@ flowchart TD
 | **SQLite only, written by the hook** | One store; real transactions | The hook would wait on a database lock, but it must never block the agent; a corrupt database loses data with no plain-text copy |
 | **Day files shared by all sessions** (`events-<day>.jsonl`) | Start reads only recent days; old days are easy to drop | Deleting one session rewrites every day file it is in while hooks append; rebuilding a session that runs past midnight scans other sessions' events |
 | **Combined JSONL + tombstones and compaction** | One file; delete appends a tombstone line | Deleted data stays on disk until compaction runs; compaction must coordinate with appending hooks |
-| **Day folders with per-session files** (this change) | Start reads only recent days; deleting a session takes one `unlink` per day; a day folder can be deleted as a whole; Node 18+ | Older sessions need **Load sessions before …**; a session found in a recent day pulls its earlier days in, which takes one `exists` check per day folder |
+| **Day folders with per-session files, split at midnight** | Start reads only recent days; the hook only appends | A session has a file in every day it was active, so the server must find and merge its earlier days |
+| **Day folders with one file per session, moved to its last active day** (this change) | Start reads only recent days, which covers every session active in them; a session is never split; deleting a session is one `unlink`; a day folder can be deleted as a whole; Node 18+ | Older sessions need **Load sessions before …**; a session's first event of a day searches earlier folders and renames its file |
 
 ## Install
 
@@ -165,7 +166,7 @@ On first use, open /hooks in Codex and trust the Session Observer hooks. The das
 ## Tricky details
 
 - **Hooks stay out of the way.** The hook writes events quickly, swallows errors and exits successfully so it does not block the coding session.
-- **Remove one session's Observer data.** Use its × button on Home or in the session list to delete its JSONL files from every day folder. If the agent is still running, later events can create a new entry. Its original Claude Code or Codex transcript is not deleted.
+- **Remove one session's Observer data.** Use its × button on Home or in the session list to delete its JSONL file. If the agent is still running, later events can create a new entry. Its original Claude Code or Codex transcript is not deleted.
 - **The sessions are not merged.** Claude Code and Codex sessions share a dashboard, but each keeps its own transcript and session identity.
 - **Codex hooks need trust.** Trust them once in Codex with /hooks. The CLI script preserves your other hooks, but its paths point to this clone.
 - **Context sizes are estimates.** Transcript formats and token counts differ by agent. Codex's rollout format is undocumented and may change; encrypted reasoning text cannot be recovered by the dashboard.

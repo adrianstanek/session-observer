@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { PORT, HOST, DATA_DIR, LOG_FILE, SESSION_LOG_DIR, DELETED_SESSIONS_FILE, LOAD_DAYS, TOKEN } = require('./lib/building-blocks/config');
 const {
-  MIGRATED_FIELD, today, addDays, listDays, sessionFilesInDay, filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted,
+  MIGRATED_FIELD, sessionLogName, today, addDays, listDays, sessionFilesInDay, filesNamed, filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted,
   migrateLegacyLog,
 } = require('./lib/building-blocks/session-logs');
 const { LOOPBACK_NAMES, WILDCARD_ADDRESSES } = require('./lib/features/web/request-guard');
@@ -25,12 +25,12 @@ const PING_MS = 15000;
 const BUSY_TRANSCRIPT_POLL_MS = 2000;
 
 // ---------- the event log ----------
-// sessions/<day>/<session hash>.jsonl: only the last LOAD_DAYS day folders are read at start, and older ones when the
-// dashboard asks. A session found in a loaded day is read whole, its earlier days too, so its state is complete.
+// sessions/<day>/<session hash>.jsonl, in the folder of the day the session was last active: only the last LOAD_DAYS day
+// folders are read at start, so every session active in those days, and older folders when the dashboard asks.
 const ALL_DAYS = '0000-00-00';
 const firstLoadedDay = () => (LOAD_DAYS ? addDays(today(), 1 - LOAD_DAYS) : ALL_DAYS);
 const COPY_FIELDS = [MIGRATED_FIELD, '_session_observer_legacy_offset'];
-const logTails = new Map(); // file → FileTail
+const logTails = new Map(); // session file name → FileTail
 const legacyTail = new FileTail(LOG_FILE);
 let loadedFrom = firstLoadedDay();
 let deletedSessions = new Map();
@@ -45,9 +45,7 @@ function parseEvent(line) {
   return event;
 }
 
-function readFile(file, fresh) {
-  let tail = logTails.get(file);
-  if (!tail) { tail = new FileTail(file); logTails.set(file, tail); }
+function readTail(tail, fresh) {
   for (const { line } of tail.readNewRecords()) {
     const event = parseEvent(line);
     if (!event) continue;
@@ -56,27 +54,37 @@ function readFile(file, fresh) {
   }
 }
 
-// a session file seen for the first time: its earlier days go first, so its events arrive in order
-function readSessionFile(days, day, name, fresh) {
-  const file = path.join(SESSION_LOG_DIR, day, name);
-  if (!logTails.has(file)) {
-    for (const earlier of days) {
-      if (earlier >= day) break;
-      const earlierFile = path.join(SESSION_LOG_DIR, earlier, name);
-      if (!logTails.has(earlierFile) && fs.existsSync(earlierFile)) readFile(earlierFile, fresh);
+// One session file: the hook moves it to the day the session was last active, so a known file found in a newer
+// folder is the same bytes, and its tail keeps its offset. Should a session still be split over days (written by an
+// earlier build), its earlier files are read first, so its events arrive in order.
+function readSessionFile(days, name, file, fresh) {
+  let tail = logTails.get(name);
+  if (!tail) {
+    for (const earlier of filesNamed(SESSION_LOG_DIR, name, days)) if (earlier !== file) readTail(new FileTail(earlier), fresh);
+    tail = new FileTail(file);
+    logTails.set(name, tail);
+  } else if (tail.file !== file) {
+    if (fs.existsSync(tail.file)) { // split: finish the earlier file, then read the newer one from its start
+      readTail(tail, fresh);
+      tail = new FileTail(file);
+      logTails.set(name, tail);
+    } else {
+      tail.file = file; // moved
     }
   }
-  readFile(file, fresh);
+  readTail(tail, fresh);
 }
 
 function readNewLogEvents() {
   const fresh = [];
   try {
     const days = listDays(SESSION_LOG_DIR);
+    const newest = new Map(); // session file name → its path in the newest loaded day folder
     for (const day of days) {
       if (day < loadedFrom) continue;
-      for (const name of sessionFilesInDay(SESSION_LOG_DIR, day)) readSessionFile(days, day, name, fresh);
+      for (const name of sessionFilesInDay(SESSION_LOG_DIR, day)) newest.set(name, path.join(SESSION_LOG_DIR, day, name));
     }
+    for (const [name, file] of newest) readSessionFile(days, name, file, fresh);
     // Older installed hooks may keep appending to the former combined log until their plugin is updated; the next
     // start moves those lines into the day folders.
     for (const { line } of legacyTail.readNewRecords()) {
@@ -145,8 +153,8 @@ function reloadAfterSessionDelete(sessionId) {
   readNewLogEvents(); // take in what was appended just before this delete, so it isn't read again afterwards
   for (const file of filesOfSession(SESSION_LOG_DIR, sessionId)) {
     try { fs.unlinkSync(file); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-    logTails.delete(file);
   }
+  logTails.delete(sessionLogName(sessionId));
   // its lines in the former combined log are skipped when that log is imported
   recordDeletedSession(DELETED_SESSIONS_FILE, deletedSessions, sessionId);
   transcripts.clearSessionState(sessionId, session);

@@ -9,7 +9,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { FileTail } = require('../server/lib/building-blocks/file-tail');
 const {
-  MIGRATED_FIELD, sessionLogPath, addDays, today, filesOfSession, migrateLegacyLog, readDeletedSessions, recordDeletedSession,
+  MIGRATED_FIELD, sessionLogPath, sessionLogForAppend, addDays, today, filesOfSession, migrateLegacyLog, readDeletedSessions, recordDeletedSession,
 } = require('../server/lib/building-blocks/session-logs');
 
 const SERVER = path.join(__dirname, '..', 'server', 'server.js');
@@ -21,7 +21,7 @@ const writeEvents = (file, events) => {
 };
 const at = (day, time = '10:00:00') => `${day}T${time}.000Z`;
 
-test('the import sorts the combined log into day folders per session, then removes it', () => {
+test('the import sorts the combined log into one file per session, then removes it', () => {
   const dir = tempDir('so-migrate-');
   const legacyFile = path.join(dir, 'events.jsonl');
   const sessionDirectory = path.join(dir, 'sessions');
@@ -33,8 +33,8 @@ test('the import sorts the combined log into day folders per session, then remov
     ]);
     assert.equal(migrateLegacyLog({ legacyFile, sessionDirectory }), 3);
     assert.equal(fs.existsSync(legacyFile), false);
-    assert.deepEqual(filesOfSession(sessionDirectory, 'a').map(file => path.basename(path.dirname(file))), ['2026-01-01', '2026-01-02']);
-    assert.deepEqual(lines(sessionLogPath(sessionDirectory, 'a', at('2026-01-01'))).map(event => event.event), ['SessionStart']);
+    assert.deepEqual(filesOfSession(sessionDirectory, 'a').map(file => path.basename(path.dirname(file))), ['2026-01-02'], 'the day it was last active');
+    assert.deepEqual(lines(sessionLogPath(sessionDirectory, 'a', at('2026-01-02'))).map(event => event.event), ['SessionStart', 'Stop']);
     assert.deepEqual(lines(sessionLogPath(sessionDirectory, 'b', at('2026-01-01'))).map(event => event.event), ['UserPromptSubmit']);
     assert.equal(migrateLegacyLog({ legacyFile, sessionDirectory }), 0, 'nothing is left to import');
   } finally {
@@ -73,6 +73,46 @@ test('the import skips what a deleted session wrote before it was deleted, and k
     const deleted = readDeletedSessions(deletedFile);
     assert.equal(migrateLegacyLog({ legacyFile, sessionDirectory, deleted }), 1);
     assert.deepEqual(lines(sessionLogPath(sessionDirectory, 'gone', at('2026-01-01'))).map(event => event.ts), [at('2026-01-01', '13:00:00')]);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a session keeps one file: its first event of a new day moves the file into that day', () => {
+  const dir = tempDir('so-move-');
+  const sessionDirectory = path.join(dir, 'sessions');
+  try {
+    const earlier = sessionLogPath(sessionDirectory, 'a', at('2026-01-01'));
+    writeEvents(earlier, [{ ts: at('2026-01-01'), session_id: 'a', event: 'SessionStart' }]);
+    const target = sessionLogForAppend(sessionDirectory, 'a', at('2026-01-03'));
+    assert.equal(target, sessionLogPath(sessionDirectory, 'a', at('2026-01-03')));
+    assert.deepEqual(filesOfSession(sessionDirectory, 'a'), [target]);
+    assert.equal(fs.existsSync(path.dirname(earlier)), false, 'the emptied day folder is removed');
+    assert.equal(lines(target).length, 1);
+    assert.equal(sessionLogForAppend(sessionDirectory, 'a', at('2026-01-03', '11:00:00')), target);
+    assert.equal(sessionLogForAppend(sessionDirectory, 'new', at('2026-01-03')), sessionLogPath(sessionDirectory, 'new', at('2026-01-03')));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the import puts a session that runs over days in one file, and adds to the file a session already has', () => {
+  const dir = tempDir('so-import-one-');
+  const legacyFile = path.join(dir, 'events.jsonl');
+  const sessionDirectory = path.join(dir, 'sessions');
+  try {
+    const existing = sessionLogPath(sessionDirectory, 'b', at('2026-01-05'));
+    writeEvents(existing, [{ ts: at('2026-01-05'), session_id: 'b', event: 'UserPromptSubmit' }]);
+    writeEvents(legacyFile, [
+      { ts: at('2026-01-01'), session_id: 'a', event: 'SessionStart' },
+      { ts: at('2026-01-02'), session_id: 'a', event: 'Stop' },
+      { ts: at('2026-01-04'), session_id: 'b', event: 'Stop' },
+    ]);
+    migrateLegacyLog({ legacyFile, sessionDirectory });
+    assert.deepEqual(filesOfSession(sessionDirectory, 'a'), [sessionLogPath(sessionDirectory, 'a', at('2026-01-02'))]);
+    assert.equal(lines(filesOfSession(sessionDirectory, 'a')[0]).length, 2);
+    assert.deepEqual(filesOfSession(sessionDirectory, 'b'), [existing]);
+    assert.equal(lines(existing).length, 2);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -129,11 +169,30 @@ async function startServer(dataDir, env = {}) {
   return { proc, base, stop, getJson, sessionIds };
 }
 
-test('the server loads recent days at start, a recent session whole, and older days when asked', async () => {
+test('the server follows a session file the hook moves into a new day, without reading it twice', async () => {
+  const dataDir = tempDir('so-follow-');
+  const sessionDirectory = path.join(dataDir, 'sessions');
+  const yesterday = addDays(today(), -1);
+  writeEvents(sessionLogPath(sessionDirectory, 'mover', at(yesterday)), [{ ts: at(yesterday), event: 'SessionStart', session_id: 'mover', data: {} }]);
+  const server = await startServer(dataDir);
+  try {
+    assert.equal((await server.getJson('/api/events?session=mover')).length, 1);
+    const now = new Date().toISOString();
+    writeEvents(sessionLogForAppend(sessionDirectory, 'mover', now), [{ ts: now, event: 'UserPromptSubmit', session_id: 'mover', data: { prompt: 'next day' } }]);
+    await waitFor(async () => (await server.getJson('/api/events?session=mover')).length >= 2);
+    await new Promise(resolve => setTimeout(resolve, 900)); // a few more polls
+    assert.deepEqual((await server.getJson('/api/events?session=mover')).map(event => event.event), ['SessionStart', 'UserPromptSubmit']);
+  } finally {
+    await server.stop();
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test('the server loads recent days at start, a split session whole, and older days when asked', async () => {
   const dataDir = tempDir('so-window-');
   const sessionDirectory = path.join(dataDir, 'sessions');
   const day = offset => addDays(today(), offset);
-  // old: only 10 days ago; long: 10 days ago and today; recent: today
+  // old: only 10 days ago; long: split over 10 days ago and today, as an earlier build wrote it; recent: today
   writeEvents(sessionLogPath(sessionDirectory, 'old', at(day(-10))), [{ ts: at(day(-10)), event: 'SessionStart', session_id: 'old', data: {} }]);
   writeEvents(sessionLogPath(sessionDirectory, 'long', at(day(-10))), [{ ts: at(day(-10)), event: 'SessionStart', session_id: 'long', data: {} }]);
   writeEvents(sessionLogPath(sessionDirectory, 'long', at(day(0))), [{ ts: at(day(0), '00:00:01'), event: 'UserPromptSubmit', session_id: 'long', data: { prompt: 'hi' } }]);
