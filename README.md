@@ -46,6 +46,59 @@ flowchart LR
 
 Both integrations append events to a session-specific JSONL file. The server indexes them in a local SQLite database for event queries; when it starts, it replays each session log and adds any rows missing from the index. A one-time startup migration imports the former combined `events.jsonl` file. While older installed hooks are still writing to that file, the server continues reading it; once those hooks use the updated script, new events go only to per-session files. The dashboard labels sessions by agent and reads transcripts when a view needs message or context detail.
 
+### Event storage
+
+Each hook call appends one line to `sessions/<sha256(session_id)>.jsonl`. The hash keeps any session id safe to use as a file name. The JSONL files are the source of truth. `events.sqlite` is an index that the server can rebuild from them at any time.
+
+~~~mermaid
+sequenceDiagram
+  participant A as Claude Code / Codex
+  participant H as hook.js
+  participant F as sessions/HASH.jsonl
+  participant S as server.js (every 400 ms)
+  participant M as In-memory sessions
+  participant Q as events.sqlite
+  participant D as Dashboard
+  A->>H: hook event (stdin JSON)
+  H->>F: append one line, exit 0
+  S->>F: list files, read bytes after each file's offset
+  S->>M: ingest (status, needs-you, totals)
+  S->>Q: upsert keyed by file:byte-offset
+  S-->>D: SSE "event" and "session"
+  D->>S: GET /api/sessions (from memory)
+  D->>S: GET /api/events (from SQLite)
+~~~
+
+The row key is `<file>:<byte offset>`, so reading the same line again overwrites its row instead of adding a copy. Model steps and texts read from transcripts are stored too, keyed by session, event and message id.
+
+On startup, the server migrates the old combined log once, then replays every session file from byte 0 into memory and SQLite:
+
+~~~mermaid
+flowchart TD
+  Start([server start]) --> Marker{.session-log-migrated exists?}
+  Marker -- no --> Split[Copy each events.jsonl line into its session file, tagged with its old byte offset]
+  Split --> Empty[Empty events.jsonl, write the marker]
+  Marker -- yes --> Replay
+  Empty --> Replay[Replay sessions/*.jsonl and events.jsonl from byte 0]
+  Replay --> Ready([serve the dashboard])
+~~~
+
+The offset tag lets a migration that was interrupted resume without copying a line twice. After migration, the server keeps tailing `events.jsonl` for hooks from older plugin versions.
+
+Deleting a session (× in the dashboard, `DELETE /api/sessions/<id>`) unlinks its file, deletes its SQLite rows and drops its in-memory state.
+
+#### Alternatives considered
+
+| Approach | Pros | Cons |
+|---|---|---|
+| **One combined `events.jsonl`** (before this change) | Simplest; one file to tail; Node 18+ | Grows forever; deleting one session means rewriting the whole file while hooks append to it |
+| **Per-session JSONL, no database** | Delete is one `unlink`; works on Node 18+; no WAL files; same startup as today, because the server already replays every file into memory | `/api/events?session=all` merges in memory (as before); no cross-session queries |
+| **Per-session JSONL + SQLite index** (this change) | Event queries come from SQL; the index can always be rebuilt from JSONL | Needs Node 22.13 (`node:sqlite`); two sources of truth (memory for sessions, SQLite for events); every start still replays everything, so the index does not speed startup |
+| **Per-session JSONL + SQLite with saved tail offsets** | Store each file's last offset and load events from SQLite on demand. Start-up becomes incremental and memory stays bounded | More code: session summaries must be rebuilt or stored as well, not only events |
+| **SQLite only, written by the hook** | One store; real transactions | The hook would need `node:sqlite` and could wait on a database lock, but it must never block the agent; a corrupt database loses data with no plain-text copy |
+| **Combined JSONL + tombstones and compaction** | Keeps one file and Node 18+; delete appends a tombstone line, and a compaction later rewrites the file without those sessions | Deleted data stays on disk until compaction runs; compaction must coordinate with appending hooks |
+| **Segments by day or size + retention** | Bounded disk use; old data ages out | Deleting one session still rewrites segments; does not by itself make deleting a session cheap |
+
 ## Install
 
 Needs Node.js 22.13 or newer for the built-in `node:sqlite` module. There is no npm install and no build step.
