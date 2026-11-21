@@ -173,6 +173,8 @@ Or install from the marketplace:
 
 Restart Claude Code after installing so the hooks load.
 
+To update later, run `/session-observer:update` in Claude Code. It updates the marketplace and the plugin (reinstalling if the version did not change), stops the old dashboard server and starts the new one.
+
 ### Codex
 
 Codex can load the hooks as a desktop plugin or from its CLI hook config.
