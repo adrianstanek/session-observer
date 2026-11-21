@@ -7,6 +7,7 @@ const { QUESTION_TOOLS } = require('./event-categories');
 
 const WAITS_KEPT_MAX = 10;
 const TEXT_MAX = 300;
+const ASYNC_QUESTION_TOOLS = new Set(['request_user_input_async']);
 const ENDS_EVERY_WAIT = new Set(['UserPromptSubmit', 'Stop', 'StopFailure', 'SessionEnd']);
 const ANSWERS_A_TOOL = new Set(['PostToolUse', 'PostToolUseFailure', 'PermissionDenied']);
 
@@ -45,7 +46,11 @@ function trackNeedsYou(session, event, data) {
     return;
   }
   if (ENDS_EVERY_WAIT.has(name)) {
-    session.needsYou = [];
+    // The async Codex input tool finishes its hook call before the user replies. Its wait
+    // survives the assistant's Stop event and ends when the next user prompt arrives.
+    session.needsYou = (name === 'Stop' || name === 'StopFailure')
+      ? session.needsYou.filter(wait => ASYNC_QUESTION_TOOLS.has(wait.tool))
+      : [];
     return;
   }
   if (name === 'SubagentStop' && data.agent_id != null) {
@@ -64,7 +69,7 @@ function trackNeedsYou(session, event, data) {
   } else if (name === 'Notification' && data.notification_type === 'permission_prompt' && !session.needsYou.length) {
     // Claude Code's own "needs your permission" notice, for when no PermissionRequest came first
     addWait(session, { key: 'notification', kind: 'permission', tool: null, text: clip(data.message), ...waitFields(event, data) });
-  } else if (ANSWERS_A_TOOL.has(name)) {
+  } else if (ANSWERS_A_TOOL.has(name) && !(name === 'PostToolUse' && ASYNC_QUESTION_TOOLS.has(data.tool_name))) {
     // a tool's result answers its own wait, and a permission asked without a call id (the permission was given or
     // refused: the call has finished)
     const sameAgent = wait => wait.agentId === (data.agent_id ?? null);

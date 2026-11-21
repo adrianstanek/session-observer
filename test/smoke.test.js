@@ -15,6 +15,7 @@ const HOOK = path.join(ROOT, 'scripts', 'hook.js');
 const SERVER = path.join(ROOT, 'server', 'server.js');
 const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'so-test-'));
 const LOG = path.join(DATA_DIR, 'events.jsonl');
+const SESSION_LOGS = path.join(DATA_DIR, 'sessions');
 let PORT, server, base;
 
 function freePort() {
@@ -45,7 +46,9 @@ async function waitFor(fn, ms = 8000) {
 
 const get = async p => { const r = await fetch(base + p); return { status: r.status, body: await r.text(), type: r.headers.get('content-type') }; };
 const getJson = async p => JSON.parse((await get(p)).body);
-const readLog = () => fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l));
+const readLog = () => fs.readdirSync(SESSION_LOGS).filter(name => /^[a-f0-9]{64}[.]jsonl$/.test(name))
+  .flatMap(name => fs.readFileSync(path.join(SESSION_LOGS, name), 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)))
+  .sort((a, b) => a.ts.localeCompare(b.ts));
 
 before(async () => {
   PORT = await freePort();
@@ -54,8 +57,12 @@ before(async () => {
   await waitFor(async () => (await getJson('/api/health')).ok);
 });
 
-after(() => {
-  if (server) server.kill();
+after(async () => {
+  if (server) {
+    const stopped = server.exitCode == null ? new Promise(resolve => server.once('exit', resolve)) : Promise.resolve();
+    server.kill();
+    await stopped;
+  }
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
 });
 
@@ -395,9 +402,25 @@ test('another machine gets in with OBSERVER_TOKEN, by header or by the cookie /?
   } finally { proc.kill(); }
 });
 
+test('deleting a session removes its log and indexed events, and keeps other sessions', async () => {
+  runHook('SessionStart', { hook_event_name: 'SessionStart', session_id: 'delete-me', cwd: '/tmp/delete-me' });
+  runHook('UserPromptSubmit', { hook_event_name: 'UserPromptSubmit', session_id: 'delete-me', cwd: '/tmp/delete-me', prompt: 'private prompt' });
+  runHook('SessionStart', { hook_event_name: 'SessionStart', session_id: 'keep-me', cwd: '/tmp/keep-me' });
+  await waitFor(async () => (await getJson('/api/sessions')).some(session => session.id === 'delete-me'));
+
+  const response = await fetch(base + '/api/sessions/delete-me', { method: 'DELETE', headers: { Origin: base } });
+  assert.equal(response.status, 200);
+  await waitFor(async () => !(await getJson('/api/sessions')).some(session => session.id === 'delete-me'));
+  assert.ok((await getJson('/api/sessions')).some(session => session.id === 'keep-me'));
+  assert.ok(readLog().every(event => event.session_id !== 'delete-me'));
+  assert.ok(!fs.existsSync(path.join(SESSION_LOGS, require('../server/lib/building-blocks/session-logs').sessionLogKey('delete-me') + '.jsonl')));
+  assert.equal((await get('/api/events?session=delete-me')).status, 404);
+  assert.ok((await getJson('/api/events?session=all')).every(event => event.session_id !== 'delete-me'));
+});
+
 test('clear wipes the log and sessions', async () => {
   const r = await fetch(base + '/api/clear', { method: 'POST', headers: { Origin: base } });
   assert.equal(r.status, 200);
-  assert.equal(fs.readFileSync(LOG, 'utf8'), '');
+  assert.equal(fs.readdirSync(SESSION_LOGS).filter(name => /^[a-f0-9]{64}[.]jsonl$/.test(name)).length, 0);
   assert.deepEqual(await getJson('/api/sessions'), []);
 });

@@ -2,11 +2,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { PORT, LOG_FILE, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
+const { PORT, SESSION_LOG_DIR, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
 const guard = require('./request-guard');
-const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/sessions');
+const { sessions, sessionSummary } = require('../sessions/sessions');
 const { sessionContext } = require('../context/session-context');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
+const { focusProcess } = require('./focus-window');
 
 const ALL_SESSIONS = 'all'; // the session id in /api/events?session= that asks for every session's events
 const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
@@ -76,13 +77,13 @@ function sessionsNewestFirst() {
   return [...sessions.values()].map(sessionSummary).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
 }
 
-function serveEvents(response, url) {
+function serveEvents(response, url, eventStore) {
   const sessionId = url.searchParams.get('session');
   const since = url.searchParams.get('since') || null;
-  if (sessionId === ALL_SESSIONS) return sendJson(response, 200, eventsOfAllSessions(since));
+  if (sessionId === ALL_SESSIONS) return sendJson(response, 200, eventStore.all(since));
   const session = sessions.get(sessionId);
   if (!session) return sendError(response, 404, 'unknown session');
-  sendJson(response, 200, since ? session.events.filter(event => event.ts >= since) : session.events);
+  sendJson(response, 200, eventStore.forSession(sessionId, since));
 }
 
 function serveContext(response, url) {
@@ -95,15 +96,27 @@ function serveContext(response, url) {
   }
 }
 
+async function focusSession(response, url) {
+  const session = sessions.get(url.searchParams.get('session'));
+  if (!session) return sendError(response, 404, 'unknown session');
+  if (!Array.isArray(session.focusProcessIds) || !session.focusProcessIds.length) return sendError(response, 409, 'focus data is unavailable until this session requests input again');
+  try {
+    await focusProcess(session.focusProcessIds || session.processId);
+    sendJson(response, 200, { ok: true });
+  } catch (error) {
+    sendError(response, 501, String(error.message || error));
+  }
+}
+
 // GET routes by path; the clear-log POST is handled on its own
-function createRequestHandler({ clearLog }) {
+function createRequestHandler({ clearLog, deleteSession, eventStore }) {
   const routes = {
     '/': (request, response) => serveDashboardPage(response),
     '/index.html': (request, response) => serveDashboardPage(response),
     '/favicon.ico': (request, response) => { response.writeHead(204); response.end(); },
-    '/api/health': (request, response) => sendJson(response, 200, { ok: true, version: VERSION, port: PORT, log: LOG_FILE, sessions: sessions.size }),
+    '/api/health': (request, response) => sendJson(response, 200, { ok: true, version: VERSION, port: PORT, log: SESSION_LOG_DIR, sessions: sessions.size }),
     '/api/sessions': (request, response) => sendJson(response, 200, sessionsNewestFirst()),
-    '/api/events': (request, response, url) => serveEvents(response, url),
+    '/api/events': (request, response, url) => serveEvents(response, url, eventStore),
     '/api/context': (request, response, url) => serveContext(response, url),
     '/api/stream': (request, response) => addClient(request, response, { version: VERSION }),
   };
@@ -124,6 +137,18 @@ function createRequestHandler({ clearLog }) {
       broadcast('reset', {});
       return sendJson(response, 200, { ok: true });
     }
+    const deleteMatch = request.method === 'DELETE' && url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
+    if (deleteMatch) {
+      let sessionId;
+      try { sessionId = decodeURIComponent(deleteMatch[1]); } catch { return sendError(response, 400, 'bad session id'); }
+      try {
+        if (!deleteSession(sessionId)) return sendError(response, 404, 'unknown session');
+        return sendJson(response, 200, { ok: true });
+      } catch (error) {
+        return sendError(response, 500, String(error.message || error));
+      }
+    }
+    if (url.pathname === '/api/focus' && request.method === 'POST') return focusSession(response, url);
     const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : null;
     if (route) return route(request, response, url);
     sendError(response, 404, 'not found');

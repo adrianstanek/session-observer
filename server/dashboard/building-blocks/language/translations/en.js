@@ -34,6 +34,8 @@ TRANSLATIONS.en = (() => {
     freeze: 'Freeze', unfreeze: n => `Unfreeze${n ? ` (${n} new)` : ''}`,
     theme: v => `Theme: ${v}`,
     clearLog: 'Clear log', clearLogTitle: 'Delete the local event log', clearConfirm: 'Delete all recorded events?',
+    deleteSessionTitle: 'Delete this session and its stored data',
+    deleteSessionConfirm: name => `Delete “${name}” and its stored Session Observer data? The original app transcript will stay. This cannot be undone.`,
     range: 'Range', range1h: 'last 1 h', range6h: 'last 6 h', range24h: 'last 24 h', range7d: 'last 7 d', rangeAll: 'everything',
     search: 'Search', searchPh: 'prompts, replies, commands, paths, errors…',
     group: 'Tool group', groupTitle: 'Which part of the map: Files, Shell, Git, MCP…', allGroups: 'all groups', agent: 'Agent', allAgents: 'all agents', agentTitle: 'Show sessions from Claude Code, Codex or both',
@@ -69,7 +71,7 @@ TRANSLATIONS.en = (() => {
     home: {
       needsYou: 'Needs you', allClear: 'Nothing needs you right now.',
       permission: t => (t ? `Permission to use ${t}` : 'Permission needed'), question: 'Question for you', mcp: s => `${s || 'An MCP server'} asks for input`,
-      inSubagent: t => `in subagent ${t}`, noSessions: 'No sessions in this range.', done: 'done', more: n => `+${n} more`, open: 'Open this session', openRepository: 'Open GitHub repository',
+      inSubagent: t => `in subagent ${t}`, noSessions: 'No sessions in this range.', done: 'done', more: n => `+${n} more`, open: 'Open this session', focus: 'Focus app window', openRepository: 'Open GitHub repository',
     },
     allActivity: 'All activity', everySession: 'every session combined', sessions: 'Sessions', lastLbl: 'last:',
     ctxWindow: 'context window', ctxShort: 'ctx', noSessions: 'No sessions in this range.',

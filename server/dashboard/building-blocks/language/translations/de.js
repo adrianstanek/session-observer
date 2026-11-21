@@ -32,6 +32,8 @@ TRANSLATIONS.de = (() => {
     freeze: 'Einfrieren', unfreeze: n => `Fortsetzen${n ? ` (${n} neu)` : ''}`,
     theme: v => `Farbschema: ${v}`,
     clearLog: 'Log leeren', clearLogTitle: 'Das lokale Ereignislog löschen', clearConfirm: 'Alle aufgezeichneten Ereignisse löschen?',
+    deleteSessionTitle: 'Diese Sitzung und ihre gespeicherten Daten löschen',
+    deleteSessionConfirm: name => `„${name}“ und die gespeicherten Session-Observer-Daten löschen? Das originale App-Transkript bleibt erhalten. Dies kann nicht rückgängig gemacht werden.`,
     range: 'Zeitraum', range1h: 'letzte 1 h', range6h: 'letzte 6 h', range24h: 'letzte 24 h', range7d: 'letzte 7 Tage', rangeAll: 'alles',
     search: 'Suche', searchPh: 'Prompts, Antworten, Befehle, Pfade, Fehler…',
     group: 'Tool-Gruppe', groupTitle: 'Welcher Teil der Karte: Dateien, Shell, Git, MCP…', allGroups: 'alle Gruppen', agent: 'Agent', allAgents: 'alle Agenten', agentTitle: 'Sitzungen von Claude Code, von Codex oder von beiden anzeigen',
@@ -64,7 +66,7 @@ TRANSLATIONS.de = (() => {
     home: {
       needsYou: 'Wartet auf dich', allClear: 'Gerade wartet nichts auf dich.',
       permission: t => (t ? `Erlaubnis für ${t}` : 'Erlaubnis nötig'), question: 'Frage an dich', mcp: s => `${s || 'Ein MCP-Server'} bittet um Eingabe`,
-      inSubagent: t => `im Subagent ${t}`, noSessions: 'Keine Sitzungen in diesem Zeitraum.', done: 'fertig', more: n => `+${n} weitere`, open: 'Diese Sitzung öffnen', openRepository: 'GitHub-Repository öffnen',
+      inSubagent: t => `im Subagent ${t}`, noSessions: 'Keine Sitzungen in diesem Zeitraum.', done: 'fertig', more: n => `+${n} weitere`, open: 'Diese Sitzung öffnen', focus: 'App-Fenster fokussieren', openRepository: 'GitHub-Repository öffnen',
     },
     allActivity: 'Alle Aktivitäten', everySession: 'alle Sitzungen zusammen', sessions: 'Sitzungen', lastLbl: 'zuletzt:',
     ctxWindow: 'Kontextfenster', ctxShort: 'Ktx', noSessions: 'Keine Sitzungen in diesem Zeitraum.',

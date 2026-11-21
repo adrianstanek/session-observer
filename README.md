@@ -36,17 +36,19 @@ Screenshots use the synthetic demo sessions.
 flowchart LR
   C[Claude Code] -->|plugin hooks| H[scripts/hook.js]
   X[Codex] -->|plugin hooks or CLI config| H
-  H -->|append events| L[(~/.claude/session-observer/events.jsonl)]
+  H -->|append by session| L[(~/.claude/session-observer/sessions/*.jsonl)]
+  L -->|index by file and byte offset| I[(Local SQLite index)]
   L --> S[Local Node server]
+  I --> S
   S -->|HTTP and live updates| D[Dashboard in your browser]
   S -. reads transcript when needed .-> T[Claude transcript or Codex rollout]
 ~~~
 
-Both integrations write events to one local log. The dashboard keeps sessions separate, labels each one by agent, and reads transcripts when a view needs message or context detail.
+Both integrations append events to a session-specific JSONL file. The server indexes them in a local SQLite database for event queries; when it starts, it replays each session log and adds any rows missing from the index. A one-time startup migration imports the former combined `events.jsonl` file. While older installed hooks are still writing to that file, the server continues reading it; once those hooks use the updated script, new events go only to per-session files. The dashboard labels sessions by agent and reads transcripts when a view needs message or context detail.
 
 ## Install
 
-Needs Node.js 18 or newer. There is no npm install and no build step.
+Needs Node.js 22.13 or newer for the built-in `node:sqlite` module. There is no npm install and no build step.
 
 ### Claude Code
 
@@ -105,15 +107,17 @@ On first use, open /hooks in Codex and trust the Session Observer hooks. The das
 ## Tricky details
 
 - **Hooks stay out of the way.** The hook writes events quickly, swallows errors and exits successfully so it does not block the coding session.
+- **Return to the agent that needs you.** On Windows, a Focus app window button on a waiting session brings its app or console window forward when Windows can identify it. Existing sessions need a new input request after this version is installed before focus is available.
+- **Remove one session's Observer data.** Use its × button on Home or in the session list to delete its JSONL file and SQLite index rows. If the agent is still running, later events can create a new entry. Its original Claude Code or Codex transcript is not deleted.
 - **The sessions are not merged.** Claude Code and Codex sessions share a dashboard, but each keeps its own transcript and session identity.
 - **Codex hooks need trust.** Trust them once in Codex with /hooks. The CLI script preserves your other hooks, but its paths point to this clone.
 - **Context sizes are estimates.** Transcript formats and token counts differ by agent. Codex's rollout format is undocumented and may change; encrypted reasoning text cannot be recovered by the dashboard.
 
 ## Privacy and stored data
 
-Session Observer writes hook events to `~/.claude/session-observer/events.jsonl`. This plain-text file can contain prompts, commands and tool output. The server binds to `127.0.0.1` by default and reads Claude transcripts or Codex rollouts locally when needed. Treat the event log as sensitive.
+Session Observer writes hook events to `~/.claude/session-observer/sessions/<session-hash>.jsonl` and maintains the SQLite event index at `~/.claude/session-observer/events.sqlite`. The former combined `events.jsonl` is imported once at startup. Older installed hooks can continue appending there until their plugin is updated, and the server tails that file for compatibility. Session logs and the database can contain prompts, commands and tool output. The server binds to `127.0.0.1` by default and reads Claude transcripts or Codex rollouts locally when needed. Treat them as sensitive.
 
-To clear Observer's event history, stop the server and delete `events.jsonl` from the configured data directory (`~/.claude/session-observer` by default). This does not delete the original Claude or Codex transcripts.
+To clear Observer's event history, stop the server and delete the `sessions` directory, `events.sqlite`, and any matching `events.sqlite-wal` or `events.sqlite-shm` files from the configured data directory (`~/.claude/session-observer` by default). This does not delete the original Claude or Codex transcripts.
 
 ## Troubleshooting
 
@@ -133,7 +137,7 @@ To clear Observer's event history, stop the server and delete `events.jsonl` fro
 - **Codex desktop:** remove Session Observer from the app's plugin manager.
 - **Codex CLI:** from the repository, run `node scripts/setup-codex.js --remove` before deleting or moving the clone. This removes only Session Observer hooks and keeps your other hooks.
 
-To remove saved Observer events as well, stop the server and delete `events.jsonl` as described above.
+To remove saved Observer events as well, stop the server and delete the event files described above.
 
 ## Use
 

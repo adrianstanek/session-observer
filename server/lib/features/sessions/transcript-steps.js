@@ -12,8 +12,8 @@ const { ingest, sessionSummary } = require('./sessions');
 const { endWaitsFromTranscript } = require('./needs-you');
 const { broadcast } = require('../../building-blocks/live-updates');
 const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
-const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps } = require('./codex-model-steps');
-const { codexRolloutTexts, resetCodexRolloutTexts } = require('./codex-rollout-texts');
+const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps, clearCodexSession } = require('./codex-model-steps');
+const { codexRolloutTexts, resetCodexRolloutTexts, clearCodexSession: clearCodexRolloutSession } = require('./codex-rollout-texts');
 
 const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
@@ -25,6 +25,7 @@ const transcriptTails = new Map();    // transcript file → FileTail
 const seenMessageIds = new Map();     // session id → Set(message id)
 const stepByMessageId = new Map();    // message id → its ModelStep event, so later lines can add their tool calls
 const scheduledReads = new Map();     // session id → timer
+let eventSink = () => {};
 
 const readsTranscript = session => !!session.transcript_path;
 const isCodex = session => session.agent === CODEX;
@@ -36,6 +37,7 @@ function ingestEvent(event) {
   const isCodexStep = isCodexModelRequest(event);
   if (isCodexStep) toCodexModelStep(event);
   const session = ingest(event);
+  if (event.synthetic) eventSink(event);
   if (isCodexStep) {
     addCodexUsage(session, event);
     if (event.data.msg_id) rememberStep(event.data.msg_id, event);
@@ -176,7 +178,12 @@ function addLateToolCalls(messageId, toolCalls, fresh) {
     step.data.tools.push(call.name);
     knownIds.push(call.id);
   }
+  eventSink(step);
   fresh.push(step);
+}
+
+function setEventSink(sink) {
+  eventSink = typeof sink === 'function' ? sink : () => {};
 }
 
 function ingestAll(events, fresh) {
@@ -274,6 +281,17 @@ function resetTranscriptState() {
   resetCodexRolloutTexts();
 }
 
+function clearSessionState(sessionId, session) {
+  const timer = scheduledReads.get(sessionId);
+  if (timer) clearTimeout(timer);
+  scheduledReads.delete(sessionId);
+  seenMessageIds.delete(sessionId);
+  for (const [id, step] of stepByMessageId) if (step.session_id === sessionId) stepByMessageId.delete(id);
+  if (session?.transcript_path) for (const { file } of transcriptFilesOf(session)) transcriptTails.delete(file);
+  clearCodexSession(sessionId);
+  clearCodexRolloutSession(sessionId);
+}
+
 module.exports = {
-  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, subagentDirOf,
+  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, clearSessionState, subagentDirOf, setEventSink,
 };

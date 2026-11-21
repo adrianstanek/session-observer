@@ -67,14 +67,19 @@ before(async () => {
   await waitFor(async () => (await getJson('/api/health')).ok);
 });
 
-after(() => {
-  if (server) server.kill();
+after(async () => {
+  if (server) {
+    const stopped = server.exitCode == null ? new Promise(resolve => server.once('exit', resolve)) : Promise.resolve();
+    server.kill();
+    await stopped;
+  }
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
   fs.rmSync(CODEX_HOME, { recursive: true, force: true });
 });
 
 test('the hook marks Codex events, and Claude Code events without --agent stay Claude', () => {
-  const log = fs.readFileSync(path.join(DATA_DIR, 'events.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  const log = fs.readdirSync(path.join(DATA_DIR, 'sessions')).filter(name => name.endsWith('.jsonl'))
+    .flatMap(name => fs.readFileSync(path.join(DATA_DIR, 'sessions', name), 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)));
   assert.ok(log.filter(event => event.session_id === SESSION).every(event => event.agent === 'codex'));
   assert.equal(log.find(event => event.session_id === 'claude-sess-1').agent, 'claude');
 });

@@ -30,6 +30,8 @@ TRANSLATIONS.ja = (() => {
     freeze: '固定', unfreeze: n => `再開${n ? `（新着 ${n}）` : ''}`,
     theme: v => `テーマ: ${v}`,
     clearLog: 'ログを消去', clearLogTitle: 'ローカルのイベントログを削除', clearConfirm: '記録されたイベントをすべて削除しますか？',
+    deleteSessionTitle: 'このセッションと保存データを削除',
+    deleteSessionConfirm: name => `「${name}」と Session Observer の保存データを削除しますか？元のアプリのトランスクリプトは削除されません。この操作は取り消せません。`,
     range: '期間', range1h: '直近 1 時間', range6h: '直近 6 時間', range24h: '直近 24 時間', range7d: '直近 7 日', rangeAll: 'すべて',
     search: '検索', searchPh: 'プロンプト、返答、コマンド、パス、エラー…',
     group: 'ツールグループ', groupTitle: 'マップのどの部分か: ファイル、シェル、Git、MCP…', allGroups: 'すべてのグループ', agent: 'エージェント', allAgents: 'すべてのエージェント', agentTitle: 'Claude Code、Codex、または両方のセッションを表示',
@@ -62,7 +64,7 @@ TRANSLATIONS.ja = (() => {
     home: {
       needsYou: '対応待ち', allClear: '今は対応待ちのものはありません。',
       permission: t => (t ? `${t} の使用許可` : '許可が必要'), question: 'あなたへの質問', mcp: s => `${s || 'MCP サーバー'} が入力を求めています`,
-      inSubagent: t => `サブエージェント ${t} 内`, noSessions: 'この期間のセッションはありません。', done: '完了', more: n => `ほか ${n} 件`, open: 'このセッションを開く', openRepository: 'GitHub リポジトリを開く',
+      inSubagent: t => `サブエージェント ${t} 内`, noSessions: 'この期間のセッションはありません。', done: '完了', more: n => `ほか ${n} 件`, open: 'このセッションを開く', focus: 'アプリのウィンドウに切り替え', openRepository: 'GitHub リポジトリを開く',
     },
     allActivity: 'すべてのアクティビティ', everySession: '全セッションの合計', sessions: 'セッション', lastLbl: '直近:',
     ctxWindow: 'コンテキストウィンドウ', ctxShort: 'ctx', noSessions: 'この期間のセッションはありません。',

@@ -34,6 +34,8 @@ TRANSLATIONS.pl = (() => {
     freeze: 'Zatrzymaj', unfreeze: n => `Wznów${n ? ` (nowe: ${n})` : ''}`,
     theme: v => `Motyw: ${v}`,
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
+    deleteSessionTitle: 'Usuń tę sesję i zapisane dane',
+    deleteSessionConfirm: name => `Usunąć sesję „${name}” i zapisane dane Session Observer? Oryginalny transkrypt aplikacji pozostanie. Tej operacji nie można cofnąć.`,
     range: 'Zakres', range1h: 'ostatnia godzina', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',
     search: 'Szukaj', searchPh: 'prompty, odpowiedzi, polecenia, ścieżki, błędy…',
     group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy', agent: 'Agent', allAgents: 'wszyscy agenci', agentTitle: 'Pokaż sesje z Claude Code, z Codex albo z obu',
@@ -66,7 +68,7 @@ TRANSLATIONS.pl = (() => {
     home: {
       needsYou: 'Czeka na Ciebie', allClear: 'Nic teraz na Ciebie nie czeka.',
       permission: t => (t ? `Zgoda na użycie ${t}` : 'Potrzebna zgoda'), question: 'Pytanie do Ciebie', mcp: s => `${s || 'Serwer MCP'} prosi o dane`,
-      inSubagent: t => `w subagencie ${t}`, noSessions: 'Brak sesji w tym zakresie.', done: 'zakończono', more: n => `+${n} więcej`, open: 'Otwórz tę sesję', openRepository: 'Otwórz repozytorium GitHub',
+      inSubagent: t => `w subagencie ${t}`, noSessions: 'Brak sesji w tym zakresie.', done: 'zakończono', more: n => `+${n} więcej`, open: 'Otwórz tę sesję', focus: 'Przełącz na okno aplikacji', openRepository: 'Otwórz repozytorium GitHub',
     },
     allActivity: 'Cała aktywność', everySession: 'wszystkie sesje razem', sessions: 'Sesje', lastLbl: 'ostatnio:',
     ctxWindow: 'okno kontekstu', ctxShort: 'kont.', noSessions: 'Brak sesji w tym zakresie.',

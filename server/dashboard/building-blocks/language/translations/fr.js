@@ -32,6 +32,8 @@ TRANSLATIONS.fr = (() => {
     freeze: 'Figer', unfreeze: n => `Reprendre${n ? ` (${n} nouveaux)` : ''}`,
     theme: v => `Thème : ${v}`,
     clearLog: 'Vider le journal', clearLogTitle: 'Supprimer le journal d’événements local', clearConfirm: 'Supprimer tous les événements enregistrés ?',
+    deleteSessionTitle: 'Supprimer cette session et ses données enregistrées',
+    deleteSessionConfirm: name => `Supprimer « ${name} » et ses données enregistrées dans Session Observer ? Le transcript original de l’application sera conservé. Cette action est irréversible.`,
     range: 'Période', range1h: 'dernière heure', range6h: '6 dernières h', range24h: '24 dernières h', range7d: '7 derniers jours', rangeAll: 'tout',
     search: 'Rechercher', searchPh: 'prompts, réponses, commandes, chemins, erreurs…',
     group: 'Groupe d’outils', groupTitle: 'Quelle partie de la carte : Fichiers, Shell, Git, MCP…', allGroups: 'tous les groupes', agent: 'Agent', allAgents: 'tous les agents', agentTitle: 'Afficher les sessions de Claude Code, de Codex ou des deux',
@@ -64,7 +66,7 @@ TRANSLATIONS.fr = (() => {
     home: {
       needsYou: 'Vous attend', allClear: 'Rien ne vous attend pour l’instant.',
       permission: t => (t ? `Autorisation d’utiliser ${t}` : 'Autorisation requise'), question: 'Question pour vous', mcp: s => `${s || 'Un serveur MCP'} demande une saisie`,
-      inSubagent: t => `dans le sous-agent ${t}`, noSessions: 'Aucune session sur cette période.', done: 'terminé', more: n => `+${n} autres`, open: 'Ouvrir cette session', openRepository: 'Ouvrir le dépôt GitHub',
+      inSubagent: t => `dans le sous-agent ${t}`, noSessions: 'Aucune session sur cette période.', done: 'terminé', more: n => `+${n} autres`, open: 'Ouvrir cette session', focus: 'Activer la fenêtre de l’application', openRepository: 'Ouvrir le dépôt GitHub',
     },
     allActivity: 'Toute l’activité', everySession: 'toutes les sessions réunies', sessions: 'Sessions', lastLbl: 'dernier :',
     ctxWindow: 'fenêtre de contexte', ctxShort: 'ctx', noSessions: 'Aucune session sur cette période.',

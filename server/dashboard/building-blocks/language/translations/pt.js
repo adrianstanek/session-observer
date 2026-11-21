@@ -32,6 +32,8 @@ TRANSLATIONS.pt = (() => {
     freeze: 'Congelar', unfreeze: n => `Retomar${n ? ` (${n} novos)` : ''}`,
     theme: v => `Tema: ${v}`,
     clearLog: 'Limpar log', clearLogTitle: 'Apagar o log local de eventos', clearConfirm: 'Apagar todos os eventos registrados?',
+    deleteSessionTitle: 'Excluir esta sessão e os dados salvos',
+    deleteSessionConfirm: name => `Excluir “${name}” e os dados salvos no Session Observer? O transcript original do aplicativo será mantido. Esta ação não pode ser desfeita.`,
     range: 'Período', range1h: 'última 1 h', range6h: 'últimas 6 h', range24h: 'últimas 24 h', range7d: 'últimos 7 dias', rangeAll: 'tudo',
     search: 'Buscar', searchPh: 'prompts, respostas, comandos, caminhos, erros…',
     group: 'Grupo de ferramentas', groupTitle: 'Qual parte do mapa: Arquivos, Shell, Git, MCP…', allGroups: 'todos os grupos', agent: 'Agente', allAgents: 'todos os agentes', agentTitle: 'Mostrar sessões do Claude Code, do Codex ou de ambos',
@@ -64,7 +66,7 @@ TRANSLATIONS.pt = (() => {
     home: {
       needsYou: 'Esperando por você', allClear: 'Nada está esperando por você agora.',
       permission: t => (t ? `Permissão para usar ${t}` : 'Permissão necessária'), question: 'Pergunta para você', mcp: s => `${s || 'Um servidor MCP'} pede dados`,
-      inSubagent: t => `no subagente ${t}`, noSessions: 'Nenhuma sessão neste intervalo.', done: 'concluído', more: n => `+${n} outros`, open: 'Abrir esta sessão', openRepository: 'Abrir repositório do GitHub',
+      inSubagent: t => `no subagente ${t}`, noSessions: 'Nenhuma sessão neste intervalo.', done: 'concluído', more: n => `+${n} outros`, open: 'Abrir esta sessão', focus: 'Focar janela do app', openRepository: 'Abrir repositório do GitHub',
     },
     allActivity: 'Toda a atividade', everySession: 'todas as sessões juntas', sessions: 'Sessões', lastLbl: 'última:',
     ctxWindow: 'janela de contexto', ctxShort: 'ctx', noSessions: 'Nenhuma sessão neste período.',

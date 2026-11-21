@@ -12,9 +12,13 @@ const waitsOf = session => (session.ended ? [] : session.needsYou || []);
 
 function sessionActivity(session) {
   if (session.ended) return 'ended';
+  const lastActivity = Date.parse(session.last || '');
+  // A closed CLI can miss its Stop/answer hook, leaving busy or needsYou set in the log.
+  // Only recent activity should keep a session in the live sections of Home.
+  if (!Number.isFinite(lastActivity) || Date.now() - lastActivity >= LIVE_SESSION_MS) return 'inactive';
   if (waitsOf(session).length) return 'needsYou';
   if (session.busy) return 'working';
-  return Date.now() - Date.parse(session.last) < LIVE_SESSION_MS ? 'yourTurn' : 'inactive';
+  return 'yourTurn';
 }
 
 // the sessions waiting on you, longest-waiting first

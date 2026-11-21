@@ -118,11 +118,21 @@ function connectLiveUpdates() {
   stream.addEventListener('reset', () => {
     state.sessions.clear();
     state.events = [];
+    state.frozenEvents = [];
+    state.openEventSeqs.clear();
     state.selectedTurnKey = null;
     state.scope = ALL_SESSIONS;
+    state.replayCursor = null;
+    state.replaying = false;
+    try {
+      const address = new URL(location.href);
+      address.hash = '';
+      history.replaceState(null, '', address.pathname + address.search);
+    } catch { /* ignore */ }
     allTurns = [];
     rebuildActivity();
     scheduleRender(...ALL_PARTS);
+    loadSessions().then(loadScope);
   });
 }
 

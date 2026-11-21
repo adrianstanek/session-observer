@@ -30,6 +30,8 @@ TRANSLATIONS.ko = (() => {
     freeze: '고정', unfreeze: n => `재개${n ? ` (새 이벤트 ${n})` : ''}`,
     theme: v => `테마: ${v}`,
     clearLog: '로그 지우기', clearLogTitle: '로컬 이벤트 로그 삭제', clearConfirm: '기록된 이벤트를 모두 삭제할까요?',
+    deleteSessionTitle: '이 세션과 저장된 데이터 삭제',
+    deleteSessionConfirm: name => `“${name}” 세션과 Session Observer에 저장된 데이터를 삭제할까요? 원본 앱 트랜스크립트는 삭제되지 않습니다. 이 작업은 취소할 수 없습니다.`,
     range: '기간', range1h: '최근 1시간', range6h: '최근 6시간', range24h: '최근 24시간', range7d: '최근 7일', rangeAll: '전체',
     search: '검색', searchPh: '프롬프트, 응답, 명령, 경로, 오류…',
     group: '도구 그룹', groupTitle: '지도의 어느 부분인지: 파일, 셸, Git, MCP…', allGroups: '모든 그룹', agent: '에이전트', allAgents: '모든 에이전트', agentTitle: 'Claude Code, Codex 또는 둘 다의 세션 표시',
@@ -62,7 +64,7 @@ TRANSLATIONS.ko = (() => {
     home: {
       needsYou: '내 응답 필요', allClear: '지금 응답이 필요한 항목이 없습니다.',
       permission: t => (t ? `${t} 사용 권한` : '권한 필요'), question: '나에게 온 질문', mcp: s => `${s || 'MCP 서버'}가 입력을 요청함`,
-      inSubagent: t => `서브에이전트 ${t}`, noSessions: '이 기간에는 세션이 없습니다.', done: '완료', more: n => `+${n}개 더`, open: '이 세션 열기', openRepository: 'GitHub 저장소 열기',
+      inSubagent: t => `서브에이전트 ${t}`, noSessions: '이 기간에는 세션이 없습니다.', done: '완료', more: n => `+${n}개 더`, open: '이 세션 열기', focus: '앱 창으로 전환', openRepository: 'GitHub 저장소 열기',
     },
     allActivity: '전체 활동', everySession: '모든 세션 합계', sessions: '세션', lastLbl: '최근:',
     ctxWindow: '컨텍스트 창', ctxShort: 'ctx', noSessions: '이 기간에는 세션이 없습니다.',

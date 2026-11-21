@@ -30,6 +30,8 @@ TRANSLATIONS.zh = (() => {
     freeze: '冻结', unfreeze: n => `恢复${n ? `（${n} 条新事件）` : ''}`,
     theme: v => `主题：${v}`,
     clearLog: '清空日志', clearLogTitle: '删除本地事件日志', clearConfirm: '删除所有已记录的事件？',
+    deleteSessionTitle: '删除此会话及其保存的数据',
+    deleteSessionConfirm: name => `删除“${name}”及其保存在 Session Observer 中的数据吗？不会删除应用原始转录记录。此操作无法撤销。`,
     range: '时间范围', range1h: '最近 1 小时', range6h: '最近 6 小时', range24h: '最近 24 小时', range7d: '最近 7 天', rangeAll: '全部',
     search: '搜索', searchPh: '提示词、回复、命令、路径、错误…',
     group: '工具组', groupTitle: '地图的哪一部分：文件、Shell、Git、MCP…', allGroups: '所有组', agent: '代理', allAgents: '所有代理', agentTitle: '显示来自 Claude Code、Codex 或两者的会话',
@@ -62,7 +64,7 @@ TRANSLATIONS.zh = (() => {
     home: {
       needsYou: '等你处理', allClear: '目前没有需要你处理的事项。',
       permission: t => (t ? `请求使用 ${t} 的权限` : '需要权限'), question: '给你的问题', mcp: s => `${s || 'MCP 服务器'} 请求输入`,
-      inSubagent: t => `在子代理 ${t} 中`, noSessions: '此时间范围内没有会话。', done: '已完成', more: n => `另有 ${n} 个`, open: '打开此会话', openRepository: '打开 GitHub 仓库',
+      inSubagent: t => `在子代理 ${t} 中`, noSessions: '此时间范围内没有会话。', done: '已完成', more: n => `另有 ${n} 个`, open: '打开此会话', focus: '切换到应用窗口', openRepository: '打开 GitHub 仓库',
     },
     allActivity: '全部活动', everySession: '所有会话合计', sessions: '会话', lastLbl: '最近：',
     ctxWindow: '上下文窗口', ctxShort: '上下文', noSessions: '此时间范围内没有会话。',
