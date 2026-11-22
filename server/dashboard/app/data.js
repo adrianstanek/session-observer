@@ -126,9 +126,14 @@ function connectLiveUpdates() {
     if (state.replayCursor == null) rebuildActivity();
     scheduleRender(...ALL_PARTS);
   });
+  // older days were loaded: the sessions, and the events of this scope and range, once (a frozen or replaying page
+  // keeps its events until it goes live again)
   stream.addEventListener('history', message => {
     state.history = JSON.parse(message.data);
-    scheduleRender('sessions');
+    loadSessions().then(() => {
+      if (state.frozen || state.replayCursor != null) return scheduleRender('sessions', 'header');
+      return loadScope();
+    });
   });
   stream.addEventListener('reset', () => resetView());
 }

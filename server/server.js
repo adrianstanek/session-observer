@@ -15,7 +15,7 @@ const {
 const { LOOPBACK_NAMES, WILDCARD_ADDRESSES } = require('./lib/features/web/request-guard');
 const { FileTail } = require('./lib/building-blocks/file-tail');
 const { sessions, sessionSummary } = require('./lib/features/sessions/sessions');
-const { broadcast, pingClients, startBroadcasting } = require('./lib/building-blocks/live-updates');
+const { broadcast, pingClients, startBroadcasting, withoutBroadcasting } = require('./lib/building-blocks/live-updates');
 const transcripts = require('./lib/features/sessions/transcript-steps');
 const { clearTranscriptRowsCache } = require('./lib/features/context/transcript-rows');
 const { createRequestHandler } = require('./lib/features/web/routes');
@@ -121,15 +121,19 @@ function logHistory() {
 function loadOlderDays() {
   const older = listDays(SESSION_LOG_DIR).filter(day => day < loadedFrom);
   if (!older.length) return logHistory();
+  readNewLogEvents(); // live events that came just before: these still go out one by one
   const known = new Set(sessions.keys());
   loadedFrom = LOAD_DAYS ? older[Math.max(0, older.length - LOAD_DAYS)] : ALL_DAYS;
-  readNewLogEvents();
-  // (the reads other sessions have scheduled stay: a live session's Stop waits on one)
-  for (const session of sessions.values()) {
-    if (known.has(session.id)) continue;
-    try { transcripts.readTranscripts(session); } catch { /* ignore */ }
-  }
-  broadcast('history', logHistory()); // the loaded sessions went out as 'session' updates
+  // The older days go out as one 'history' message, not event by event: each page then reloads its sessions and
+  // the events of its scope and range once. (The reads other sessions have scheduled stay: a live Stop waits on one.)
+  withoutBroadcasting(() => {
+    readNewLogEvents();
+    for (const session of sessions.values()) {
+      if (known.has(session.id)) continue;
+      try { transcripts.readTranscripts(session); } catch { /* ignore */ }
+    }
+  });
+  broadcast('history', logHistory());
   return logHistory();
 }
 

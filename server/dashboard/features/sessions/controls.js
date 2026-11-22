@@ -21,7 +21,7 @@ async function loadOlderSessions(button) {
   button.disabled = true;
   try {
     const response = await fetch('/api/history/older', { method: 'POST' });
-    if (response.ok) state.history = await response.json(); // the server also sends reset, which reloads the sessions
+    if (response.ok) state.history = await response.json(); // the server also sends history, which reloads the page's data
   } catch { /* server down */ }
   button.disabled = false;
 }
