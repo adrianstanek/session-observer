@@ -357,6 +357,30 @@ test('a background subagent goes on after its turn stops, until its own Subagent
   await waitFor(async () => (await subagentsOf()).find(subagent => subagent.id === 'sub-bg').ended);
 });
 
+test('a subagent whose call returns while it runs is a background one, without run_in_background', async () => {
+  const id = 'sess-async';
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', ...fields });
+  const subagent = async agentId => (await getJson('/api/sessions')).find(s => s.id === id)?.subagentList.find(s => s.id === agentId);
+  // as a real session logged it: the call returns 25ms after SubagentStart, the turn stops, the agent ends a minute later
+  hook('UserPromptSubmit', { prompt: 'wait a minute' });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'as-call', tool_input: { description: 'Wait 60s and report', subagent_type: 'general-purpose', prompt: 'sleep' } });
+  hook('SubagentStart', { agent_id: 'as-sub', agent_type: 'general-purpose' });
+  hook('PostToolUse', { tool_name: 'Agent', tool_use_id: 'as-call', tool_input: { description: 'Wait 60s and report', subagent_type: 'general-purpose', prompt: 'sleep' }, tool_response: 'launched' });
+  // and when the call's result lands before the SubagentStart
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'as-call-2', tool_input: { description: 'Watch the build', subagent_type: 'Explore' } });
+  hook('PostToolUse', { tool_name: 'Agent', tool_use_id: 'as-call-2', tool_input: { description: 'Watch the build', subagent_type: 'Explore' }, tool_response: 'launched' });
+  hook('SubagentStart', { agent_id: 'as-sub-2', agent_type: 'Explore' });
+  hook('Stop', {});
+  await waitFor(async () => (await getJson('/api/sessions')).find(s => s.id === id)?.busy === false);
+  for (const agentId of ['as-sub', 'as-sub-2']) {
+    const running = await subagent(agentId);
+    assert.deepEqual([running.background, running.ended], [true, null], `${agentId} still runs after the Stop`);
+  }
+  hook('SubagentStop', { agent_id: 'as-sub', agent_type: 'general-purpose' });
+  await waitFor(async () => (await subagent('as-sub'))?.ended);
+  hook('SessionEnd', { reason: 'other' });
+});
+
 test('an interrupt written while a turn runs ends the turn though no hook comes after it', async () => {
   const id = 'sess-esc', tp = path.join(DATA_DIR, 'esc.jsonl');
   const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', transcript_path: tp, ...fields });

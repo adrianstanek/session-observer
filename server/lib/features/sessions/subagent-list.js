@@ -3,8 +3,10 @@
 // SubagentStart. Hooks race into the log, so a SubagentStart takes the oldest waiting call of its own type
 // (subagent_type), or else the oldest call that names no type. A call that started no subagent leaves the queue: one
 // refused at its prompt (PermissionDenied, or its error result read from the transcript), or one that failed.
-// A turn that stops ends its subagents, except Claude Code's background agents (Agent with run_in_background): they
-// go on after the turn, until their own SubagentStop, an interrupt or the session's end.
+// A turn that stops ends its subagents, except background agents: they go on after the turn, until their own
+// SubagentStop, an interrupt or the session's end. A subagent runs in the background when its call asked for it
+// (run_in_background), or when its call returned while it still runs (Claude Code can start an agent in the
+// background without that flag; a foreground agent's call returns only after its SubagentStop).
 'use strict';
 const { SUBAGENT_TOOLS } = require('./event-categories');
 
@@ -48,10 +50,16 @@ function trackSubagents(session, event, data) {
     });
   } else if (NO_SUBAGENT_STARTED.has(event.event)) {
     dropSubagentCall(session, data.tool_use_id);
+  } else if (event.event === 'PostToolUse' && data.tool_use_id && SUBAGENT_TOOLS.has(data.tool_name)) {
+    // (hooks race into the log: the call can also return before its SubagentStart)
+    const subagent = session.subagentList.find(candidate => candidate.callId === data.tool_use_id && !candidate.ended);
+    if (subagent) subagent.background = true;
+    const waiting = session.subagentDescriptionsWaiting.find(call => call.toolUseId === data.tool_use_id);
+    if (waiting) waiting.background = true;
   } else if (event.event === 'SubagentStart' && data.agent_id != null) {
     const call = takeSubagentCall(session, data.agent_type);
     session.subagentList.push({
-      id: data.agent_id, type: data.agent_type || null,
+      id: data.agent_id, type: data.agent_type || null, callId: call.toolUseId || null,
       description: call.description, background: call.background, started: event.ts, ended: null,
     });
     if (session.subagentList.length > SUBAGENTS_KEPT_MAX) session.subagentList.splice(0, session.subagentList.length - SUBAGENTS_KEPT_MAX);
