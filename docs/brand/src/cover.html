@@ -24,6 +24,10 @@
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid #2d3036; border-radius: 999px; background: #17181bcc; font-size: 15px; color: #b9bec7; }
   .chip i { width: 9px; height: 9px; border-radius: 2px; }
+  .agents { display: flex; align-items: center; gap: 10px; font-size: 17px; color: #8b919c; }
+  .agent { padding: 5px 14px; border: 1px solid; border-radius: 999px; font-size: 18px; font-weight: 600; }
+  .agent.claude { color: #e8875f; border-color: #e8875f8c; background: #e8875f1f; }
+  .agent.codex { color: #d4d7dd; border-color: #d4d7dd8c; background: #d4d7dd1f; }
   .shot { position: absolute; left: 590px; top: 70px; width: 820px; height: 500px; border-radius: 14px; overflow: hidden;
     border: 1px solid #3a3e46; box-shadow: 0 40px 80px #000a, 0 0 0 6px #ffffff06;
     transform: perspective(1800px) rotateY(-13deg) rotateX(3deg); transform-origin: left center; }
@@ -33,7 +37,8 @@
   <div class="left">
     <div class="brand"><img src="icon-eye.svg" alt=""><span class="live"><i></i>live · local · zero deps</span></div>
     <h1>Session<br>Observer</h1>
-    <p>See <b>everything Claude Code does</b> in a session, live, on one local dashboard.</p>
+    <p>See <b>everything your coding agents do</b> in a session, live, on one local dashboard.</p>
+    <div class="agents">for <span class="agent claude">Claude Code</span><span class="agent codex">Codex</span></div>
     <div class="chips">
       <span class="chip"><i style="background:#2dd4bf"></i>Prompts</span>
       <span class="chip"><i style="background:#a78bfa"></i>Model steps</span>
