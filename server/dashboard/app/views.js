@@ -86,7 +86,22 @@ function restoreHomeScroll(box, top) {
   if (home) home.scrollTop = top;
 }
 
-// route: newest turn is on top, so jump to the focused turn when it changes, otherwise keep the scroll position
+// route: a click inside it (a stop, a turn's header or its toggle) leaves what was clicked where it is under the mouse;
+// a turn picked anywhere else (Prev / Next, keys, Details, Overview, Chat) is brought into view if it is out of sight;
+// otherwise the scroll position stays
+const ROUTE_ANCHOR_MS = 2000; // how long a click inside the route holds its place, for the redraw it causes
+let routeClickAnchor = null;  // { selector, offset, at }: what was clicked, and how far below the top of the box
+
+function anchorRouteClick(target) {
+  const scroller = viewBox().querySelector('.mscroll');
+  const item = scroller?.contains(target) ? target.closest('[data-tog], [data-key], [data-seqs]') : null;
+  if (!item || !scroller.contains(item)) { routeClickAnchor = null; return; }
+  const selector = item.dataset.tog ? `[data-tog="${CSS.escape(item.dataset.tog)}"]`
+    : item.dataset.key ? `[data-key="${CSS.escape(item.dataset.key)}"]`
+      : `[data-seqs~="${CSS.escape(item.dataset.seqs.trim().split(/\s+/)[0])}"]`;
+  routeClickAnchor = { selector, offset: item.getBoundingClientRect().top - scroller.getBoundingClientRect().top, at: Date.now() };
+}
+
 function rememberRouteScroll(box) {
   const scroller = box.querySelector('.mscroll');
   return { focusedTurn: scroller?.dataset.focus, top: scroller ? scroller.scrollTop : 0 };
@@ -94,7 +109,17 @@ function rememberRouteScroll(box) {
 
 function restoreRouteScroll(box, before) {
   const scroller = box.querySelector('.mscroll');
-  if (scroller) scroller.scrollTop = scroller.dataset.focus !== before.focusedTurn ? Number(scroller.dataset.fy) : before.top;
+  if (!scroller) return;
+  scroller.scrollTop = before.top;
+  const anchor = routeClickAnchor && Date.now() - routeClickAnchor.at <= ROUTE_ANCHOR_MS && scroller.querySelector(routeClickAnchor.selector);
+  if (anchor) {
+    scroller.scrollTop += anchor.getBoundingClientRect().top - scroller.getBoundingClientRect().top - routeClickAnchor.offset;
+    return;
+  }
+  if (scroller.dataset.focus === before.focusedTurn) return;
+  const turnTop = Number(scroller.dataset.fy);
+  const inSight = turnTop >= before.top && turnTop <= before.top + scroller.clientHeight - 60;
+  if (!inSight) scroller.scrollTop = turnTop;
 }
 
 // draws the view in #alt when something changed (at most every VIEW_REDRAW_MS otherwise)
