@@ -35,6 +35,7 @@ function initViewClicks() {
     setView(new URLSearchParams(location.search).get('layout') || storage.get(SETTING_KEYS.layout, 'home'), 'none');
   });
   viewBox().addEventListener('click', event => {
+    anchorRouteClick(event.target); // a click inside the route keeps what it clicked in place (views.js)
     if (event.target.closest('[data-follow]')) {
       state.selectedTurnKey = null;
       renderDetails();

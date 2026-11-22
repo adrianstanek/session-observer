@@ -15,6 +15,9 @@ const RENDERERS = {
 const ALL_PARTS = Object.keys(RENDERERS);
 const partsToRender = new Set();
 let renderFrame = 0;
+// a mouse button or finger is down on the page: nothing is redrawn until it is released, or a redraw between press and
+// release would swap the button under the pointer and the click would be lost (initPointerHold)
+let pointerHeld = false;
 
 function scheduleRender(...parts) {
   for (const part of parts) partsToRender.add(part);
@@ -23,9 +26,22 @@ function scheduleRender(...parts) {
 
 function renderScheduledParts() {
   renderFrame = 0;
+  if (pointerHeld) return; // the parts wait for the release
   for (const [part, render] of Object.entries(RENDERERS)) if (partsToRender.has(part)) render();
   partsToRender.clear();
   viewNeedsDrawing = true;
+}
+
+function initPointerHold() {
+  addEventListener('pointerdown', () => { pointerHeld = true; }, true);
+  const release = () => {
+    if (!pointerHeld) return;
+    pointerHeld = false;
+    if (partsToRender.size) scheduleRender(); // what waited is drawn now (the view catches up on its own)
+  };
+  for (const name of ['pointerup', 'pointercancel']) addEventListener(name, release, true);
+  // only the window losing focus ends the hold: a button or input losing it (the press moves focus) must not
+  addEventListener('blur', event => { if (event.target === window) release(); }, true);
 }
 
 // every frame: the replay moves on and the view in #alt is drawn when something changed

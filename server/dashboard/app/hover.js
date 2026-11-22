@@ -8,15 +8,24 @@ let hoveredViewSeqs = null;  // the seqs of the chat item / route stop under the
 const stopForSeq = (svg, seq) => svg.querySelector(`[data-seqs~="${CSS.escape(String(seq))}"]`);
 const detailRowForSeq = seq => elementById('ev-' + seq) || elementById('detail').querySelector(`.erow[data-pre="${seq}"]`);
 
-// route: the hovered line lit, and the hovered Details row's stop pinned; everything else fades
+// a Route line's key is "<turn key>|<main or subagent id>": the turn it belongs to
+const turnOfLineKey = lineKey => lineKey.slice(0, lineKey.lastIndexOf('|'));
+
+// route: the hovered line lit, and the hovered Details row's stop pinned; the rest of that turn fades. The other open
+// turns share the svg but stay as they are.
 function highlightRoute(box) {
   const svg = box.querySelector('svg.metro');
   if (!svg) return;
   const pinnedStop = hoveredDetailSeq != null ? stopForSeq(svg, hoveredDetailSeq) : null;
-  svg.classList.toggle('hl', !!hoveredLineKey || !!pinnedStop);
-  for (const element of svg.querySelectorAll('.on, .pin')) element.classList.remove('on', 'pin');
-  if (hoveredLineKey) for (const element of svg.querySelectorAll(`[data-ln~="${CSS.escape(hoveredLineKey)}"]`)) element.classList.add('on');
-  if (pinnedStop) pinnedStop.classList.add('on', 'pin');
+  for (const element of svg.querySelectorAll('.on, .pin, .off')) element.classList.remove('on', 'pin', 'off');
+  const turns = new Set([hoveredLineKey, pinnedStop?.dataset.ln.split(' ')[0]].filter(Boolean).map(turnOfLineKey));
+  if (!turns.size) return;
+  for (const element of svg.querySelectorAll('[data-ln]')) {
+    const keys = element.dataset.ln.split(' ');
+    if (!keys.some(key => turns.has(turnOfLineKey(key)))) continue;
+    element.classList.add(keys.includes(hoveredLineKey) || element === pinnedStop ? 'on' : 'off');
+  }
+  if (pinnedStop) pinnedStop.classList.add('pin');
 }
 
 // chat: the items for the hovered Details row lit, the rest faded

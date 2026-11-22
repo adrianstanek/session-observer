@@ -10,7 +10,6 @@ const VIEW_REDRAW_MS = 250;
 let lastViewDrawAt = 0;
 let lastViewHtml = '';
 let contextTurnShown = null; // the selected turn the Context view last scrolled to
-
 function setView(id, historyMode = 'push') {
   if (!VIEWS.some(view => view.id === id)) id = 'home';
   if (historyMode !== 'none') {
@@ -79,7 +78,30 @@ function restoreChatScroll(box) {
   remember();
 }
 
-// route: newest turn is on top, so jump to the focused turn when it changes, otherwise keep the scroll position
+// home: the whole view scrolls, and live updates redraw it often, so keep where you scrolled to
+const rememberHomeScroll = box => box.querySelector('.home')?.scrollTop ?? 0;
+
+function restoreHomeScroll(box, top) {
+  const home = box.querySelector('.home');
+  if (home) home.scrollTop = top;
+}
+
+// route: a click inside it (a stop, a turn's header or its toggle) leaves what was clicked where it is under the mouse;
+// a turn picked anywhere else (Prev / Next, keys, Details, Overview, Chat) is brought into view if it is out of sight;
+// otherwise the scroll position stays
+const ROUTE_ANCHOR_MS = 2000; // how long a click inside the route holds its place, for the redraw it causes
+let routeClickAnchor = null;  // { selector, offset, at }: what was clicked, and how far below the top of the box
+
+function anchorRouteClick(target) {
+  const scroller = viewBox().querySelector('.mscroll');
+  const item = scroller?.contains(target) ? target.closest('[data-tog], [data-key], [data-seqs]') : null;
+  if (!item || !scroller.contains(item)) { routeClickAnchor = null; return; }
+  const selector = item.dataset.tog ? `[data-tog="${CSS.escape(item.dataset.tog)}"]`
+    : item.dataset.key ? `[data-key="${CSS.escape(item.dataset.key)}"]`
+      : `[data-seqs~="${CSS.escape(item.dataset.seqs.trim().split(/\s+/)[0])}"]`;
+  routeClickAnchor = { selector, offset: item.getBoundingClientRect().top - scroller.getBoundingClientRect().top, at: Date.now() };
+}
+
 function rememberRouteScroll(box) {
   const scroller = box.querySelector('.mscroll');
   return { focusedTurn: scroller?.dataset.focus, top: scroller ? scroller.scrollTop : 0 };
@@ -87,12 +109,23 @@ function rememberRouteScroll(box) {
 
 function restoreRouteScroll(box, before) {
   const scroller = box.querySelector('.mscroll');
-  if (scroller) scroller.scrollTop = scroller.dataset.focus !== before.focusedTurn ? Number(scroller.dataset.fy) : before.top;
+  if (!scroller) return;
+  scroller.scrollTop = before.top;
+  const anchor = routeClickAnchor && Date.now() - routeClickAnchor.at <= ROUTE_ANCHOR_MS && scroller.querySelector(routeClickAnchor.selector);
+  if (anchor) {
+    scroller.scrollTop += anchor.getBoundingClientRect().top - scroller.getBoundingClientRect().top - routeClickAnchor.offset;
+    return;
+  }
+  if (scroller.dataset.focus === before.focusedTurn) return;
+  const turnTop = Number(scroller.dataset.fy);
+  const inSight = turnTop >= before.top && turnTop <= before.top + scroller.clientHeight - 60;
+  if (!inSight) scroller.scrollTop = turnTop;
 }
 
 // draws the view in #alt when something changed (at most every VIEW_REDRAW_MS otherwise)
 function drawView(now) {
   if (!viewNeedsDrawing && now - lastViewDrawAt < VIEW_REDRAW_MS) return;
+  if (pointerHeld) return; // a click in progress: drawn once it is released (rendering.js)
   viewNeedsDrawing = false;
   lastViewDrawAt = now;
   if (state.view === 'overview') return; // the overview is #mid, drawn by renderOverview
@@ -101,9 +134,10 @@ function drawView(now) {
   lastViewHtml = html;
 
   const box = viewBox();
-  const routeScroll = rememberRouteScroll(box);
+  const routeScroll = rememberRouteScroll(box), homeScroll = rememberHomeScroll(box);
   rememberContextScroll(box);
   box.innerHTML = withAnimationPhase(html, now);
+  restoreHomeScroll(box, homeScroll);
   restoreContextScroll(box);
   applyHoverHighlights();
   restoreChatScroll(box);
