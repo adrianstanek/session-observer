@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.10.0](https://github.com/radekwojpl2/session-observer/compare/v0.9.0...v0.10.0) (2026-11-22)
+
+
+### Features
+
+* store events in day folders per session ([c4fd3b0](https://github.com/radekwojpl2/session-observer/commit/c4fd3b0e73828cc13daf4d53d0573426d720614f))
+
+
+### Bug Fixes
+
+* day-folder storage bugs found in review ([896480a](https://github.com/radekwojpl2/session-observer/commit/896480a585d64a5920f8b3280f36d0fc7fa9b19a))
+* load older days without sending each event to every page ([137314f](https://github.com/radekwojpl2/session-observer/commit/137314f7937892673bd25ae01a9b2f417965be91))
+* restart.js finds the server without lsof ([136f749](https://github.com/radekwojpl2/session-observer/commit/136f749ba1881f722bb449fa306e0565971232db))
+
+
+### Code Changes
+
+* drop the hook's unused fs import ([2ddfa86](https://github.com/radekwojpl2/session-observer/commit/2ddfa86cbce60e7f81d8e248981c28fc8e5f2287))
+* stop importing session files from unreleased builds ([6c7694f](https://github.com/radekwojpl2/session-observer/commit/6c7694f16323d52626cfce7081d6a039f5c92700))
+
+
+### Reverts
+
+* leave restart.js as it is on main ([cae1f43](https://github.com/radekwojpl2/session-observer/commit/cae1f4375522096cfae458b0798fc61047a5b878))
+
 ## [0.9.0](https://github.com/radekwojpl2/session-observer/compare/v0.8.0...v0.9.0) (2026-11-22)
 
 
