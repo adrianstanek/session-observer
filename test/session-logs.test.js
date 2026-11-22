@@ -192,7 +192,7 @@ test('the server loads recent days at start, a split session whole, and older da
   const dataDir = tempDir('so-window-');
   const sessionDirectory = path.join(dataDir, 'sessions');
   const day = offset => addDays(today(), offset);
-  // old: only 10 days ago; long: split over 10 days ago and today, as an earlier build wrote it; recent: today
+  // old: only 10 days ago; long: split over 10 days ago and today, as two hooks of a new session can at midnight; recent: today
   writeEvents(sessionLogPath(sessionDirectory, 'old', at(day(-10))), [{ ts: at(day(-10)), event: 'SessionStart', session_id: 'old', data: {} }]);
   writeEvents(sessionLogPath(sessionDirectory, 'long', at(day(-10))), [{ ts: at(day(-10)), event: 'SessionStart', session_id: 'long', data: {} }]);
   writeEvents(sessionLogPath(sessionDirectory, 'long', at(day(0))), [{ ts: at(day(0), '00:00:01'), event: 'UserPromptSubmit', session_id: 'long', data: { prompt: 'hi' } }]);

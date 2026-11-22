@@ -28,7 +28,7 @@ const readNames = directory => { try { return fs.readdirSync(directory); } catch
 const listDays = directory => readNames(directory).filter(name => DAY_PATTERN.test(name)).sort();
 const sessionFilesInDay = (directory, day) => readNames(path.join(directory, day)).filter(name => FILE_PATTERN.test(name));
 
-// every file with this name, oldest day first: one, unless an earlier build split the session over several days
+// every file with this name, oldest day first: one, unless two hooks of a new session created it on both sides of midnight
 const filesNamed = (directory, name, days = listDays(directory)) =>
   days.map(day => path.join(directory, day, name)).filter(file => fs.existsSync(file));
 const filesOfSession = (directory, sessionId) => filesNamed(directory, sessionLogName(sessionId));
@@ -179,9 +179,8 @@ function importFile(source, { sessionDirectory, deleted, resumed }) {
   return copied;
 }
 
-// Moves events written outside the day folders into them: the former combined events.jsonl (renamed first, so an
-// older hook that appends meanwhile starts a new file that the server tails), and per-session files written straight
-// into sessions/ by an earlier build of this layout. Runs at every start; returns how many lines were copied.
+// Moves the former combined events.jsonl into the day folders (renamed first, so an older hook that appends meanwhile
+// starts a new file that the server tails). Runs at every start; returns how many lines were copied.
 function migrateLegacyLog({ legacyFile, sessionDirectory, deleted = new Map() }) {
   fs.mkdirSync(sessionDirectory, { recursive: true, mode: 0o700 });
   const dataDirectory = path.dirname(legacyFile);
@@ -194,9 +193,6 @@ function migrateLegacyLog({ legacyFile, sessionDirectory, deleted = new Map() })
       sources.push({ file: renamed, resumed: false });
     }
   } catch { /* no legacy log, or an older hook holds it open: it is tailed instead, and imported next start */ }
-  for (const name of readNames(sessionDirectory)) {
-    if (FILE_PATTERN.test(name)) sources.push({ file: path.join(sessionDirectory, name), resumed: true });
-  }
   let copied = 0;
   for (const { file, resumed } of sources) {
     try { copied += importFile(file, { sessionDirectory, deleted, resumed }); } catch { /* left for the next start */ }

@@ -119,7 +119,7 @@ Claude Code can fire several hooks at once:
 
 **3. The import also writes one file per session.** When the server copies the former combined `events.jsonl` into the day folders, it groups lines by session. Each session goes into the file it already has, or into a new file in the folder of the day of its last event. A session in the old log that ran from the 1st to the 2nd ends up in a single file under `2026-01-02/`.
 
-**Fallback.** A session can still end up in two folders, for example if a move keeps being refused, or if an earlier build of this layout wrote the files. The server then reads the older file first and the newer one after it, so the session's events stay in order.
+**Fallback.** A session can still end up in two folders: when a brand-new session sends its first two events at the same moment on both sides of midnight UTC, each hook creates a file. The server then reads the older file first and the newer one after it, so the session's events stay in order.
 
 **What a start reads.** The server reads the day folders from the last `OBSERVER_LOAD_DAYS` days (7 by default, today included). Because a session's file sits in the folder of its last active day, this covers every session active in those days, however long ago it started. Older day folders stay on disk until **Load sessions before …** in the session list loads the next batch. The dashboard's time range still filters what it shows, so pick a longer range to see older sessions.
 

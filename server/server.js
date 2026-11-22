@@ -54,8 +54,8 @@ function readTail(tail, fresh) {
 }
 
 // One session file: the hook moves it to the day the session was last active, so a known file found in a newer
-// folder is the same bytes, and its tail keeps its offset. Should a session still be split over days (written by an
-// earlier build), its earlier files are read first, so its events arrive in order.
+// folder is the same bytes, and its tail keeps its offset. Should a session be split over days (the first two events of
+// a new session, sent at once on both sides of midnight, each create a file), its earlier files are read first.
 function readSessionFile(days, name, file, fresh) {
   let tail = logTails.get(name);
   if (!tail) {
