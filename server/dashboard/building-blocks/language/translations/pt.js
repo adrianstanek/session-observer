@@ -34,6 +34,7 @@ TRANSLATIONS.pt = (() => {
     clearLog: 'Limpar log', clearLogTitle: 'Apagar o log local de eventos', clearConfirm: 'Apagar todos os eventos registrados?',
     deleteSessionTitle: 'Excluir esta sessão e os dados salvos',
     deleteSessionConfirm: name => `Excluir “${name}” e os dados salvos no Session Observer? O transcript original do aplicativo será mantido. Esta ação não pode ser desfeita.`,
+    deleteSessionFailed: reason => `Não foi possível excluir a sessão: ${reason}`,
     loadOlderSessions: day => `Carregar sessões anteriores a ${day}`,
     loadOlderTitle: 'Dias anteriores estão salvos, mas ainda não foram carregados',
     range: 'Período', range1h: 'última 1 h', range6h: 'últimas 6 h', range24h: 'últimas 24 h', range7d: 'últimos 7 dias', rangeAll: 'tudo',

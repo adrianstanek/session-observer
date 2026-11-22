@@ -32,6 +32,7 @@ TRANSLATIONS.ja = (() => {
     clearLog: 'ログを消去', clearLogTitle: 'ローカルのイベントログを削除', clearConfirm: '記録されたイベントをすべて削除しますか？',
     deleteSessionTitle: 'このセッションと保存データを削除',
     deleteSessionConfirm: name => `「${name}」と Session Observer の保存データを削除しますか？元のアプリのトランスクリプトは削除されません。この操作は取り消せません。`,
+    deleteSessionFailed: reason => `セッションを削除できませんでした: ${reason}`,
     loadOlderSessions: day => `${day} より前のセッションを読み込む`,
     loadOlderTitle: '以前の日のデータは保存されていますが、まだ読み込まれていません',
     range: '期間', range1h: '直近 1 時間', range6h: '直近 6 時間', range24h: '直近 24 時間', range7d: '直近 7 日', rangeAll: 'すべて',

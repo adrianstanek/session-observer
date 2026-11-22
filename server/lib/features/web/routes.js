@@ -121,7 +121,7 @@ function createRequestHandler({ clearLog, deleteSession, logHistory, loadOlderDa
     const asset = ASSET_PATH.exec(url.pathname);
     if (asset) return serveDashboardAsset(response, asset);
     if (url.pathname === '/api/clear' && request.method === 'POST') {
-      clearLog();
+      try { clearLog(); } catch (error) { return sendError(response, 500, String(error.message || error)); }
       broadcast('reset', {});
       return sendJson(response, 200, { ok: true });
     }

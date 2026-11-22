@@ -37,12 +37,14 @@ const filesOfSession = (directory, sessionId) => filesNamed(directory, sessionLo
 // its first event of a new day moves the file from the earlier day's folder into today's.
 function sessionLogForAppend(directory, sessionId, ts) {
   const name = sessionLogName(sessionId);
-  const target = path.join(directory, dayOf(ts), name);
+  const targetDay = dayOf(ts);
+  const target = path.join(directory, targetDay, name);
   if (fs.existsSync(target)) return target;
   fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
   for (const day of listDays(directory).reverse()) {
     const earlier = path.join(directory, day, name);
     if (earlier === target || !fs.existsSync(earlier)) continue;
+    if (day > targetDay) return earlier; // a hook with a later ts already moved it on (around midnight): append there
     try {
       fs.renameSync(earlier, target);
     } catch {
@@ -53,6 +55,24 @@ function sessionLogForAppend(directory, sessionId, ts) {
     return target;
   }
   return target;
+}
+
+// Appends one hook event to its session's file. An existing file is opened without creating it: a hook whose file
+// another hook moved meanwhile (the session's first event of a new day) looks it up again instead of starting a stray
+// copy in the old folder. An open file follows a move, so a line written after one lands in the moved file.
+function appendSessionEvent(directory, sessionId, ts, text) {
+  let fd = null;
+  for (let attempt = 0; attempt < 3 && fd == null; attempt++) {
+    const file = sessionLogForAppend(directory, sessionId, ts);
+    try {
+      fd = fs.openSync(file, fs.constants.O_WRONLY | fs.constants.O_APPEND);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      if (!filesOfSession(directory, sessionId).length) fd = fs.openSync(file, 'a', 0o600); // the session's first event
+    }
+  }
+  if (fd == null) fd = fs.openSync(sessionLogForAppend(directory, sessionId, ts), 'a', 0o600);
+  try { fs.writeSync(fd, text); } finally { fs.closeSync(fd); }
 }
 
 function appendLine(file, event) {
@@ -116,7 +136,17 @@ function importDestinations(sessionDirectory, events) {
   for (const event of events) if (!(lastTs.get(event.session_id) >= event.ts)) lastTs.set(event.session_id, event.ts);
   const destinations = new Map();
   for (const [sessionId, ts] of lastTs) {
-    destinations.set(sessionId, filesOfSession(sessionDirectory, sessionId).at(-1) || sessionLogPath(sessionDirectory, sessionId, ts));
+    const existing = filesOfSession(sessionDirectory, sessionId).at(-1);
+    const target = sessionLogPath(sessionDirectory, sessionId, ts);
+    // the file sits in the day the session was last active: move it forward when the imported lines are newer
+    if (existing && path.basename(path.dirname(existing)) < dayOf(ts)) {
+      fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
+      fs.renameSync(existing, target);
+      try { fs.rmdirSync(path.dirname(existing)); } catch { /* the day still holds other sessions */ }
+      destinations.set(sessionId, target);
+    } else {
+      destinations.set(sessionId, existing || target);
+    }
   }
   return events.map(event => destinations.get(event.session_id));
 }
@@ -175,6 +205,6 @@ function migrateLegacyLog({ legacyFile, sessionDirectory, deleted = new Map() })
 }
 
 module.exports = {
-  MIGRATED_FIELD, sessionLogKey, sessionLogName, sessionLogPath, sessionLogForAppend, today, dayOf, addDays, listDays,
+  MIGRATED_FIELD, sessionLogKey, sessionLogName, sessionLogPath, sessionLogForAppend, appendSessionEvent, today, dayOf, addDays, listDays,
   sessionFilesInDay, filesNamed, filesOfSession, readDeletedSessions, recordDeletedSession, isDeleted, migrateLegacyLog,
 };

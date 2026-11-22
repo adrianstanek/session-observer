@@ -8,12 +8,12 @@ async function deleteSessionFromDashboard(button) {
   try {
     const response = await fetch(`/api/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
     if (!response.ok) {
-      const body = await response.json();
-      throw new Error(body.error || 'Could not delete session');
+      const body = await response.json().catch(() => ({})); // an error page need not be JSON
+      throw new Error(body.error || `HTTP ${response.status}`);
     }
   } catch (error) {
-    button.title = error.message;
     button.disabled = false;
+    alert(TEXT.deleteSessionFailed(error.message)); // the session stays: say so, or the click looks ignored
   }
 }
 

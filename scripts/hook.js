@@ -9,7 +9,6 @@ const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
 const net = require('net');
-const { sessionLogForAppend } = require('../server/lib/building-blocks/session-logs');
 
 const DATA_DIR = process.env.OBSERVER_DATA_DIR || path.join(os.homedir(), '.claude', 'session-observer');
 const SESSION_LOG_DIR = path.join(DATA_DIR, 'sessions');
@@ -87,8 +86,9 @@ async function main() {
 
   // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
   // one file per session, in the folder of the UTC day it was last active (moved there by its first event of the day)
-  const logFile = sessionLogForAppend(SESSION_LOG_DIR, event.session_id, event.ts);
-  fs.appendFileSync(logFile, JSON.stringify(event) + '\n', { mode: 0o600 });
+  // loaded here, inside main(): a missing or broken module must not make the hook fail
+  const { appendSessionEvent } = require('../server/lib/building-blocks/session-logs');
+  appendSessionEvent(SESSION_LOG_DIR, event.session_id, event.ts, JSON.stringify(event) + '\n');
 
   if (event.event === 'SessionStart') await ensureServer();
 }

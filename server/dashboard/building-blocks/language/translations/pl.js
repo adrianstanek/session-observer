@@ -36,6 +36,7 @@ TRANSLATIONS.pl = (() => {
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
     deleteSessionTitle: 'Usuń tę sesję i zapisane dane',
     deleteSessionConfirm: name => `Usunąć sesję „${name}” i zapisane dane Session Observer? Oryginalny transkrypt aplikacji pozostanie. Tej operacji nie można cofnąć.`,
+    deleteSessionFailed: reason => `Nie udało się usunąć sesji: ${reason}`,
     loadOlderSessions: day => `Wczytaj sesje sprzed ${day}`,
     loadOlderTitle: 'Starsze dni są zapisane, ale jeszcze niewczytane',
     range: 'Zakres', range1h: 'ostatnia godzina', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',

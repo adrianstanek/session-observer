@@ -49,7 +49,6 @@ function readTail(tail, fresh) {
   for (const { line } of tail.readNewRecords()) {
     const event = parseEvent(line);
     if (!event) continue;
-    transcripts.ingestEvent(event);
     fresh.push(event);
   }
 }
@@ -90,7 +89,6 @@ function readNewLogEvents() {
     for (const { line } of legacyTail.readNewRecords()) {
       const event = parseEvent(line);
       if (!event || isDeleted(deletedSessions, event)) continue;
-      transcripts.ingestEvent(event);
       fresh.push(event);
     }
     lastReadError = '';
@@ -100,6 +98,9 @@ function readNewLogEvents() {
     if (message !== lastReadError) console.error('session-observer: reading the event log failed:', message);
     lastReadError = message;
   }
+  // in time order: a session's lines imported from the former combined log can sit after its newer ones
+  fresh.sort((a, b) => String(a.ts || '').localeCompare(String(b.ts || '')));
+  for (const event of fresh) transcripts.ingestEvent(event);
   const touched = new Set();
   for (const event of fresh) {
     broadcast('event', event);
@@ -123,21 +124,29 @@ function loadOlderDays() {
   const known = new Set(sessions.keys());
   loadedFrom = LOAD_DAYS ? older[Math.max(0, older.length - LOAD_DAYS)] : ALL_DAYS;
   readNewLogEvents();
-  transcripts.cancelScheduledReads();
+  // (the reads other sessions have scheduled stay: a live session's Stop waits on one)
   for (const session of sessions.values()) {
     if (known.has(session.id)) continue;
     try { transcripts.readTranscripts(session); } catch { /* ignore */ }
   }
-  broadcast('reset', {});
+  broadcast('history', logHistory()); // the loaded sessions went out as 'session' updates
   return logHistory();
 }
 
 function clearLog() {
   try { fs.writeFileSync(LOG_FILE, ''); } catch { /* ignore */ }
-  for (const name of fs.readdirSync(SESSION_LOG_DIR)) {
+  let names = [];
+  try { names = fs.readdirSync(SESSION_LOG_DIR); } catch { /* no sessions folder: nothing to remove */ }
+  for (const name of names) {
     try { fs.rmSync(path.join(SESSION_LOG_DIR, name), { recursive: true, force: true }); } catch { /* ignore */ }
   }
   try { fs.writeFileSync(DELETED_SESSIONS_FILE, ''); } catch { /* ignore */ }
+  // an interrupted import's leftovers, or the next start brings the cleared events back
+  let dataNames = [];
+  try { dataNames = fs.readdirSync(DATA_DIR); } catch { /* no data folder */ }
+  for (const name of dataNames) {
+    if (/^events[.][0-9]+[.]migrating$/.test(name)) try { fs.unlinkSync(path.join(DATA_DIR, name)); } catch { /* ignore */ }
+  }
   deletedSessions = new Map();
   sessions.clear();
   transcripts.resetTranscriptState();
@@ -160,7 +169,7 @@ function reloadAfterSessionDelete(sessionId) {
   transcripts.clearSessionState(sessionId, session);
   clearTranscriptRowsCache(session);
   sessions.delete(sessionId);
-  broadcast('reset', {});
+  broadcast('session-deleted', { id: sessionId });
   return true;
 }
 
@@ -202,19 +211,20 @@ function warnIfReachableFromOtherMachines() {
 }
 
 // ---------- start ----------
-protectDataDir();
-loadExistingEvents();
-setInterval(readNewLogEvents, LOG_POLL_MS);
-setInterval(pingClients, PING_MS);
-setInterval(pollBusyTranscripts, BUSY_TRANSCRIPT_POLL_MS);
-
 const server = http.createServer(createRequestHandler({ clearLog, deleteSession: reloadAfterSessionDelete, logHistory, loadOlderDays }));
 server.on('error', error => {
   if (error.code === 'EADDRINUSE') process.exit(0); // another instance already serves the dashboard
   console.error(error);
   process.exit(1);
 });
+// Only the instance that holds the port imports the former combined log and reads the day folders: a second start
+// exits on EADDRINUSE before it moves any file another server is tailing.
 server.listen(PORT, HOST, () => {
+  protectDataDir();
+  loadExistingEvents();
+  setInterval(readNewLogEvents, LOG_POLL_MS);
+  setInterval(pingClients, PING_MS);
+  setInterval(pollBusyTranscripts, BUSY_TRANSCRIPT_POLL_MS);
   console.log(`Session Observer → http://localhost:${PORT}`);
   warnIfReachableFromOtherMachines();
 });

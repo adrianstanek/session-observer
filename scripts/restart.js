@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Stops every running dashboard server and starts the newest installed plugin version's server.
+// Stops the dashboard server on PORT and starts the newest installed plugin version's server.
 // Used after a plugin update: the old server keeps running in the background until it is stopped.
 'use strict';
 const fs = require('fs');
@@ -10,7 +10,7 @@ const { execFileSync } = require('child_process');
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
 const PORT_FREE_TIMEOUT_MS = 5000;
 const PORT_POLL_MS = 200;
-const SERVER_COMMAND_LINE = /session-observer.*server\.js/;
+const SERVER_COMMAND_LINE = /server\.js/;
 
 const pluginRoot = path.join(__dirname, '..');
 
@@ -31,7 +31,26 @@ function newestPluginRoot() {
   return versions.length ? path.join(versionsDir, versions[versions.length - 1]) : pluginRoot;
 }
 
+// the pids listening on PORT: only the dashboard on this port is stopped, not a server on another port
+function pidsListeningOnPort() {
+  try {
+    if (process.platform === 'win32') {
+      const script = `Get-NetTCPConnection -LocalPort ${PORT} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $_.OwningProcess }`;
+      const output = execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { encoding: 'utf8' });
+      return new Set(output.split(/\r?\n/).map(Number).filter(Boolean));
+    }
+    const output = execFileSync('lsof', ['-t', '-iTCP:' + PORT, '-sTCP:LISTEN'], { encoding: 'utf8' });
+    return new Set(output.split('\n').map(Number).filter(Boolean));
+  } catch { return new Set(); }
+}
+
+// node processes running a server.js that listen on PORT (one started with a relative path included)
 function runningServerPids() {
+  const listening = pidsListeningOnPort();
+  return nodeServerPids().filter((pid) => listening.has(pid));
+}
+
+function nodeServerPids() {
   try {
     if (process.platform === 'win32') {
       const script = "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ForEach-Object { \"$($_.ProcessId)`t$($_.CommandLine)\" }";

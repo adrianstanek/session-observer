@@ -115,25 +115,43 @@ function connectLiveUpdates() {
     }
     takeEvent(event);
   });
-  stream.addEventListener('reset', () => {
-    state.sessions.clear();
-    state.events = [];
-    state.frozenEvents = [];
-    state.openEventSeqs.clear();
-    state.selectedTurnKey = null;
-    state.scope = ALL_SESSIONS;
-    state.replayCursor = null;
-    state.replaying = false;
-    try {
-      const address = new URL(location.href);
-      address.hash = '';
-      history.replaceState(null, '', address.pathname + address.search);
-    } catch { /* ignore */ }
-    allTurns = [];
-    rebuildActivity();
+  // one session gone: the other tabs keep their view, unless they were looking at that session
+  stream.addEventListener('session-deleted', message => {
+    const { id } = JSON.parse(message.data);
+    state.sessions.delete(id);
+    if (state.scope === id) return resetView();
+    state.events = state.events.filter(event => event.session_id !== id);
+    state.frozenEvents = state.frozenEvents.filter(event => event.session_id !== id);
+    if (state.selectedTurnKey?.split(':')[0] === id) state.selectedTurnKey = null;
+    if (state.replayCursor == null) rebuildActivity();
     scheduleRender(...ALL_PARTS);
-    loadSessions().then(loadScope);
   });
+  stream.addEventListener('history', message => {
+    state.history = JSON.parse(message.data);
+    scheduleRender('sessions');
+  });
+  stream.addEventListener('reset', () => resetView());
+}
+
+// the whole log changed (it was cleared, or the session in view is gone): back to every session
+function resetView() {
+  state.sessions.clear();
+  state.events = [];
+  state.frozenEvents = [];
+  state.openEventSeqs.clear();
+  state.selectedTurnKey = null;
+  state.scope = ALL_SESSIONS;
+  state.replayCursor = null;
+  state.replaying = false;
+  try {
+    const address = new URL(location.href);
+    address.hash = '';
+    history.replaceState(null, '', address.pathname + address.search);
+  } catch { /* ignore */ }
+  allTurns = [];
+  rebuildActivity();
+  scheduleRender(...ALL_PARTS);
+  loadSessions().then(loadScope);
 }
 
 async function loadSessions() {

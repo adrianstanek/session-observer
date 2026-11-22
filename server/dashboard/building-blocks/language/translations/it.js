@@ -34,6 +34,7 @@ TRANSLATIONS.it = (() => {
     clearLog: 'Svuota log', clearLogTitle: 'Elimina il log locale degli eventi', clearConfirm: 'Eliminare tutti gli eventi registrati?',
     deleteSessionTitle: 'Elimina questa sessione e i dati salvati',
     deleteSessionConfirm: name => `Eliminare “${name}” e i relativi dati salvati in Session Observer? Il transcript originale dell’app non verrà eliminato. L’azione non si può annullare.`,
+    deleteSessionFailed: reason => `Impossibile eliminare la sessione: ${reason}`,
     loadOlderSessions: day => `Carica le sessioni prima del ${day}`,
     loadOlderTitle: 'I giorni precedenti sono salvati ma non ancora caricati',
     range: 'Periodo', range1h: 'ultima 1 h', range6h: 'ultime 6 h', range24h: 'ultime 24 h', range7d: 'ultimi 7 giorni', rangeAll: 'tutto',
