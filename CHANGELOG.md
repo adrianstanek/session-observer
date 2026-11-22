@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.0](https://github.com/radekwojpl2/session-observer/compare/v0.10.0...v0.11.0) (2026-11-22)
+
+
+### Features
+
+* link agent sessions started by other agent sessions ([4e8b201](https://github.com/radekwojpl2/session-observer/commit/4e8b201f01894651ac07f05f3dc96b4bccee1b81))
+* link agent sessions started by other agent sessions ([65fed31](https://github.com/radekwojpl2/session-observer/commit/65fed3123493271cf6cc8ccadca8b2664b066827))
+
+
+### Bug Fixes
+
+* a refused or interrupted call no longer takes a started session's link ([1ba41b4](https://github.com/radekwojpl2/session-observer/commit/1ba41b47eeb67b756706e2fc9890598182c62bfa))
+* link started sessions to the right call, and keep them all visible on Home ([b54ef4c](https://github.com/radekwojpl2/session-observer/commit/b54ef4cd3339f33d4e66409f7d3fd273f1bcf170))
+
 ## [0.10.0](https://github.com/radekwojpl2/session-observer/compare/v0.9.0...v0.10.0) (2026-11-22)
 
 

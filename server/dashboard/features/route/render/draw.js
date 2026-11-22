@@ -299,10 +299,14 @@ function regularStopSvg(stop, drawing) {
   const tech = stop.tech ? TECH_BADGES[stop.tech] : null;
   const labelY = stop.lane ? radius + 16 : -radius - 20, detailY = stop.lane ? radius + 28 : -radius - 8;
   const techTitle = tech ? escapeHtml(techNames(stop.techs).join(' + ')) + ' · ' : '';
+  // a call that started another agent's session carries that agent's badge colour on a ring, and names it
+  const started = sessionsStartedByCall(stop.toolUseId);
+  const startedMark = started.length ? `<circle class="started-ring agent-${agentKey(started[0].agent)}" r="${radius + 4}"/>` : '';
+  const startedTitle = started.length ? ` · ${TEXT.startedSessions(started.length)}: ${started.map(child => `${agentName(child.agent)} ${shorten(sessionName(child), 40)}`).join(', ')}` : '';
   return `<g class="stop ${stop.failed ? 'fail' : ''} ${stop.mergeFromIndex != null ? 'mg' : ''}${drawing.dimClass(stop)}" data-ln="${drawing.lineKeys(stop)}" data-seqs="${(stop.seqs || []).join(' ')}" transform="translate(${stop.x.toFixed(1)},${stop.y})" style="color:var(--s-${stop.group})" data-seq="${stop.seq}">
-      <circle class="sn" r="${radius}"${tech ? ` style="fill:${tech.background}"` : ''}/>${stopMarkSvg(stop, radius)}${stop.running ? `<circle class="ring" r="${radius + 5}"/>` : ''}
+      ${startedMark}<circle class="sn" r="${radius}"${tech ? ` style="fill:${tech.background}"` : ''}/>${stopMarkSvg(stop, radius)}${stop.running ? `<circle class="ring" r="${radius + 5}"/>` : ''}
       <text class="sl" y="${labelY}">${escapeHtml(truncateToColumns(stop.label, 12))}</text><text class="ss ${stop.failed ? 'err' : stop.running ? 'run' : ''}" y="${detailY}">${escapeHtml(truncateToColumns(stopDetailText(stop, drawing.now), 12))}</text>
-      <title>${techTitle}${stop.tooltip}${stop.durationMs != null ? ' · ' + formatDuration(stop.durationMs) : ''}</title></g>`;
+      <title>${techTitle}${stop.tooltip}${stop.durationMs != null ? ' · ' + formatDuration(stop.durationMs) : ''}${escapeHtml(startedTitle)}</title></g>`;
 }
 
 function stopSvg(stop, drawing) {

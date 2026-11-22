@@ -40,6 +40,20 @@ function truncate(value, depth = 0) {
   return truncated;
 }
 
+// the agent sessions this one was started from, as its environment shows: Claude Code puts its session id into every
+// command it runs, Codex its session id and the id of the tool call. Both carry on down a chain of agents, so a session
+// can see several; the server takes the one that started last, its direct parent.
+function parentSessions(ownId, env = process.env) {
+  const parents = [];
+  const add = (agent, sessionId, toolCallId) => {
+    if (!sessionId || sessionId === ownId || parents.some(parent => parent.session_id === sessionId)) return;
+    parents.push(toolCallId ? { agent, session_id: sessionId, tool_call_id: toolCallId } : { agent, session_id: sessionId });
+  };
+  add('codex', env.CODEX_SESSION_ID || env.CODEX_THREAD_ID, env.CODEX_TOOL_CALL_ID);
+  add('claude', env.CLAUDE_CODE_SESSION_ID);
+  return parents;
+}
+
 function isPortInUse(port) {
   return new Promise(resolve => {
     const socket = net.connect({ port, host: '127.0.0.1' });
@@ -82,6 +96,8 @@ async function main() {
     agent: agentFromArguments(process.argv.slice(2)),
     data: truncate(payload),
   };
+  const parents = parentSessions(event.session_id);
+  if (parents.length) event.parents = parents;
 
   // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
   // one file per session, in the folder of the UTC day it was last active (moved there by its first event of the day)
@@ -92,4 +108,6 @@ async function main() {
   if (event.event === 'SessionStart') await ensureServer();
 }
 
-main().catch(() => {}).finally(() => process.exit(0));
+if (require.main === module) main().catch(() => {}).finally(() => process.exit(0));
+
+module.exports = { parentSessions };

@@ -35,6 +35,7 @@ TRANSLATIONS.fr = (() => {
     deleteSessionTitle: 'Supprimer cette session et ses données enregistrées',
     deleteSessionConfirm: name => `Supprimer « ${name} » et ses données enregistrées dans Session Observer ? Le transcript original de l’application sera conservé. Cette action est irréversible.`,
     deleteSessionFailed: reason => `Impossible de supprimer la session : ${reason}`,
+    openSession: 'Ouvrir cette session', startedBy: 'lancée par', startedSessions: n => (n === 1 ? 'Session lancée' : 'Sessions lancées'),
     loadOlderSessions: day => `Charger les sessions avant le ${day}`,
     loadOlderTitle: 'Des jours plus anciens sont enregistrés mais pas encore chargés',
     range: 'Période', range1h: 'dernière heure', range6h: '6 dernières h', range24h: '24 dernières h', range7d: '7 derniers jours', rangeAll: 'tout',
