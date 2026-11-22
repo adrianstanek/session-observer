@@ -8,27 +8,27 @@
 
 ## Screenshots
 
-Screenshots use the synthetic demo sessions.
+Screenshots come from real Claude Code and Codex sessions. The numbered labels were added for this README; the dashboard doesn't show them.
 
-![Home groups sessions by project](docs/home.png)
+![Home with sessions grouped by project, agent badges, status and nested subagents](docs/home.jpg)
 
-*Home: see sessions and what needs attention.*
+*Home: every session by project, with its agent, status and subagents.*
 
-![Overview with session metrics, turns and activity charts](docs/overview.png)
+![Overview with session totals, a Turns chart, context over time, activity by group and the open turn in Details](docs/overview.jpg)
 
-*Overview: turns, tools, context and failures.*
+*Overview: totals, one bar per turn, context use and activity. Click a bar to open the turn.*
 
-![Route with parallel subagents and their tool calls](docs/route.png)
+![Route of one turn with three parallel subagents and an open tool call](docs/route.jpg)
 
-*Route: follow a turn through tools and agents.*
+*Route: follow a turn through tool calls and parallel subagents. Click a stop to see its input and output.*
 
-![Chat with prompts, replies and tool calls](docs/chat.png)
+![Chat with a prompt, model thinking, failed agent calls and a reply](docs/chat.jpg)
 
-*Chat: prompts, replies and tool calls.*
+*Chat: prompts, thinking, tool chips and replies in order.*
 
-![Context view with context usage and transcript entries](docs/context.png)
+![Context view with a context window grid and estimated tokens by category](docs/context.jpg)
 
-*Context: inspect usage and transcript records.*
+*Context: what fills the context window, down to each record.*
 
 ## How it works
 
@@ -46,109 +46,54 @@ Both integrations append each event to a JSONL file for its session inside a fol
 
 ### Event storage
 
-Each hook call appends one line to `sessions/<YYYY-MM-DD>/<sha256(session_id)>.jsonl`. The hash keeps any session id safe to use as a file name. **A session is never split:** it has exactly one file, in the folder of the UTC day it was last active. When a session sends its first event of a new day, the hook moves its file from the earlier day's folder into today's before appending. It also removes the earlier folder if that leaves it empty.
+One file per session, in the folder of the UTC day it was last active.
 
 ```
 ~/.claude/session-observer/
-  sessions/
-    2026-11-14/0d2e….jsonl     ← session C, last active on the 14th
-    2026-11-21/3f9a….jsonl     ← session A, started on the 20th, moved here by its first event on the 21st
-    2026-11-21/b71c….jsonl     ← session B
-  deleted-sessions.jsonl       ← ids and times of deleted sessions
-  events.jsonl                 ← only while an older plugin's hook still writes here
+  sessions/<YYYY-MM-DD>/<sha256(session_id)>.jsonl
+  deleted-sessions.jsonl   ← deleted session ids, so they are not imported again
+  events.jsonl             ← written only by older plugin versions; imported at start
 ```
 
-~~~mermaid
-sequenceDiagram
-  participant A as Claude Code / Codex
-  participant H as hook.js
-  participant F as sessions/DAY/HASH.jsonl
-  participant S as server.js (every 400 ms)
-  participant M as In-memory sessions
-  participant D as Dashboard
-  A->>H: hook event (stdin JSON)
-  H->>F: first event today? move the file from its earlier day
-  H->>F: append one line, exit 0
-  S->>F: list loaded day folders, read bytes after each file's offset
-  Note over S,F: A known file found in a newer folder was moved:<br/>same bytes, so its read offset is kept
-  S->>M: ingest (status, needs-you, totals)
-  S-->>D: SSE "event" and "session"
-  D->>S: GET /api/sessions, /api/events, /api/history
-~~~
-
-#### How a session stays in one file
-
-The hook moves a session's file forward to today instead of starting a new one. Three parts work together.
-
-**1. The hook moves the file.** Before appending, `sessionLogForAppend` in `server/lib/building-blocks/session-logs.js` (called by `scripts/hook.js`) picks the file:
-
-```
-target = sessions/<today>/<hash>.jsonl
-if target exists               → append there           (every event after the day's first)
-else look in earlier day folders, newest first:
-  found sessions/<older>/<hash>.jsonl
-    → rename it to target, then append there
-    → remove <older>/ if it is now empty
-not found anywhere             → create target          (a new session)
-```
-
-~~~mermaid
-sequenceDiagram
-  participant H as hook.js
-  participant Old as sessions/2026-11-20/3f9a.jsonl
-  participant New as sessions/2026-11-21/3f9a.jsonl
-  Note over H: first event of session A on the 21st
-  H->>New: exists? no
-  H->>Old: exists? yes
-  H->>New: rename Old to New (same bytes)
-  H->>New: append the event
-  Note over H: later events on the 21st
-  H->>New: exists? yes, append
-~~~
-
-Only a session's first event of a day costs extra: up to one existence check per day folder, plus one rename. Every later event that day finds today's file on the first check.
-
-Claude Code can fire several hooks at once:
-- **Two hooks race to move the file.** The rename that loses fails, finds the file already at the target, and appends there.
-- **The rename is refused.** On Windows, this can happen while another process has the file open. The hook appends to the file where it is, so the session still has one file, and the next event tries the move again.
-
-**2. The server follows a moved file.** `server/server.js` tracks each session file by its name (the session hash), not by its full path. On every poll, it finds where that name now lives, in the newest loaded day folder:
-- **Same path as before:** it reads the new bytes.
-- **New path, old path gone:** the hook moved the file. The bytes are the same, so the server points its reader at the new path and keeps its read position. Nothing is read twice.
-- **A name it hasn't seen:** it reads the file from the start.
-
-**3. The import also writes one file per session.** When the server copies the former combined `events.jsonl` into the day folders, it groups lines by session. Each session goes into the file it already has, or into a new file in the folder of the day of its last event. A session in the old log that ran from the 1st to the 2nd ends up in a single file under `2026-01-02/`.
-
-**Fallback.** A session can still end up in two folders: when a brand-new session sends its first two events at the same moment on both sides of midnight UTC, each hook creates a file. The server then reads the older file first and the newer one after it, so the session's events stay in order.
-
-**What a start reads.** The server reads the day folders from the last `OBSERVER_LOAD_DAYS` days (7 by default, today included). Because a session's file sits in the folder of its last active day, this covers every session active in those days, however long ago it started. Older day folders stay on disk until **Load sessions before …** in the session list loads the next batch. The dashboard's time range still filters what it shows, so pick a longer range to see older sessions.
+**Hook: append, moving the file forward to today**
 
 ~~~mermaid
 flowchart TD
-  Start([server start]) --> Import[Move events.jsonl and its unfinished imports into day folders, skipping deleted sessions]
-  Import --> Window[Read day folders from the last OBSERVER_LOAD_DAYS days]
-  Window --> Ready([serve the dashboard])
-  Ready -->|POST /api/history/older| Older[Read the next batch of older day folders]
-  Older --> Ready
+  E([hook event]) --> T{today's file exists?}
+  T -->|yes| A[append]
+  T -->|no| O{file in an earlier day?}
+  O -->|no| N[create today's file] --> A
+  O -->|yes| M[move it to today, remove the empty folder] --> A
+  M -.->|rename refused: file locked on Windows| A2[append where it is, retry on the next event]
 ~~~
 
-**The import from the former combined log.** At every start, the server renames `events.jsonl` to `events.<time>.migrating`, then copies each line into its session's one file: the file the session already has, or a new one in the folder of the day of its last event. Renaming first means a hook from an older plugin that appends meanwhile starts a new `events.jsonl`, and no line is lost. Each copied line carries its source and byte offset, so an interrupted import resumes without copying a line twice. Until the next start, the server also tails the new `events.jsonl`.
+**Server: read recent days, follow moved files**
 
-**Deleting a session** (× in the dashboard, `DELETE /api/sessions/<id>`) removes its file and drops its in-memory state. It also appends the id and the time to `deleted-sessions.jsonl`. An older plugin's hook may have written that session to `events.jsonl`; the import skips those lines, so the session does not come back after a restart. Events of the same id written after the delete start a new entry.
+~~~mermaid
+flowchart TD
+  S([start]) --> I[import events.jsonl into day folders, skip deleted ids]
+  I --> W[read the last OBSERVER_LOAD_DAYS days]
+  W --> P[every 400 ms: read new bytes of each file]
+  P -->|same file in a newer folder| K[keep the read offset]
+  P --> D[push events to the dashboard]
+  W -->|Load sessions before …| O[read older days]
+~~~
 
-#### Alternatives considered
+- **Delete (×):** removes the session's file and adds its id to `deleted-sessions.jsonl`.
+- **Midnight race:** a new session can get two files; the server reads them in order.
 
-| Approach | Pros | Cons |
-|---|---|---|
-| **One combined `events.jsonl`** (before this change) | Simplest; one file to tail | Every start reads everything; grows forever; deleting one session means rewriting the whole file while hooks append to it |
-| **Per-session JSONL, flat** | Deleting a session is one `unlink` | Every start still reads every session ever recorded |
-| **Per-session JSONL + SQLite index** (an earlier version of this change) | Event queries come from SQL; the index can always be rebuilt from JSONL | Needs Node 22.13 (`node:sqlite`) and WAL files. Memory and SQLite were two sources of truth, and each start still replayed everything into both, so the index made nothing faster |
-| **Per-session JSONL + SQLite with saved tail offsets** | Incremental start; memory stays bounded | Needs Node 22.13; session summaries must be stored or rebuilt as well, not only events |
-| **SQLite only, written by the hook** | One store; real transactions | The hook would wait on a database lock, but it must never block the agent; a corrupt database loses data with no plain-text copy |
-| **Day files shared by all sessions** (`events-<day>.jsonl`) | Start reads only recent days; old days are easy to drop | Deleting one session rewrites every day file it is in while hooks append; rebuilding a session that runs past midnight scans other sessions' events |
-| **Combined JSONL + tombstones and compaction** | One file; delete appends a tombstone line | Deleted data stays on disk until compaction runs; compaction must coordinate with appending hooks |
-| **Day folders with per-session files, split at midnight** | Start reads only recent days; the hook only appends | A session has a file in every day it was active, so the server must find and merge its earlier days |
-| **Day folders with one file per session, moved to its last active day** (this change) | Start reads only recent days, which covers every session active in them; a session is never split; deleting a session is one `unlink`; a day folder can be deleted as a whole; Node 18+ | Older sessions need **Load sessions before …**; a session's first event of a day searches earlier folders and renames its file |
+<details>
+<summary>Alternatives considered</summary>
+
+| Approach | Why not |
+|---|---|
+| One combined `events.jsonl` | Every start reads everything; deleting a session rewrites the file |
+| Per-session files, flat | Every start reads every session ever |
+| Per-session files + SQLite | Needs Node 22.13; two sources of truth; the hook would wait on a lock |
+| Day files shared by all sessions | Deleting a session rewrites every day file it is in |
+| Per-session files split at midnight | The server must merge a session's days |
+
+</details>
 
 ## Install
 
