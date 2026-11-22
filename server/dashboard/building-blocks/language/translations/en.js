@@ -37,6 +37,7 @@ TRANSLATIONS.en = (() => {
     deleteSessionTitle: 'Delete this session and its stored data',
     deleteSessionConfirm: name => `Delete “${name}” and its stored Session Observer data? The original app transcript will stay. This cannot be undone.`,
     deleteSessionFailed: reason => `Could not delete the session: ${reason}`,
+    openSession: 'Open this session', startedBy: 'started by', startedSessions: n => (n === 1 ? 'Started session' : 'Started sessions'),
     loadOlderSessions: day => `Load sessions before ${day}`,
     loadOlderTitle: 'Older days are saved but not loaded yet',
     range: 'Range', range1h: 'last 1 h', range6h: 'last 6 h', range24h: 'last 24 h', range7d: 'last 7 d', rangeAll: 'everything',

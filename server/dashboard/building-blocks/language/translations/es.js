@@ -35,6 +35,7 @@ TRANSLATIONS.es = (() => {
     deleteSessionTitle: 'Eliminar esta sesión y sus datos guardados',
     deleteSessionConfirm: name => `¿Eliminar “${name}” y sus datos guardados de Session Observer? El transcript original de la aplicación se conservará. Esta acción no se puede deshacer.`,
     deleteSessionFailed: reason => `No se pudo eliminar la sesión: ${reason}`,
+    openSession: 'Abrir esta sesión', startedBy: 'iniciada por', startedSessions: n => (n === 1 ? 'Sesión iniciada' : 'Sesiones iniciadas'),
     loadOlderSessions: day => `Cargar sesiones anteriores al ${day}`,
     loadOlderTitle: 'Hay días anteriores guardados que aún no se han cargado',
     range: 'Periodo', range1h: 'última 1 h', range6h: 'últimas 6 h', range24h: 'últimas 24 h', range7d: 'últimos 7 días', rangeAll: 'todo',

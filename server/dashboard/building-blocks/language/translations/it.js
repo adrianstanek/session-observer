@@ -35,6 +35,7 @@ TRANSLATIONS.it = (() => {
     deleteSessionTitle: 'Elimina questa sessione e i dati salvati',
     deleteSessionConfirm: name => `Eliminare “${name}” e i relativi dati salvati in Session Observer? Il transcript originale dell’app non verrà eliminato. L’azione non si può annullare.`,
     deleteSessionFailed: reason => `Impossibile eliminare la sessione: ${reason}`,
+    openSession: 'Apri questa sessione', startedBy: 'avviata da', startedSessions: n => (n === 1 ? 'Sessione avviata' : 'Sessioni avviate'),
     loadOlderSessions: day => `Carica le sessioni prima del ${day}`,
     loadOlderTitle: 'I giorni precedenti sono salvati ma non ancora caricati',
     range: 'Periodo', range1h: 'ultima 1 h', range6h: 'ultime 6 h', range24h: 'ultime 24 h', range7d: 'ultimi 7 giorni', rangeAll: 'tutto',

@@ -29,5 +29,6 @@ function eventCardHtml(event, body, footer) {
   const agent = data.agent_type ? `${TEXT.subagentLc} ${data.agent_type}` : data.subagent ? TEXT.subagentLc : TEXT.mainAgentLc;
   const meta = [formatTime(event.ts), agent, data.effort?.level && TEXT.effortX(data.effort.level), data.permission_mode && TEXT.modeX(data.permission_mode), `#${event.seq}`];
   const raw = footer ?? `<details><summary>${escapeHtml(TEXT.rawPayload)}</summary>${rawPayloadHtml(event)}</details>`;
-  return `<div class="evx">${body}<div class="meta">${meta.filter(Boolean).map(escapeHtml).join(' · ')}</div>${raw}</div>`;
+  // a call that ran another agent (codex exec, claude -p) links to the session it started
+  return `<div class="evx">${body}${startedSessionsHtml(data.tool_use_id)}<div class="meta">${meta.filter(Boolean).map(escapeHtml).join(' · ')}</div>${raw}</div>`;
 }

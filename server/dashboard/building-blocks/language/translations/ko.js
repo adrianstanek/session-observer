@@ -33,6 +33,7 @@ TRANSLATIONS.ko = (() => {
     deleteSessionTitle: '이 세션과 저장된 데이터 삭제',
     deleteSessionConfirm: name => `“${name}” 세션과 Session Observer에 저장된 데이터를 삭제할까요? 원본 앱 트랜스크립트는 삭제되지 않습니다. 이 작업은 취소할 수 없습니다.`,
     deleteSessionFailed: reason => `세션을 삭제할 수 없습니다: ${reason}`,
+    openSession: '이 세션 열기', startedBy: '상위 세션', startedSessions: () => '시작한 세션',
     loadOlderSessions: day => `${day} 이전 세션 불러오기`,
     loadOlderTitle: '이전 날짜의 데이터가 저장되어 있지만 아직 불러오지 않았습니다',
     range: '기간', range1h: '최근 1시간', range6h: '최근 6시간', range24h: '최근 24시간', range7d: '최근 7일', rangeAll: '전체',
