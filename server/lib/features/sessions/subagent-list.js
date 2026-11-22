@@ -11,6 +11,11 @@ const { SUBAGENT_TOOLS } = require('./event-categories');
 const SUBAGENTS_KEPT_MAX = 50;
 const DESCRIPTION_MAX = 200;
 const NO_SUBAGENT_STARTED = new Set(['PermissionDenied', 'PostToolUseFailure']);
+const ENDED_CALLS_KEPT_MAX = 50;
+
+// the ids of calls known to have started no subagent: the transcript can show a refusal before the log has given
+// its PreToolUse, which then must not join the queue
+const endedCalls = new WeakMap(); // session → [tool_use_id]
 
 // the waiting call a subagent of this type came from
 function takeSubagentCall(session, agentType) {
@@ -24,11 +29,16 @@ function takeSubagentCall(session, agentType) {
 // a call that started no subagent: its description must not go to the next one
 function dropSubagentCall(session, toolUseId) {
   if (!toolUseId) return;
+  const ended = endedCalls.get(session) || [];
+  ended.push(toolUseId);
+  if (ended.length > ENDED_CALLS_KEPT_MAX) ended.splice(0, ended.length - ENDED_CALLS_KEPT_MAX);
+  endedCalls.set(session, ended);
   session.subagentDescriptionsWaiting = session.subagentDescriptionsWaiting.filter(call => call.toolUseId !== toolUseId);
 }
 
 function trackSubagents(session, event, data) {
   if (event.event === 'PreToolUse' && SUBAGENT_TOOLS.has(data.tool_name) && data.tool_name !== 'SendMessage') {
+    if (data.tool_use_id && endedCalls.get(session)?.includes(data.tool_use_id)) return;
     const input = data.tool_input || {};
     session.subagentDescriptionsWaiting.push({
       toolUseId: data.tool_use_id || null,

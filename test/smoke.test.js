@@ -411,6 +411,14 @@ test('a subagent takes the description of its own call: by type, and never from 
   hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-ok', tool_input: { description: 'Read the README', subagent_type: 'Explore' } });
   hook('SubagentStart', { agent_id: 'sc-next', agent_type: 'Explore' });
   assert.equal((await waitFor(() => subagent('sc-next'))).description, 'Read the README');
+  // the transcript's refusal read before the log gives that call's PreToolUse
+  fs.appendFileSync(tp, JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'sc-early', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } }) + '\n');
+  hook('Notification', { notification_type: 'idle_prompt', message: 'read the transcript' });
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-early', tool_input: { description: 'Drop the table', subagent_type: 'Explore' } });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-late', tool_input: { description: 'List the routes', subagent_type: 'Explore' } });
+  hook('SubagentStart', { agent_id: 'sc-last', agent_type: 'Explore' });
+  assert.equal((await waitFor(() => subagent('sc-last'))).description, 'List the routes');
   hook('Stop', {});
 });
 
