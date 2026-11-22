@@ -4,7 +4,7 @@
 const WAIT_TEXT_MAX = 160;
 const SUBAGENT_DESCRIPTION_MAX = 90;
 const HOME_DOT = { needsYou: 'dot need', working: 'dot busy', yourTurn: 'dot on', inactive: 'dot', ended: 'dot' };
-const homeExpandedProjects = new Set();
+const homePastShown = new Map(); // project → whether you opened (true) or closed (false) its past sessions
 
 const homeSessionName = session => stripTags(session.title) || baseName(session.cwd) || session.id.slice(0, 8);
 const homeAgentTag = session => `<span class="agent-tag agent-${agentKey(session.agent)}">${escapeHtml(agentName(session.agent))}</span>`;
@@ -23,7 +23,8 @@ function waitHtml(wait) {
     + (wait.text ? `<div class="hwait-text mono">${escapeHtml(shorten(wait.text, WAIT_TEXT_MAX))}</div>` : '') + '</div>';
 }
 
-// one card per session waiting on you, with everything it waits for
+// one card per session waiting on you, with everything it waits for: every loaded session, whatever the range, agent
+// filter or search (as the header counts them), so a wait is never hidden
 function needsYouHtml(sessions) {
   const waiting = sessionsNeedingYou(sessions);
   if (!waiting.length) {
@@ -62,7 +63,9 @@ function projectHtml(project) {
   const current = project.sessions.filter(session => !['inactive', 'ended'].includes(sessionActivity(session)));
   const past = project.sessions.filter(session => ['inactive', 'ended'].includes(sessionActivity(session)));
   const projectId = projectKey(project.path);
-  const openPast = state.searchText || past.some(session => session.id === state.scope) || homeExpandedProjects.has(projectId) ? ' open' : '';
+  // open when you opened it, or, unless you closed it, while a search runs or it holds the selected session
+  const shown = homePastShown.get(projectId) ?? (!!state.searchText || past.some(session => session.id === state.scope));
+  const openPast = shown ? ' open' : '';
   const archived = past.length
     ? `<li class="harchive"><details data-home-project="${escapeHtml(projectId)}"${openPast}><summary>${escapeHtml(TEXT.home.more(past.length))}</summary><ul>${past.map(sessionRowHtml).join('')}</ul></details></li>`
     : '';
@@ -75,5 +78,5 @@ function homeViewHtml() {
   const tree = sessions.length
     ? `<ul class="htree">${projectTree(sessions).map(projectHtml).join('')}</ul>`
     : `<div class="cempty">${escapeHtml(TEXT.home.noSessions)}</div>`;
-  return `<div class="home">${needsYouHtml(sessions)}<section class="hsec hsessions"><div class="home-heading"><h2>${escapeHtml(TEXT.sessions)}</h2><span class="muted">${sessions.length}</span></div>${tree}</section></div>`;
+  return `<div class="home">${needsYouHtml([...state.sessions.values()])}<section class="hsec hsessions"><div class="home-heading"><h2>${escapeHtml(TEXT.sessions)}</h2><span class="muted">${sessions.length}</span></div>${tree}</section></div>`;
 }

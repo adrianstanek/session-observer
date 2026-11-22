@@ -1,6 +1,7 @@
 'use strict';
 // Session Observer dashboard — Home, its data: every session in the range as a tree (project folder → session →
-// its subagents), and the sessions waiting on you. Home shows every session, whatever session is selected.
+// its subagents), and the sessions waiting on you. Home shows every session, whatever session is selected; the tree
+// follows the range, agent filter and search, and the sessions waiting on you don't.
 const FINISHED_SUBAGENTS_SHOWN = 3; // a session's finished subagents beyond these fold into "+N more"
 
 // the sessions Home shows: in the range, from the agents the filter shows, matching the search
