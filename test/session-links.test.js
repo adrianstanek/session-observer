@@ -76,6 +76,24 @@ test('Claude Code → Codex: the call still running when the child began wins ov
   assert.equal(sessionSummary(child).parent.callId, 'toolu_running');
 });
 
+test('Claude Code → Codex: a refused or interrupted call does not stay running and take the link', () => {
+  send('L-refused', 'claude', 'SessionStart');
+  send('L-refused', 'claude', 'PreToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_refused', tool_input: { command: 'codex exec "review"' } });
+  send('L-refused', 'claude', 'PermissionDenied', { tool_name: 'Bash', tool_use_id: 'toolu_refused' });
+  send('L-refused', 'claude', 'PreToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_bg', tool_input: { command: 'codex exec "review"' } });
+  send('L-refused', 'claude', 'PostToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_bg' });
+  const afterRefused = send('L-refused-codex', 'codex', 'SessionStart', {}, [{ agent: 'claude', session_id: 'L-refused' }]);
+  assert.equal(sessionSummary(afterRefused).parent.callId, 'toolu_bg');
+
+  send('L-stopped', 'claude', 'SessionStart');
+  send('L-stopped', 'claude', 'PreToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_interrupted', tool_input: { command: 'codex exec "one"' } });
+  send('L-stopped', 'claude', 'UserPromptSubmit', { prompt: 'run it in the background' });
+  send('L-stopped', 'claude', 'PreToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_bg2', tool_input: { command: 'codex exec "one"' } });
+  send('L-stopped', 'claude', 'PostToolUse', { tool_name: 'Bash', tool_use_id: 'toolu_bg2' });
+  const afterInterrupt = send('L-stopped-codex', 'codex', 'SessionStart', {}, [{ agent: 'claude', session_id: 'L-stopped' }]);
+  assert.equal(sessionSummary(afterInterrupt).parent.callId, 'toolu_bg2');
+});
+
 // the dashboard's links.js and Home's model, as plain browser scripts, over a session list and their activities
 function dashboardOver(sessions) {
   const source = file => fs.readFileSync(path.join(__dirname, '..', 'server', 'dashboard', file), 'utf8');

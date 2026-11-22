@@ -8,7 +8,10 @@
 // word (`~/.codex/config.toml`, `codex-rollout.js`)
 const agentCommand = name => new RegExp(`(?:^|[\\s;&|(\`"'/\\\\])${name}(?:\\.(?:exe|cmd|ps1))?(?=$|[\\s;&|)"'])`, 'i');
 const STARTS_AGENT = { claude: agentCommand('claude'), codex: agentCommand('codex') };
-const RESULT_EVENTS = new Set(['PostToolUse', 'PostToolUseFailure']);
+// a call is over at its answer (a refused one gets only PermissionDenied), or when its turn ends: an interrupted call
+// gets no hook at all (as in needs-you.js)
+const ANSWERS_A_CALL = new Set(['PostToolUse', 'PostToolUseFailure', 'PermissionDenied']);
+const ENDS_THE_TURN = new Set(['UserPromptSubmit', 'Stop', 'StopFailure', 'SessionEnd']);
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell', 'shell', 'exec_command', 'local_shell']);
 
 // takes the parent sessions an event names (once: they are the same on every event of a session)
@@ -29,7 +32,8 @@ function startingCall(parent, child) {
   for (const event of parent.events) {
     if (event.ts > child.started) break;
     const data = event.data || {};
-    if (RESULT_EVENTS.has(event.event) && data.tool_use_id) finished.add(data.tool_use_id);
+    if (ANSWERS_A_CALL.has(event.event) && data.tool_use_id) finished.add(data.tool_use_id);
+    if (ENDS_THE_TURN.has(event.event)) for (const callId of matches) finished.add(callId);
     if (event.event !== 'PreToolUse' || !SHELL_TOOLS.has(data.tool_name) || !data.tool_use_id) continue;
     if (pattern.test(String(data.tool_input?.command || ''))) matches.push(data.tool_use_id);
   }
