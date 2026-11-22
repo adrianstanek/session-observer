@@ -578,8 +578,6 @@ details.cx.grp .chip.err { color: var(--err); border-color: color-mix(in srgb, v
 .htree > .hproj + .hproj { margin-top: 18px; }
 .hproj > .hrow { font-size: 16px; gap: 10px; min-height: 42px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
 .hproj > .hrow svg { width: 18px; height: 18px; color: var(--s-files); flex: none; }
-.hrepo { flex: none; padding: 4px 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--accent); font-size: 12px; font-weight: 600; text-decoration: none; }
-.hrepo:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .hproj > ul, .hsess > ul { margin: 6px 0 0 12px; padding-left: 18px; border-left: 1px solid var(--line); }
 .harchive { margin: 2px 0; }
 .harchive summary { display: flex; align-items: center; width: max-content; max-width: 100%; min-height: 44px; box-sizing: border-box; padding: 8px 14px 8px 42px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; }

@@ -66,7 +66,7 @@ TRANSLATIONS.ko = (() => {
     home: {
       needsYou: '내 응답 필요', allClear: '지금 응답이 필요한 항목이 없습니다.',
       permission: t => (t ? `${t} 사용 권한` : '권한 필요'), question: '나에게 온 질문', mcp: s => `${s || 'MCP 서버'}가 입력을 요청함`,
-      inSubagent: t => `서브에이전트 ${t}`, noSessions: '이 기간에는 세션이 없습니다.', done: '완료', more: n => `+${n}개 더`, open: '이 세션 열기', openRepository: 'GitHub 저장소 열기',
+      inSubagent: t => `서브에이전트 ${t}`, noSessions: '이 기간에는 세션이 없습니다.', done: '완료', more: n => `+${n}개 더`, open: '이 세션 열기',
     },
     allActivity: '전체 활동', everySession: '모든 세션 합계', sessions: '세션', lastLbl: '최근:',
     ctxWindow: '컨텍스트 창', ctxShort: 'ctx', noSessions: '이 기간에는 세션이 없습니다.',

@@ -199,7 +199,8 @@ function turnContextInfo(sessionTurns, turn, limit) {
   if (tokens == null) return null;
   let previous = null;
   for (let index = sessionTurns.indexOf(turn) - 1; index >= 0 && previous == null; index--) previous = turnEndContextTokens(sessionTurns[index], limit);
-  const window = tokens > DEFAULT_CONTEXT_WINDOW ? ONE_MILLION_WINDOW : (state.sessions.get(turn.sessionId)?.context?.window || DEFAULT_CONTEXT_WINDOW);
+  const session = state.sessions.get(turn.sessionId);
+  const window = contextWindowFor(session?.agent, session?.context?.window, tokens);
   const change = previous == null ? null : tokens - previous;
   return contextSize(tokens, change, window, change == null ? '' : signedTokens(change));
 }

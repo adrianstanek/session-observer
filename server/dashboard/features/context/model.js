@@ -61,7 +61,7 @@ const splitMcpToolName = name => { const match = /^mcp__(.+?)__(.+)$/.exec(name)
 // a context size for a badge (see contextSize in features/events/model/context-window.js)
 function contextSizeInfo(tokens, change) {
   const data = contextView.data;
-  const window = data?.window || (tokens > DEFAULT_CONTEXT_WINDOW ? ONE_MILLION_WINDOW : (data?.context?.window || DEFAULT_CONTEXT_WINDOW));
+  const window = data?.window || contextWindowFor(data?.agent, data?.context?.window, tokens);
   return contextSize(tokens, change, window, change ? signedTokens(change) : '');
 }
 

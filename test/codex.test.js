@@ -128,6 +128,27 @@ test('a Codex model step lists the tool calls it started, and comes before them'
   assert.deepEqual(subagent.data.tools, [], "the main agent's calls are not the subagent's");
 });
 
+test('a Codex permission waits for its own call, not for a call run beside it', async () => {
+  const id = 'codex-wait';
+  const hook = (eventName, fields) =>
+    runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/work/app', turn_id: 'turn-w', ...fields }, '--agent', 'codex');
+  const waits = async expected => waitFor(async () => {
+    const session = (await getJson('/api/sessions')).find(s => s.id === id);
+    return session && JSON.stringify(session.needsYou.map(wait => wait.tool)) === JSON.stringify(expected) && session;
+  });
+  hook('UserPromptSubmit', { prompt: 'clean up' });
+  hook('PreToolUse', { tool_name: 'exec_command', tool_use_id: 'w-ls', tool_input: { cmd: 'ls' } });
+  hook('PreToolUse', { tool_name: 'exec_command', tool_use_id: 'w-rm', tool_input: { cmd: 'rm -rf build' } });
+  // as Codex sends it: no tool_use_id, and a description the call's own input doesn't have
+  hook('PermissionRequest', { tool_name: 'exec_command', tool_input: { cmd: 'rm -rf build', description: 'Remove the build folder' } });
+  await waits(['exec_command']);
+  hook('PostToolUse', { tool_name: 'exec_command', tool_use_id: 'w-ls', tool_input: { cmd: 'ls' }, tool_response: 'src' });
+  await waitFor(async () => (await getJson('/api/sessions')).find(s => s.id === id)?.running === 1);
+  await waits(['exec_command']);
+  hook('PostToolUse', { tool_name: 'exec_command', tool_use_id: 'w-rm', tool_input: { cmd: 'rm -rf build' }, tool_response: '' });
+  await waits([]);
+});
+
 test("what a Codex model wrote comes from Codex's session file, with its step's id", async () => {
   const id = 'codex-live', rollout = path.join(DATA_DIR, 'live-rollout.jsonl');
   const hook = (eventName, fields) => runHook(eventName,

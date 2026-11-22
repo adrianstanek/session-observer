@@ -190,8 +190,8 @@ function stepTokensHtml(tokens, contextTokens, window) {
 
 function modelStepCardHtml(step, turn) {
   const data = step.data || {}, tokens = data.tokens || {}, contextTokens = tokens.context || 0;
-  const hasOneMillionWindow = contextTokens > DEFAULT_CONTEXT_WINDOW || /\[1m\]|-1m/i.test(data.model || '');
-  const window = hasOneMillionWindow ? ONE_MILLION_WINDOW : (state.sessions.get(step.session_id)?.context?.window || DEFAULT_CONTEXT_WINDOW);
+  const session = state.sessions.get(step.session_id);
+  const window = contextWindowFor(session?.agent, session?.context?.window, contextTokens, data.model);
   const { calls, texts } = modelStepParts(step, turn);
   const stopReason = STOP_REASONS[data.stop_reason] || (data.stop_reason ? data.stop_reason : TEXT.noStopReason);
   const header = `<div class="hd"><b>${escapeHtml(data.subagent ? TEXT.subagent : TEXT.mainAgent)}</b><span class="muted">${escapeHtml(data.model || '?')}</span><span>${escapeHtml(stopReason)}</span></div>`;
