@@ -16,6 +16,7 @@ const { isRunningBackgroundSubagent } = require('./subagent-list');
 const WAITS_KEPT_MAX = 10;
 const CALLS_KEPT_MAX = 50;
 const TEXT_MAX = 300;
+const ASYNC_QUESTION_TOOLS = new Set(['request_user_input_async']);
 const ENDS_EVERY_WAIT = new Set(['UserPromptSubmit', 'Stop', 'StopFailure', 'SessionEnd']);
 const ANSWERS_A_TOOL = new Set(['PostToolUse', 'PostToolUseFailure', 'PermissionDenied']);
 
@@ -116,8 +117,12 @@ function trackNeedsYou(session, event, data) {
     return;
   }
   if (ENDS_EVERY_WAIT.has(name)) {
-    // (a background agent goes on after its turn, and keeps waiting on you; only the session's end ends that)
-    session.needsYou = name === 'SessionEnd' ? [] : session.needsYou.filter(wait => isRunningBackgroundSubagent(session, wait.agentId));
+    // (a background agent goes on after its turn, and keeps waiting on you; only the session's end ends that.
+    // The async Codex input tool finishes its hook call before the user replies: its wait survives the Stop and
+    // ends when the next prompt arrives.)
+    const turnStopped = name === 'Stop' || name === 'StopFailure';
+    session.needsYou = name === 'SessionEnd' ? [] : session.needsYou.filter(wait => isRunningBackgroundSubagent(session, wait.agentId)
+      || (turnStopped && ASYNC_QUESTION_TOOLS.has(wait.tool)));
     if (name === 'SessionEnd') { openCalls.delete(session); unlinkedPermissions.delete(session); }
     return;
   }
@@ -138,9 +143,9 @@ function trackNeedsYou(session, event, data) {
   } else if (name === 'Notification' && data.notification_type === 'permission_prompt' && !session.needsYou.length) {
     // Claude Code's own "needs your permission" notice, for when no PermissionRequest came first
     addWait(session, { key: 'notification', kind: 'permission', tool: null, text: clip(data.message), ...waitFields(event, data) });
-  } else if (ANSWERS_A_TOOL.has(name)) {
+  } else if (ANSWERS_A_TOOL.has(name) && !(name === 'PostToolUse' && ASYNC_QUESTION_TOOLS.has(data.tool_name))) {
     // a tool's result answers its own wait (the permission was given or refused: the call has finished), and a
-    // permission about this call that had no call to tie it to
+    // permission about this call that had no call to tie it to (an async question's result comes before your answer)
     const sameAgent = wait => wait.agentId === (data.agent_id ?? null);
     const answered = unlinkedAnsweredBy(session, data);
     if (toolUseId) closeOpenCall(session, toolUseId);

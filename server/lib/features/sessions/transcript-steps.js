@@ -13,8 +13,8 @@ const { endWaitsFromTranscript } = require('./needs-you');
 const { dropSubagentCall } = require('./subagent-list');
 const { broadcast, isBroadcasting } = require('../../building-blocks/live-updates');
 const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
-const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps } = require('./codex-model-steps');
-const { codexRolloutTexts, resetCodexRolloutTexts } = require('./codex-rollout-texts');
+const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps, clearCodexSession } = require('./codex-model-steps');
+const { codexRolloutTexts, resetCodexRolloutTexts, clearCodexSession: clearCodexRolloutSession } = require('./codex-rollout-texts');
 
 const MODEL_TEXT_MAX = 2000;          // characters kept of one text / thinking block
 const REMEMBERED_STEPS_MAX = 2000;    // recent ModelSteps kept by message id
@@ -313,6 +313,17 @@ function resetTranscriptState() {
   resetCodexRolloutTexts();
 }
 
+function clearSessionState(sessionId, session) {
+  const timer = scheduledReads.get(sessionId);
+  if (timer) clearTimeout(timer);
+  scheduledReads.delete(sessionId);
+  seenMessageIds.delete(sessionId);
+  for (const [id, step] of stepByMessageId) if (step.session_id === sessionId) stepByMessageId.delete(id);
+  if (session?.transcript_path) for (const { file } of transcriptFilesOf(session)) transcriptTails.delete(file);
+  clearCodexSession(sessionId);
+  clearCodexRolloutSession(sessionId);
+}
+
 module.exports = {
-  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, subagentDirOf,
+  ingestEvent, scheduleTranscriptRead, cancelScheduledReads, readTranscripts, resetTranscriptState, clearSessionState, subagentDirOf,
 };

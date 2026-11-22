@@ -4,21 +4,19 @@
 // it runs as an async hook, always exits 0, and swallows every error.
 // Usage: hook.js <EventName> [--agent codex]   (no --agent: Claude Code)
 'use strict';
-const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
 const net = require('net');
 
 const DATA_DIR = process.env.OBSERVER_DATA_DIR || path.join(os.homedir(), '.claude', 'session-observer');
-const LOG_FILE = path.join(DATA_DIR, 'events.jsonl');
+const SESSION_LOG_DIR = path.join(DATA_DIR, 'sessions');
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
 const MAX_STRING = Number(process.env.OBSERVER_MAX_FIELD || 8000); // chars kept per string field
 const MAX_ARRAY_ITEMS = 200;
 const MAX_DEPTH = 8;
 const AGENTS = new Set(['claude', 'codex']);
 const DEFAULT_AGENT = 'claude';
-
 // which agent sent the event: Codex's hook commands pass --agent codex, Claude Code's pass nothing
 function agentFromArguments(args) {
   const flag = args.indexOf('--agent');
@@ -76,17 +74,20 @@ async function main() {
   let payload;
   try { payload = JSON.parse(input); } catch { payload = { raw: input }; }
 
+  const eventName = payload.hook_event_name || process.argv[2] || 'Unknown';
   const event = {
     ts: new Date().toISOString(),
-    event: payload.hook_event_name || process.argv[2] || 'Unknown',
+    event: eventName,
     session_id: payload.session_id || 'unknown',
     agent: agentFromArguments(process.argv.slice(2)),
     data: truncate(payload),
   };
 
   // owner-only: the log holds prompts, file contents and command output (mode applies when created; no-op on Windows)
-  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-  fs.appendFileSync(LOG_FILE, JSON.stringify(event) + '\n', { mode: 0o600 });
+  // one file per session, in the folder of the UTC day it was last active (moved there by its first event of the day)
+  // loaded here, inside main(): a missing or broken module must not make the hook fail
+  const { appendSessionEvent } = require('../server/lib/building-blocks/session-logs');
+  appendSessionEvent(SESSION_LOG_DIR, event.session_id, event.ts, JSON.stringify(event) + '\n');
 
   if (event.event === 'SessionStart') await ensureServer();
 }

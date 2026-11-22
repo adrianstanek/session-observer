@@ -35,6 +35,7 @@ function takeCallsSinceStep(event) {
 }
 
 const resetCodexSteps = () => callsSinceStep.clear();
+const clearCodexSession = sessionId => callsSinceStep.delete(sessionId);
 
 // the step's time: just before its first tool call, when that came earlier
 function stepTime(ts, calls) {
@@ -89,4 +90,4 @@ function addCodexUsage(session, step) {
   session.context = { tokens: tokens.context, window, pct: Math.min(1, tokens.context / window), ts: step.ts };
 }
 
-module.exports = { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps, tokensOf };
+module.exports = { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps, clearCodexSession, tokensOf };

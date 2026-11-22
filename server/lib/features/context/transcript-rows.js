@@ -1,10 +1,19 @@
 // A transcript read in full (the Context view needs every row, not only new ones), and text clipping for the page.
 'use strict';
 const fs = require('fs');
+const path = require('path');
 const { CONTEXT_FIELD_MAX } = require('../../building-blocks/config');
 
 const CACHED_FILES_MAX = 50;
 const rowsCache = new Map(); // file → { mtimeMs, size, rows }
+
+function clearTranscriptRowsCache(session) {
+  if (!session) { rowsCache.clear(); return; }
+  const main = session.transcript_path;
+  if (!main) return;
+  const subagents = path.join(path.dirname(main), path.basename(main, '.jsonl'), 'subagents') + path.sep;
+  for (const file of rowsCache.keys()) if (file === main || file.startsWith(subagents)) rowsCache.delete(file);
+}
 
 // every row of a JSONL transcript, cached until the file changes; null when the file can't be read
 function readTranscriptRows(file) {
@@ -50,4 +59,4 @@ function contentText(content) {
 
 const textLength = text => String(text ?? '').length;
 
-module.exports = { readTranscriptRows, clipText, clipDeep, contentText, textLength };
+module.exports = { readTranscriptRows, clearTranscriptRowsCache, clipText, clipDeep, contentText, textLength };

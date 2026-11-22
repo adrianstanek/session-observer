@@ -2,7 +2,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { PORT, LOG_FILE, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
+const { PORT, SESSION_LOG_DIR, TOKEN, VERSION, DASHBOARD_PAGE, DASHBOARD_ASSETS_DIR } = require('../../building-blocks/config');
 const guard = require('./request-guard');
 const { sessions, sessionSummary, eventsOfAllSessions } = require('../sessions/sessions');
 const { sessionContext } = require('../context/session-context');
@@ -95,15 +95,16 @@ function serveContext(response, url) {
   }
 }
 
-// GET routes by path; the clear-log POST is handled on its own
-function createRequestHandler({ clearLog }) {
+// GET routes by path; the clear-log and load-older POSTs and the session DELETE are handled on their own
+function createRequestHandler({ clearLog, deleteSession, logHistory, loadOlderDays }) {
   const routes = {
     '/': (request, response) => serveDashboardPage(response),
     '/index.html': (request, response) => serveDashboardPage(response),
     '/favicon.ico': (request, response) => { response.writeHead(204); response.end(); },
-    '/api/health': (request, response) => sendJson(response, 200, { ok: true, version: VERSION, port: PORT, log: LOG_FILE, sessions: sessions.size }),
+    '/api/health': (request, response) => sendJson(response, 200, { ok: true, version: VERSION, port: PORT, log: SESSION_LOG_DIR, sessions: sessions.size }),
     '/api/sessions': (request, response) => sendJson(response, 200, sessionsNewestFirst()),
     '/api/events': (request, response, url) => serveEvents(response, url),
+    '/api/history': (request, response) => sendJson(response, 200, logHistory()),
     '/api/context': (request, response, url) => serveContext(response, url),
     '/api/stream': (request, response) => addClient(request, response, { version: VERSION }),
   };
@@ -120,9 +121,23 @@ function createRequestHandler({ clearLog }) {
     const asset = ASSET_PATH.exec(url.pathname);
     if (asset) return serveDashboardAsset(response, asset);
     if (url.pathname === '/api/clear' && request.method === 'POST') {
-      clearLog();
+      try { clearLog(); } catch (error) { return sendError(response, 500, String(error.message || error)); }
       broadcast('reset', {});
       return sendJson(response, 200, { ok: true });
+    }
+    if (url.pathname === '/api/history/older' && request.method === 'POST') {
+      try { return sendJson(response, 200, loadOlderDays()); } catch (error) { return sendError(response, 500, String(error.message || error)); }
+    }
+    const deleteMatch = request.method === 'DELETE' && url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
+    if (deleteMatch) {
+      let sessionId;
+      try { sessionId = decodeURIComponent(deleteMatch[1]); } catch { return sendError(response, 400, 'bad session id'); }
+      try {
+        if (!deleteSession(sessionId)) return sendError(response, 404, 'unknown session');
+        return sendJson(response, 200, { ok: true });
+      } catch (error) {
+        return sendError(response, 500, String(error.message || error));
+      }
     }
     const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : null;
     if (route) return route(request, response, url);

@@ -54,5 +54,6 @@ function codexRolloutTexts(session, row, stepOf) {
 }
 
 const resetCodexRolloutTexts = () => waitingTexts.clear();
+const clearCodexSession = sessionId => waitingTexts.delete(sessionId);
 
-module.exports = { codexRolloutTexts, resetCodexRolloutTexts };
+module.exports = { codexRolloutTexts, resetCodexRolloutTexts, clearCodexSession };

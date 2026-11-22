@@ -54,11 +54,18 @@ function sessionCardHtml(session) {
   const meta = `${session.last ? escapeHtml(formatAgo(session.last)) : ''} · ${escapeHtml(countOf(session.turns || 0, 'turn'))} · ${escapeHtml(countOf(session.toolCalls || 0, 'tool'))}`
     + (outputTokens ? ` · ${escapeHtml(TEXT.outX(formatCompactNumber(outputTokens)))}` : '');
   return `<div class="card ${session.id === state.scope ? 'sel' : ''}" data-id="${escapeHtml(session.id)}">
-        <div class="row1"><span class="${dotClass}" title="${status}"></span><span class="name">${name}</span>${agentTag}</div>
+        <div class="row1"><span class="${dotClass}" title="${status}"></span><span class="name">${name}</span>${agentTag}<button class="session-delete" type="button" data-delete-session="${escapeHtml(session.id)}" title="${escapeHtml(TEXT.deleteSessionTitle)}" aria-label="${escapeHtml(TEXT.deleteSessionTitle)}">×</button></div>
         <template class="sdet"><div class="row1"><span class="name">${name}</span><span class="state"><span class="${dotClass}"></span>${status}</span></div>
         <div class="meta">${meta}</div>${lastTool}
         <div class="chips">${sessionChipsHtml(session)}</div></template>
       </div>`;
+}
+
+// older day folders stay on disk until asked for
+function olderSessionsHtml() {
+  const { loadedFrom, olderDays } = state.history;
+  if (!loadedFrom || !olderDays) return '';
+  return `<button class="load-older" type="button" data-load-older title="${escapeHtml(TEXT.loadOlderTitle)}">${escapeHtml(TEXT.loadOlderSessions(loadedFrom))}</button>`;
 }
 
 function renderSessions() {
@@ -72,7 +79,7 @@ function renderSessions() {
       <div class="meta">${escapeHtml(TEXT.everySession)}</div>
     </div>
     <div class="sect">${escapeHtml(TEXT.sessions)} <span>${sessions.length}</span></div>
-    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>`;
+    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>${olderSessionsHtml()}`;
   panel.scrollTop = scrollTop;
   renderSessionHoverCard(); // the list was rebuilt: refresh (or hide) the hover card
 }

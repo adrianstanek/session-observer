@@ -30,9 +30,12 @@ function needsYouHtml(sessions) {
   if (!waiting.length) {
     return `<section class="hsec hneeds hneeds-empty"><span class="hclear-icon" aria-hidden="true">✓</span><span class="muted">${escapeHtml(TEXT.home.allClear)}</span></section>`;
   }
-  const cards = waiting.map(session => `<button class="hneed" ${openAttributes(session)}>
-      <div class="hrow"><span class="dot need"></span><b class="hname">${escapeHtml(homeSessionName(session))}</b>${homeAgentTag(session)}<span class="muted hpath">${escapeHtml(baseName(session.cwd) || '')}</span></div>
-      ${session.needsYou.map(waitHtml).join('')}</button>`).join('');
+  const cards = waiting.map(session => `<div class="hneed">
+      <button class="hneed-open" type="button" ${openAttributes(session)}>
+        <div class="hrow"><span class="dot need"></span><b class="hname">${escapeHtml(homeSessionName(session))}</b>${homeAgentTag(session)}<span class="muted hpath">${escapeHtml(baseName(session.cwd) || '')}</span></div>
+        ${session.needsYou.map(waitHtml).join('')}
+      </button>
+    </div>`).join('');
   return `<section class="hsec hneeds on"><h3>${iconSvg('you')} ${escapeHtml(TEXT.home.needsYou)} <span class="hcount">${waiting.length}</span></h3>${cards}</section>`;
 }
 
@@ -55,6 +58,7 @@ function sessionRowHtml(session) {
       <button class="hsess-main" type="button" ${openAttributes(session)}><span class="${HOME_DOT[activity]}"></span>
         <span class="hsess-content"><span class="hsess-title"><span class="hname" title="${escapeHtml(name)}">${escapeHtml(name)}</span>${homeAgentTag(session)}<span class="hstate">${escapeHtml(TEXT.sessionState[activity])}</span></span>
         <span class="hsess-meta">${escapeHtml(countOf(session.turns || 0, 'turn'))}${session.last ? ` · ${escapeHtml(formatAgo(session.last))}` : ''}${lastTool}</span></span></button>
+      <button class="home-session-delete" type="button" data-delete-session="${escapeHtml(session.id)}" title="${escapeHtml(TEXT.deleteSessionTitle)}" aria-label="${escapeHtml(TEXT.deleteSessionTitle)}">×</button>
       ${children ? `<ul>${children}</ul>` : ''}</li>`;
 }
 

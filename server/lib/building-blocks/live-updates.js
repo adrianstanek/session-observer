@@ -4,11 +4,12 @@
 const RECONNECT_DELAY_MS = 2000; // how long a page waits before reconnecting after the stream drops
 const clients = new Set(); // open /api/stream responses
 let started = false;       // nothing is pushed while the server is still loading the log at start-up
+let muted = false;         // nothing is pushed while older days are read: the pages reload them in one go
 
 const sseMessage = (type, payload) => `event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;
 
 function broadcast(type, payload) {
-  if (!started) return;
+  if (!started || muted) return;
   const message = sseMessage(type, payload);
   for (const response of clients) response.write(message);
 }
@@ -24,5 +25,9 @@ function addClient(request, response, helloPayload) {
 const pingClients = () => { for (const response of clients) response.write(': ping\n\n'); };
 const startBroadcasting = () => { started = true; };
 const isBroadcasting = () => started;
+function withoutBroadcasting(work) {
+  muted = true;
+  try { return work(); } finally { muted = false; }
+}
 
-module.exports = { broadcast, addClient, pingClients, startBroadcasting, isBroadcasting };
+module.exports = { broadcast, addClient, pingClients, startBroadcasting, isBroadcasting, withoutBroadcasting };
