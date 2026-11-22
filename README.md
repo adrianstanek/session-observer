@@ -8,27 +8,27 @@
 
 ## Screenshots
 
-Screenshots use the synthetic demo sessions.
+Screenshots come from real Claude Code and Codex sessions. The numbered labels were added for this README; the dashboard doesn't show them.
 
-![Home groups sessions by project](docs/home.png)
+![Home with sessions grouped by project, agent badges, status and nested subagents](docs/home.jpg)
 
-*Home: see sessions and what needs attention.*
+*Home: every session by project, with its agent, status and subagents.*
 
-![Overview with session metrics, turns and activity charts](docs/overview.png)
+![Overview with session totals, a Turns chart, context over time, activity by group and the open turn in Details](docs/overview.jpg)
 
-*Overview: turns, tools, context and failures.*
+*Overview: totals, one bar per turn, context use and activity. Click a bar to open the turn.*
 
-![Route with parallel subagents and their tool calls](docs/route.png)
+![Route of one turn with three parallel subagents and an open tool call](docs/route.jpg)
 
-*Route: follow a turn through tools and agents.*
+*Route: follow a turn through tool calls and parallel subagents. Click a stop to see its input and output.*
 
-![Chat with prompts, replies and tool calls](docs/chat.png)
+![Chat with a prompt, model thinking, failed agent calls and a reply](docs/chat.jpg)
 
-*Chat: prompts, replies and tool calls.*
+*Chat: prompts, thinking, tool chips and replies in order.*
 
-![Context view with context usage and transcript entries](docs/context.png)
+![Context view with a context window grid and estimated tokens by category](docs/context.jpg)
 
-*Context: inspect usage and transcript records.*
+*Context: what fills the context window, down to each record.*
 
 ## How it works
 
