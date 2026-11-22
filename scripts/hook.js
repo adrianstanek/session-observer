@@ -4,7 +4,6 @@
 // it runs as an async hook, always exits 0, and swallows every error.
 // Usage: hook.js <EventName> [--agent codex]   (no --agent: Claude Code)
 'use strict';
-const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
