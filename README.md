@@ -64,7 +64,7 @@ flowchart TD
   T -->|no| O{file in an earlier day?}
   O -->|no| N[create today's file] --> A
   O -->|yes| M[move it to today, remove the empty folder] --> A
-  M -. rename refused, e.g. file locked on Windows .-> A2[append where it is, retry on the next event]
+  M -.->|rename refused: file locked on Windows| A2[append where it is, retry on the next event]
 ~~~
 
 **Server: read recent days, follow moved files**
