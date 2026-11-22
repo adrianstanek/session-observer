@@ -34,9 +34,6 @@ function initViewClicks() {
     if (scope !== state.scope) selectScope(scope);
     setView(new URLSearchParams(location.search).get('layout') || storage.get(SETTING_KEYS.layout, 'home'), 'none');
   });
-  // a redraw between press and release would swap the button under the pointer, and the click would be lost
-  viewBox().addEventListener('pointerdown', () => { viewPointerDown = true; });
-  for (const name of ['pointerup', 'pointercancel', 'blur']) addEventListener(name, () => { viewPointerDown = false; }, true);
   viewBox().addEventListener('click', event => {
     if (event.target.closest('[data-follow]')) {
       state.selectedTurnKey = null;

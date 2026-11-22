@@ -62,8 +62,21 @@ function detailsHeaderHtml(turn) {
     <p class="lead">${escapeHtml(baseName(session?.cwd))} · ${escapeHtml(turnStateWord(turn))} · ${formatDuration(duration)} · ${escapeHtml(countOf(turn.stepCount, 'modelStep'))} · ${escapeHtml(countOf(turn.toolCount, 'toolCall'))} (${formatDuration(turn.toolMs)}) · ${escapeHtml(TEXT.outTokens(formatCompactNumber(turn.outputTokens)))}${problems}</p>`;
 }
 
+// the boxes opened inside event cards (raw payload, hook events), as "<row id>:<index>": live updates redraw the panel,
+// and these stay open
+const openCardBoxes = panel => [...panel.querySelectorAll('.erow')].flatMap(row =>
+  [...row.querySelectorAll('details:not(.dsec)')].map((box, index) => (box.open ? `${row.id}:${index}` : null)).filter(Boolean));
+
+function reopenCardBoxes(panel, keys) {
+  for (const key of keys) {
+    const split = key.lastIndexOf(':');
+    const box = elementById(key.slice(0, split))?.querySelectorAll('details:not(.dsec)')[Number(key.slice(split + 1))];
+    if (box) box.open = true;
+  }
+}
+
 function renderDetails() {
-  const panel = elementById('detail'), scrollTop = panel.scrollTop;
+  const panel = elementById('detail'), scrollTop = panel.scrollTop, openBoxes = openCardBoxes(panel);
   const turn = selectedTurn();
   if (!turn) {
     panel.innerHTML = `<div class="dh"><h2>${escapeHtml(TEXT.details)}</h2></div><p class="muted">${TEXT.pickTurn}</p>${colourKeyHtml(turn)}`;
@@ -79,6 +92,7 @@ function renderDetails() {
     ${detailSectionHtml('prompt', escapeHtml(TEXT.prompt), `<div class="q">${prompt}</div>`)}
     ${turn.answer ? detailSectionHtml('reply', escapeHtml(TEXT.reply), `<div class="q ans">${escapeHtml(turn.answer)}</div>`) : ''}
     ${detailSectionHtml('events', eventsTitle, `<div>${rows.join('')}</div>`)}${colourKeyHtml(turn)}`;
+  reopenCardBoxes(panel, openBoxes);
   panel.scrollTop = scrollTop;
   applyHoverHighlights(); // keep the row lit for the chat item / route stop under the mouse
 }

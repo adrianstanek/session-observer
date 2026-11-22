@@ -10,8 +10,6 @@ const VIEW_REDRAW_MS = 250;
 let lastViewDrawAt = 0;
 let lastViewHtml = '';
 let contextTurnShown = null; // the selected turn the Context view last scrolled to
-let viewPointerDown = false; // a press in the view: no redraw swaps the element under it until release (view-controls.js)
-
 function setView(id, historyMode = 'push') {
   if (!VIEWS.some(view => view.id === id)) id = 'home';
   if (historyMode !== 'none') {
@@ -102,7 +100,7 @@ function restoreRouteScroll(box, before) {
 // draws the view in #alt when something changed (at most every VIEW_REDRAW_MS otherwise)
 function drawView(now) {
   if (!viewNeedsDrawing && now - lastViewDrawAt < VIEW_REDRAW_MS) return;
-  if (viewPointerDown) return; // a click in progress: drawn once it is released
+  if (pointerHeld) return; // a click in progress: drawn once it is released (rendering.js)
   viewNeedsDrawing = false;
   lastViewDrawAt = now;
   if (state.view === 'overview') return; // the overview is #mid, drawn by renderOverview
