@@ -133,7 +133,8 @@ test('a Codex permission waits for its own call, not for a call run beside it', 
   hook('UserPromptSubmit', { prompt: 'clean up' });
   hook('PreToolUse', { tool_name: 'exec_command', tool_use_id: 'w-ls', tool_input: { cmd: 'ls' } });
   hook('PreToolUse', { tool_name: 'exec_command', tool_use_id: 'w-rm', tool_input: { cmd: 'rm -rf build' } });
-  hook('PermissionRequest', { tool_name: 'exec_command', tool_use_id: 'w-rm', tool_input: { cmd: 'rm -rf build' } });
+  // as Codex sends it: no tool_use_id, and a description the call's own input doesn't have
+  hook('PermissionRequest', { tool_name: 'exec_command', tool_input: { cmd: 'rm -rf build', description: 'Remove the build folder' } });
   await waits(['exec_command']);
   hook('PostToolUse', { tool_name: 'exec_command', tool_use_id: 'w-ls', tool_input: { cmd: 'ls' }, tool_response: 'src' });
   await waitFor(async () => (await getJson('/api/sessions')).find(s => s.id === id)?.running === 1);

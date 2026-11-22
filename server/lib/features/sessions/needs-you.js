@@ -3,10 +3,11 @@
 // result), or when the turn ends one way or another (Stop, an interrupt, a new prompt, the session ending).
 // A call refused at its prompt, and an interrupt, send no hook at all: the transcript shows them (endWaitsFromTranscript).
 //
-// Claude Code's PermissionRequest carries no tool_use_id. Such a permission is tied to the call it asks about: the
-// latest PreToolUse of the same agent, tool and input that has no result yet. Its wait then ends with that call's
-// result, and another call that finishes meanwhile (one run in parallel) leaves it alone. A permission with no such
-// call gets a key of its own from its tool and input, and ends with a result of that same tool and input.
+// A PermissionRequest carries no tool_use_id (Claude Code's and Codex's alike). Such a permission is tied to the call it
+// asks about: the latest PreToolUse of the same agent and tool, with no result yet, whose input fields all come back
+// unchanged in the permission's input (Codex adds a description). Its wait then ends with that call's result, and
+// another call that finishes meanwhile (one run in parallel) leaves it alone. A permission with no such call gets a
+// key of its own, and ends with a result of the same agent and tool whose input fields all come back in it.
 'use strict';
 const crypto = require('crypto');
 const { QUESTION_TOOLS } = require('./event-categories');
@@ -51,27 +52,55 @@ function stableJson(value) {
 const callKey = (agentId, tool, input) =>
   crypto.createHash('sha1').update(stableJson([agentId ?? null, tool || null, input ?? null])).digest('hex').slice(0, 16);
 
-// calls without a result yet, per session, so a permission asked without a call id can find its call
-const openCalls = new WeakMap(); // session → [{ id, key }]
-const openCallsOf = session => {
-  if (!openCalls.has(session)) openCalls.set(session, []);
-  return openCalls.get(session);
+// every field of a call's input, unchanged in the other input (which may have more)
+function fieldsIn(part, whole) {
+  if (!part || typeof part !== 'object' || Array.isArray(part)) return stableJson(part) === stableJson(whole);
+  return Object.keys(part).every(field => stableJson(part[field]) === stableJson(whole?.[field]));
+}
+const callOf = data => ({ agentId: data.agent_id ?? null, tool: data.tool_name || null, input: data.tool_input ?? null });
+// a call, and a permission that asks about it
+const asksAbout = (call, permission) =>
+  call.agentId === permission.agentId && call.tool === permission.tool && fieldsIn(call.input, permission.input);
+
+// per session: the calls without a result yet, so a permission asked without a call id can find its call; and the
+// permissions that found none, so a later result can end them
+const openCalls = new WeakMap();       // session → [{ id, agentId, tool, input }]
+const unlinkedPermissions = new WeakMap(); // session → Map(wait key → { agentId, tool, input })
+const listOf = (map, session, empty) => {
+  if (!map.has(session)) map.set(session, empty());
+  return map.get(session);
 };
 
 function noteOpenCall(session, data) {
-  const calls = openCallsOf(session);
-  calls.push({ id: data.tool_use_id, key: callKey(data.agent_id, data.tool_name, data.tool_input) });
+  const calls = listOf(openCalls, session, () => []);
+  calls.push({ id: data.tool_use_id, ...callOf(data) });
   if (calls.length > CALLS_KEPT_MAX) calls.splice(0, calls.length - CALLS_KEPT_MAX);
 }
 
-const closeOpenCall = (session, toolUseId) => openCalls.set(session, openCallsOf(session).filter(call => call.id !== toolUseId));
+const closeOpenCall = (session, toolUseId) =>
+  openCalls.set(session, listOf(openCalls, session, () => []).filter(call => call.id !== toolUseId));
 
-// the key of a permission's wait: its own call id, the id of the call it asks about, or its tool and input
+// the key of a permission's wait: its own call id, the id of the call it asks about, or a key of its own
 function permissionKey(session, data) {
   if (data.tool_use_id) return 'tool:' + data.tool_use_id;
-  const key = callKey(data.agent_id, data.tool_name, data.tool_input);
-  const call = openCallsOf(session).findLast(candidate => candidate.key === key);
-  return call ? 'tool:' + call.id : 'permission:' + key;
+  const permission = callOf(data);
+  const call = listOf(openCalls, session, () => []).findLast(candidate => asksAbout(candidate, permission));
+  if (call) return 'tool:' + call.id;
+  const key = 'permission:' + callKey(permission.agentId, permission.tool, permission.input);
+  const unlinked = listOf(unlinkedPermissions, session, () => new Map());
+  unlinked.set(key, permission);
+  if (unlinked.size > CALLS_KEPT_MAX) unlinked.delete(unlinked.keys().next().value);
+  return key;
+}
+
+// the keys of the permissions with no call that this result answers
+function unlinkedAnsweredBy(session, data) {
+  const unlinked = unlinkedPermissions.get(session);
+  if (!unlinked) return new Set();
+  const call = callOf(data);
+  const keys = new Set([...unlinked].filter(([, permission]) => asksAbout(call, permission)).map(([key]) => key));
+  for (const key of keys) unlinked.delete(key);
+  return keys;
 }
 
 function waitFields(event, data) {
@@ -89,7 +118,7 @@ function trackNeedsYou(session, event, data) {
   if (ENDS_EVERY_WAIT.has(name)) {
     // (a background agent goes on after its turn, and keeps waiting on you; only the session's end ends that)
     session.needsYou = name === 'SessionEnd' ? [] : session.needsYou.filter(wait => isRunningBackgroundSubagent(session, wait.agentId));
-    if (name === 'SessionEnd') openCalls.delete(session);
+    if (name === 'SessionEnd') { openCalls.delete(session); unlinkedPermissions.delete(session); }
     return;
   }
   if (name === 'PreToolUse' && toolUseId) noteOpenCall(session, data);
@@ -111,11 +140,11 @@ function trackNeedsYou(session, event, data) {
     addWait(session, { key: 'notification', kind: 'permission', tool: null, text: clip(data.message), ...waitFields(event, data) });
   } else if (ANSWERS_A_TOOL.has(name)) {
     // a tool's result answers its own wait (the permission was given or refused: the call has finished), and a
-    // permission asked for this tool and input with no call to tie it to
+    // permission about this call that had no call to tie it to
     const sameAgent = wait => wait.agentId === (data.agent_id ?? null);
-    const ownKey = 'permission:' + callKey(data.agent_id, data.tool_name, data.tool_input);
+    const answered = unlinkedAnsweredBy(session, data);
     if (toolUseId) closeOpenCall(session, toolUseId);
-    removeWaits(session, wait => (toolUseId && wait.key === 'tool:' + toolUseId) || wait.key === ownKey
+    removeWaits(session, wait => (toolUseId && wait.key === 'tool:' + toolUseId) || answered.has(wait.key)
       || (wait.key === 'notification' && sameAgent(wait)));
   }
 }
