@@ -42,4 +42,13 @@ function initSessionsControls() {
   elementById('sessions').addEventListener('mouseover', event => hoverSession(event.target.closest('.sess-list .card')?.dataset.id ?? null));
   elementById('sessions').addEventListener('mouseleave', () => hoverSession(null));
   elementById('sessions').addEventListener('scroll', () => { if (hoveredSessionId) hoverSession(null); });
+  // a link to a session started by, or starting, another (links.js) opens that session on its Route, wherever it is
+  document.addEventListener('click', event => {
+    const link = event.target.closest('[data-open-session]');
+    if (!link) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setView('route');
+    selectScope(link.dataset.openSession);
+  }, true);
 }

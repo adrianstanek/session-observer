@@ -35,6 +35,7 @@ TRANSLATIONS.de = (() => {
     deleteSessionTitle: 'Diese Sitzung und ihre gespeicherten Daten löschen',
     deleteSessionConfirm: name => `„${name}“ und die gespeicherten Session-Observer-Daten löschen? Das originale App-Transkript bleibt erhalten. Dies kann nicht rückgängig gemacht werden.`,
     deleteSessionFailed: reason => `Die Session konnte nicht gelöscht werden: ${reason}`,
+    openSession: 'Diese Sitzung öffnen', startedBy: 'gestartet von', startedSessions: n => (n === 1 ? 'Gestartete Sitzung' : 'Gestartete Sitzungen'),
     loadOlderSessions: day => `Sitzungen vor dem ${day} laden`,
     loadOlderTitle: 'Ältere Tage sind gespeichert, aber noch nicht geladen',
     range: 'Zeitraum', range1h: 'letzte 1 h', range6h: 'letzte 6 h', range24h: 'letzte 24 h', range7d: 'letzte 7 Tage', rangeAll: 'alles',

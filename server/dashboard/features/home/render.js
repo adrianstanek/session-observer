@@ -1,7 +1,10 @@
 'use strict';
 // Session Observer dashboard — Home: what waits on you, on top, then every agent as a tree: project folder → session
-// → its subagents. A row opens its session.
+// → its subagents, and the agent sessions it started (Claude Code running Codex, or Codex Claude Code). A row opens its
+// session.
 const WAIT_TEXT_MAX = 160;
+const HOME_LINK_DEPTH_MAX = 4; // sessions started by started sessions nest this deep
+let homeShownIds = new Set(); // the sessions Home shows this render: a started one nests under its parent if that is one
 const SUBAGENT_DESCRIPTION_MAX = 90;
 const HOME_DOT = { needsYou: 'dot need', working: 'dot busy', yourTurn: 'dot on', inactive: 'dot', ended: 'dot' };
 const homePastShown = new Map(); // project → whether you opened (true) or closed (false) its past sessions
@@ -47,14 +50,17 @@ function subagentRowHtml(subagent) {
     + `<span class="muted">${escapeHtml(running ? TEXT.sessionState.working : TEXT.home.done)}${duration ? ' · ' + escapeHtml(duration) : ''}</span></li>`;
 }
 
-function sessionRowHtml(session) {
+// a session's row, with the agent sessions it started (links.js) and its subagents under it
+function sessionRowHtml(session, depth = 0) {
   const activity = sessionActivity(session);
   const { subagents, folded } = shownSubagents(session);
   const lastTool = activity === 'working' && session.lastTool
     ? `<span class="muted mono hlast">${escapeHtml(toolDisplayName(session.lastTool.name))} ${escapeHtml(shorten(session.lastTool.arg, 60))}</span>` : '';
-  const children = subagents.map(subagentRowHtml).join('') + (folded ? `<li class="hsub muted">${escapeHtml(TEXT.home.more(folded))}</li>` : '');
+  const startedSessions = depth < HOME_LINK_DEPTH_MAX
+    ? childSessionsOf(session).filter(child => homeShownIds.has(child.id)).map(child => sessionRowHtml(child, depth + 1)).join('') : '';
+  const children = startedSessions + subagents.map(subagentRowHtml).join('') + (folded ? `<li class="hsub muted">${escapeHtml(TEXT.home.more(folded))}</li>` : '');
   const name = homeSessionName(session);
-  return `<li class="hsess act-${activity} ${session.id === state.scope ? 'sel' : ''}">
+  return `<li class="hsess act-${activity} ${depth ? 'hchild' : ''} ${session.id === state.scope ? 'sel' : ''}">
       <button class="hsess-main" type="button" ${openAttributes(session)}><span class="${HOME_DOT[activity]}"></span>
         <span class="hsess-content"><span class="hsess-title"><span class="hname" title="${escapeHtml(name)}">${escapeHtml(name)}</span>${homeAgentTag(session)}<span class="hstate">${escapeHtml(TEXT.sessionState[activity])}</span></span>
         <span class="hsess-meta">${escapeHtml(countOf(session.turns || 0, 'turn'))}${session.last ? ` · ${escapeHtml(formatAgo(session.last))}` : ''}${lastTool}</span></span></button>
@@ -71,16 +77,19 @@ function projectHtml(project) {
   const shown = homePastShown.get(projectId) ?? (!!state.searchText || past.some(session => session.id === state.scope));
   const openPast = shown ? ' open' : '';
   const archived = past.length
-    ? `<li class="harchive"><details data-home-project="${escapeHtml(projectId)}"${openPast}><summary>${escapeHtml(TEXT.home.more(past.length))}</summary><ul>${past.map(sessionRowHtml).join('')}</ul></details></li>`
+    ? `<li class="harchive"><details data-home-project="${escapeHtml(projectId)}"${openPast}><summary>${escapeHtml(TEXT.home.more(past.length))}</summary><ul>${past.map(session => sessionRowHtml(session)).join('')}</ul></details></li>`
     : '';
   return `<li class="hproj"><div class="hrow">${iconSvg('files')}<b>${escapeHtml(name)}</b><span class="muted mono hpath" title="${escapeHtml(project.path)}">${escapeHtml(project.path)}</span></div>
-    <ul>${current.map(sessionRowHtml).join('')}${archived}</ul></li>`;
+    <ul>${current.map(session => sessionRowHtml(session)).join('')}${archived}</ul></li>`;
 }
 
 function homeViewHtml() {
-  const sessions = homeSessions();
+  const shown = homeSessions();
+  homeShownIds = new Set(shown.map(session => session.id));
+  // a session started by another one Home shows sits under it, not at the top of its project
+  const sessions = shown.filter(session => !(parentSessionOf(session) && homeShownIds.has(session.parent.id)));
   const tree = sessions.length
     ? `<ul class="htree">${projectTree(sessions).map(projectHtml).join('')}</ul>`
     : `<div class="cempty">${escapeHtml(TEXT.home.noSessions)}</div>`;
-  return `<div class="home">${needsYouHtml([...state.sessions.values()])}<section class="hsec hsessions"><div class="home-heading"><h2>${escapeHtml(TEXT.sessions)}</h2><span class="muted">${sessions.length}</span></div>${tree}</section></div>`;
+  return `<div class="home">${needsYouHtml([...state.sessions.values()])}<section class="hsec hsessions"><div class="home-heading"><h2>${escapeHtml(TEXT.sessions)}</h2><span class="muted">${shown.length}</span></div>${tree}</section></div>`;
 }

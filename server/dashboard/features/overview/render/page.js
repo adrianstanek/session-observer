@@ -42,6 +42,14 @@ function sessionLeadHtml(session) {
     + (session.ended && session.endReason ? ' · ' + escapeHtml(TEXT.endedX(session.endReason)) : '');
 }
 
+// the agent session that started this one, and the ones it started (links.js), or ''
+function sessionLinksHtml(session) {
+  const parent = parentSessionOf(session), children = childSessionsOf(session);
+  const startedBy = parent ? `<div class="slinks"><span class="muted">${escapeHtml(TEXT.startedBy)}</span>${sessionLinkHtml(parent)}</div>` : '';
+  const started = children.length ? `<div class="slinks"><span class="muted">${escapeHtml(TEXT.startedSessions(children.length))}</span>${children.map(sessionLinkHtml).join('')}</div>` : '';
+  return startedBy + started;
+}
+
 function sessionTilesHtml(session) {
   const labels = TEXT.tiles, usage = session.usage || {}, context = session.context;
   const totalTokens = (usage.input || 0) + (usage.cache_read || 0) + (usage.cache_write || 0);
@@ -53,7 +61,7 @@ function sessionTilesHtml(session) {
 
 function sessionOverviewHtml(session, filterNote) {
   return `<h2>${escapeHtml(shorten(stripTags(session.title) || baseName(session.cwd) || session.id, TITLE_PREVIEW_MAX))}</h2>
-      <p class="lead">${sessionLeadHtml(session)}</p>
+      <p class="lead">${sessionLeadHtml(session)}</p>${sessionLinksHtml(session)}
       <div class="tiles">${sessionTilesHtml(session)}</div>
       ${overviewChartsHtml(session, filterNote)}`;
 }

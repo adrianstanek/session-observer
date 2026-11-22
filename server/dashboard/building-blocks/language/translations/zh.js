@@ -33,6 +33,7 @@ TRANSLATIONS.zh = (() => {
     deleteSessionTitle: '删除此会话及其保存的数据',
     deleteSessionConfirm: name => `删除“${name}”及其保存在 Session Observer 中的数据吗？不会删除应用原始转录记录。此操作无法撤销。`,
     deleteSessionFailed: reason => `无法删除会话：${reason}`,
+    openSession: '打开此会话', startedBy: '启动者', startedSessions: () => '启动的会话',
     loadOlderSessions: day => `加载 ${day} 之前的会话`,
     loadOlderTitle: '更早的日期已保存，但尚未加载',
     range: '时间范围', range1h: '最近 1 小时', range6h: '最近 6 小时', range24h: '最近 24 小时', range7d: '最近 7 天', rangeAll: '全部',
