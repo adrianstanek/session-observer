@@ -153,7 +153,7 @@ svg.metro { display: block; }
 .metro .dim { opacity: .5; }
 /* hovering a line highlights that whole line (a subagent's branch or a turn's main line) and its stops */
 .metro .hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
-.metro.hl .ml:not(.on), .metro.hl .stop:not(.on), .metro.hl .md:not(.on) { opacity: .3; }
+.metro .ml.off, .metro .stop.off, .metro .md.off { opacity: .3; } /* the rest of a hovered line's turn (app/hover.js) */
 .metro .ml.on { opacity: 1; stroke-width: 8; }
 .metro .ml.br.on { stroke-width: 7; }
 .metro .stop.on .sn { stroke-width: 4; }
