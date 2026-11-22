@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/radekwojpl2/session-observer/compare/v0.11.0...v0.11.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* keep scroll, clicks, open boxes and Route hover and selection steady ([9b8b2ed](https://github.com/radekwojpl2/session-observer/commit/9b8b2ed5d40778205af8c8adfba7d978c51e186a))
+
 ## [0.11.0](https://github.com/radekwojpl2/session-observer/compare/v0.10.0...v0.11.0) (2026-11-22)
 
 
