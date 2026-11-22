@@ -407,8 +407,7 @@ test('a subagent takes the description of its own call: by type, and never from 
   // refused at its prompt: only the transcript says so
   hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-refused', tool_input: { description: 'Delete the cache', subagent_type: 'Explore' } });
   fs.appendFileSync(tp, JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'sc-refused', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } }) + '\n');
-  hook('Notification', { notification_type: 'idle_prompt', message: 'read the transcript' });
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // the next call comes straight after, before the transcript would be read on its own
   hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-ok', tool_input: { description: 'Read the README', subagent_type: 'Explore' } });
   hook('SubagentStart', { agent_id: 'sc-next', agent_type: 'Explore' });
   assert.equal((await waitFor(() => subagent('sc-next'))).description, 'Read the README');

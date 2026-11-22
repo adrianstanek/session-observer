@@ -8,10 +8,10 @@ const fs = require('fs');
 const path = require('path');
 const { CONTEXT_WINDOW } = require('../../building-blocks/config');
 const { FileTail } = require('../../building-blocks/file-tail');
-const { ingest, sessionSummary } = require('./sessions');
+const { sessions, ingest, sessionSummary } = require('./sessions');
 const { endWaitsFromTranscript } = require('./needs-you');
 const { dropSubagentCall } = require('./subagent-list');
-const { broadcast } = require('../../building-blocks/live-updates');
+const { broadcast, isBroadcasting } = require('../../building-blocks/live-updates');
 const { ONE_MILLION_WINDOW, contextTokensOf, hasOneMillionWindow } = require('../../building-blocks/token-usage');
 const { CODEX, isCodexModelRequest, noteCodexEvent, toCodexModelStep, addCodexUsage, resetCodexSteps } = require('./codex-model-steps');
 const { codexRolloutTexts, resetCodexRolloutTexts } = require('./codex-rollout-texts');
@@ -36,6 +36,7 @@ const isCodex = session => session.agent === CODEX;
 // A Codex model request becomes a ModelStep right here (with the tool calls it started) instead.
 function ingestEvent(event) {
   noteCodexEvent(event);
+  if (event.event === 'SubagentStart' && !event.synthetic && isBroadcasting()) readBeforeSubagentStart(event);
   const isCodexStep = isCodexModelRequest(event);
   if (isCodexStep) toCodexModelStep(event);
   const session = ingest(event);
@@ -45,6 +46,15 @@ function ingestEvent(event) {
   }
   if (!event.synthetic && readsTranscript(session)) scheduleTranscriptRead(session);
   return session;
+}
+
+// a subagent call refused at its prompt shows only in the transcript, which is read late: a SubagentStart reads it
+// first, so a refused call is out of the queue before the new subagent takes its description (subagent-list.js).
+// (Live only: the start-up load reads every transcript once, after the log.)
+function readBeforeSubagentStart(event) {
+  const session = sessions.get(event.session_id);
+  if (!session || !readsTranscript(session) || isCodex(session) || !session.subagentDescriptionsWaiting.length) return;
+  try { readTranscripts(session); } catch { /* ignore */ }
 }
 
 function scheduleTranscriptRead(session, delay = READ_DELAY_MS) {
