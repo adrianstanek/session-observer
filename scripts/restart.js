@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Stops the dashboard server on PORT and starts the newest installed plugin version's server.
+// Stops every running dashboard server and starts the newest installed plugin version's server.
 // Used after a plugin update: the old server keeps running in the background until it is stopped.
 'use strict';
 const fs = require('fs');
@@ -10,9 +10,7 @@ const { execFileSync } = require('child_process');
 const PORT = Number(process.env.OBSERVER_PORT || 4777);
 const PORT_FREE_TIMEOUT_MS = 5000;
 const PORT_POLL_MS = 200;
-const SERVER_COMMAND_LINE = /server\.js/;
-const PLUGIN_SERVER_COMMAND_LINE = /session-observer.*server\.js/;
-const NODE_COMMAND = /^\s*\d+\s+(\S*[/\\])?node(\.exe)?\s/; // a `ps -eo pid=,args=` line of a node process
+const SERVER_COMMAND_LINE = /session-observer.*server\.js/;
 
 const pluginRoot = path.join(__dirname, '..');
 
@@ -33,48 +31,17 @@ function newestPluginRoot() {
   return versions.length ? path.join(versionsDir, versions[versions.length - 1]) : pluginRoot;
 }
 
-// The pids listening on PORT, so only the dashboard on this port is stopped, not a server on another port; null when
-// no lookup command works here (lsof and ss are both missing on some minimal Linux installs).
-function pidsListeningOnPort() {
-  const lookups = process.platform === 'win32' ? [
-    ['powershell.exe', ['-NoProfile', '-Command', `Get-NetTCPConnection -LocalPort ${PORT} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $_.OwningProcess }`],
-      (output) => output.split(/\r?\n/).map(Number)],
-  ] : [
-    ['lsof', ['-t', '-iTCP:' + PORT, '-sTCP:LISTEN'], (output) => output.split('\n').map(Number)],
-    ['ss', ['-ltnpH', `sport = :${PORT}`], (output) => [...output.matchAll(/pid=(\d+)/g)].map((match) => Number(match[1]))],
-  ];
-  for (const [command, args, pidsOf] of lookups) {
-    try {
-      return new Set(pidsOf(execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })).filter(Boolean));
-    } catch (error) {
-      if (error.code === 'ENOENT') continue; // not installed: try the next one
-      // it ran, and found nothing: lsof and Get-NetTCPConnection exit non-zero when nothing listens
-      return new Set(pidsOf(String(error.stdout || '')).filter(Boolean));
-    }
-  }
-  return null;
-}
-
-// Node processes running a server.js that listen on PORT (one started with a relative path included). Without a port
-// lookup, the plugin's own servers by their command line, as before: never stop nothing, nor a stranger's server.js.
 function runningServerPids() {
-  const listening = pidsListeningOnPort();
-  return nodeServerProcesses()
-    .filter(({ pid, commandLine }) => (listening ? listening.has(pid) : PLUGIN_SERVER_COMMAND_LINE.test(commandLine)))
-    .map(({ pid }) => pid);
-}
-
-function nodeServerProcesses() {
   try {
     if (process.platform === 'win32') {
       const script = "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ForEach-Object { \"$($_.ProcessId)`t$($_.CommandLine)\" }";
       const output = execFileSync('powershell.exe', ['-NoProfile', '-Command', script], { encoding: 'utf8' });
       return output.split(/\r?\n/).filter((line) => SERVER_COMMAND_LINE.test(line))
-        .map((line) => ({ pid: Number(line.split('\t')[0]), commandLine: line }));
+        .map((line) => Number(line.split('\t')[0]));
     }
     const output = execFileSync('ps', ['-eo', 'pid=,args='], { encoding: 'utf8' });
-    return output.split('\n').filter((line) => NODE_COMMAND.test(line) && SERVER_COMMAND_LINE.test(line))
-      .map((line) => ({ pid: Number(line.trim().split(/\s+/)[0]), commandLine: line }));
+    return output.split('\n').filter((line) => SERVER_COMMAND_LINE.test(line))
+      .map((line) => Number(line.trim().split(/\s+/)[0]));
   } catch { return []; }
 }
 
