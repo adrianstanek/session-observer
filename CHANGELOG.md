@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.9.0](https://github.com/radekwojpl2/session-observer/compare/v0.8.0...v0.9.0) (2026-11-22)
+
+
+### Features
+
+* Codex sessions on the same dashboard ([0bd1120](https://github.com/radekwojpl2/session-observer/commit/0bd1120ac92fc05a8b145e556c2ce11eaff07f2c))
+
+
+### Bug Fixes
+
+* a subagent whose call returns while it runs is a background one ([02abb45](https://github.com/radekwojpl2/session-observer/commit/02abb45a0ad85acdaa294376daea637c89ced496))
+* Codex context window, sidechain interrupts and subagent matching ([7cb978b](https://github.com/radekwojpl2/session-observer/commit/7cb978bcbfc21a79a17885bb489e8697970a0ebc))
+* Home's needs-you, past sessions and Back ([0c94b69](https://github.com/radekwojpl2/session-observer/commit/0c94b69546c1b6ed9e0c4473c79eca346e2487e3))
+* keep Needs you and subagent state right ([e1a5f2e](https://github.com/radekwojpl2/session-observer/commit/e1a5f2ee9c9ea943f0dfc20b3af8ba31f8bcf61b))
+* read the transcript before matching a SubagentStart ([4f7b5b6](https://github.com/radekwojpl2/session-observer/commit/4f7b5b6c734d561c656c7a39df731079824e3d0b))
+* skip a subagent call the transcript already showed refused ([647b6e2](https://github.com/radekwojpl2/session-observer/commit/647b6e2a143112f59ddd7472d4c7304bd8a80557))
+* tie a Codex permission to its call ([c46731a](https://github.com/radekwojpl2/session-observer/commit/c46731a1e4ef720e02b13bd501ab95456e332c4a))
+
+
+### Code Changes
+
+* remove the GitHub link from Home ([f43ff94](https://github.com/radekwojpl2/session-observer/commit/f43ff9444ad19805c7201acfd077c71c22488d1d))
+
 ## [0.8.0](https://github.com/radekwojpl2/session-observer/compare/v0.7.1...v0.8.0) (2026-11-21)
 
 
