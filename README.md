@@ -4,7 +4,14 @@
 
 **One local dashboard for Claude Code and Codex.** Follow prompts, tool calls, model steps, subagents, context use and failures as they happen.
 
-[![CI](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml/badge.svg)](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/radekwojpl2/session-observer/ci.yml?branch=main&label=Tests&logo=github)](https://github.com/radekwojpl2/session-observer/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/radekwojpl2/session-observer?label=release)](https://github.com/radekwojpl2/session-observer/releases)
+[![Stars](https://img.shields.io/github/stars/radekwojpl2/session-observer?style=flat&label=stars&color=blue)](https://github.com/radekwojpl2/session-observer/stargazers)
+[![License: MIT](https://img.shields.io/github/license/radekwojpl2/session-observer?label=license&color=brightgreen)](LICENSE)
+[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-D97757)](#install)
+[![Codex plugin](https://img.shields.io/badge/Codex-plugin-412991)](#install)
+[![Dependencies: zero](https://img.shields.io/badge/dependencies-zero-brightgreen)](#development)
+[![Last commit](https://img.shields.io/github/last-commit/radekwojpl2/session-observer?label=last%20commit&color=brightgreen)](https://github.com/radekwojpl2/session-observer/commits/main)
 
 ## Screenshots
 
