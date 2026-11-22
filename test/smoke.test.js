@@ -224,6 +224,249 @@ test('context: the whole transcript, in full, with subagents and the request sha
   assert.equal((await get('/api/context?session=nope')).status, 404);
 });
 
+// ---- Home: what a session waits on you for, and its subagents
+const WAIT_SESSION = 'sess-wait';
+const waitHook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: WAIT_SESSION, cwd: '/tmp/waits', ...fields });
+const waitingSession = () => getJson('/api/sessions').then(list => list.find(session => session.id === WAIT_SESSION));
+const waitsAre = async expected => waitFor(async () => {
+  const session = await waitingSession();
+  return session && JSON.stringify(session.needsYou.map(wait => wait.kind)) === JSON.stringify(expected) && session;
+});
+
+test('a session tracks what it waits on you for, until it is answered', async () => {
+  waitHook('UserPromptSubmit', { prompt: 'deploy it' });
+  waitHook('PreToolUse', { tool_name: 'AskUserQuestion', tool_use_id: 'q1', tool_input: { questions: [{ question: 'Which region?' }] } });
+  // Claude Code asks permission for the question tool too: still one wait
+  waitHook('PermissionRequest', { tool_name: 'AskUserQuestion', tool_input: { questions: [{ question: 'Which region?' }] } });
+  waitHook('Notification', { notification_type: 'permission_prompt', message: 'Claude needs your permission' });
+  let session = await waitsAre(['question']);
+  assert.equal(session.needsYou[0].text, 'Which region?');
+
+  waitHook('PostToolUse', { tool_name: 'AskUserQuestion', tool_use_id: 'q1', tool_response: { answers: { 'Which region?': 'eu' } } });
+  await waitsAre([]);
+
+  waitHook('PreToolUse', { tool_name: 'Bash', tool_use_id: 'b1', tool_input: { command: 'rm -rf build' } });
+  waitHook('PermissionRequest', { tool_name: 'Bash', tool_input: { command: 'rm -rf build' } });
+  waitHook('Elicitation', { server_name: 'docs', message: 'Pick a space' });
+  session = await waitsAre(['permission', 'mcp']);
+  assert.deepEqual([session.needsYou[0].tool, session.needsYou[0].text], ['Bash', 'rm -rf build']);
+
+  waitHook('PostToolUse', { tool_name: 'Bash', tool_use_id: 'b1', tool_response: 'ok' });
+  await waitsAre(['mcp']);
+  waitHook('ElicitationResult', { server_name: 'docs', action: 'accept' });
+  await waitsAre([]);
+
+  waitHook('PermissionRequest', { tool_name: 'Write', tool_input: { file_path: '/tmp/a' } });
+  await waitsAre(['permission']);
+  waitHook('Stop', {});
+  await waitsAre([]);
+});
+
+test('a call refused at its prompt, or an interrupt, ends its wait though no hook comes', async () => {
+  const id = 'sess-refused', tp = path.join(DATA_DIR, 'refused.jsonl');
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', transcript_path: tp, ...fields });
+  const waits = async expected => waitFor(async () => {
+    const session = (await getJson('/api/sessions')).find(s => s.id === id);
+    return session && JSON.stringify(session.needsYou.map(wait => wait.kind)) === JSON.stringify(expected);
+  });
+  const writeTranscript = rows => fs.appendFileSync(tp, rows.map(row => JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), ...row }) + '\n').join(''));
+  fs.writeFileSync(tp, '');
+  hook('UserPromptSubmit', { prompt: 'ask me' });
+  hook('PreToolUse', { tool_name: 'AskUserQuestion', tool_use_id: 'rq1', tool_input: { questions: [{ question: 'Tabs or spaces?' }] } });
+  hook('PermissionRequest', { tool_name: 'AskUserQuestion', tool_input: { questions: [{ question: 'Tabs or spaces?' }] } });
+  await waits(['question']);
+  // you decline: Claude Code writes the refusal and the interrupt to the transcript, and sends no hook
+  writeTranscript([
+    { message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'rq1', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } },
+    { message: { role: 'user', content: [{ type: 'text', text: '[Request interrupted by user for tool use]' }] } },
+  ]);
+  await waits([]);
+  // and the interrupt ends the turn: no Stop comes, so the call no longer runs and the session is not busy
+  const ended = await waitFor(async () => {
+    const session = (await getJson('/api/sessions')).find(s => s.id === id);
+    return session && !session.busy && session.running === 0 && session;
+  });
+  assert.equal(ended.busy, false);
+  const interrupts = (await getJson('/api/events?session=' + id)).filter(event => event.event === 'Interrupt');
+  assert.equal(interrupts.length, 1);
+
+  hook('UserPromptSubmit', { prompt: 'clean up' });
+  hook('PreToolUse', { tool_name: 'Bash', tool_use_id: 'rb1', tool_input: { command: 'rm -rf build' } });
+  hook('PermissionRequest', { tool_name: 'Bash', tool_input: { command: 'rm -rf build' } });
+  await waits(['permission']);
+  // refused with a note for Claude: only the tool result, no interrupt
+  writeTranscript([{ message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'rb1', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } }]);
+  await waits([]);
+});
+
+test("a session lists its subagents: each one's type, task and whether it still runs", async () => {
+  waitHook('UserPromptSubmit', { prompt: 'look around' });
+  waitHook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'a1', tool_input: { description: 'Find the config', subagent_type: 'Explore' } });
+  waitHook('SubagentStart', { agent_id: 'sub-1', agent_type: 'Explore' });
+  const running = await waitFor(async () => (await waitingSession())?.subagentList.find(subagent => subagent.id === 'sub-1'));
+  assert.deepEqual([running.type, running.description, running.ended], ['Explore', 'Find the config', null]);
+
+  waitHook('SubagentStop', { agent_id: 'sub-1', agent_type: 'Explore' });
+  await waitFor(async () => (await waitingSession())?.subagentList.find(subagent => subagent.id === 'sub-1').ended);
+});
+
+test('a permission asked without a call id waits for its own call, not for a call run beside it', async () => {
+  const id = 'sess-parallel';
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', ...fields });
+  const waits = async expected => waitFor(async () => {
+    const session = (await getJson('/api/sessions')).find(s => s.id === id);
+    return session && JSON.stringify(session.needsYou.map(wait => wait.tool)) === JSON.stringify(expected) && session;
+  });
+  hook('UserPromptSubmit', { prompt: 'read and clean' });
+  hook('PreToolUse', { tool_name: 'Read', tool_use_id: 'p-read', tool_input: { file_path: '/tmp/a' } });
+  hook('PreToolUse', { tool_name: 'Bash', tool_use_id: 'p-bash', tool_input: { command: 'rm -rf build' } });
+  hook('PermissionRequest', { tool_name: 'Bash', tool_input: { command: 'rm -rf build' } });
+  await waits(['Bash']);
+  // the Read run beside it finishes: the permission still waits
+  hook('PostToolUse', { tool_name: 'Read', tool_use_id: 'p-read', tool_input: { file_path: '/tmp/a' }, tool_response: 'text' });
+  await waitFor(async () => (await getJson('/api/sessions')).find(s => s.id === id)?.running === 1);
+  await waits(['Bash']);
+  hook('PostToolUse', { tool_name: 'Bash', tool_use_id: 'p-bash', tool_input: { command: 'rm -rf build' }, tool_response: 'ok' });
+  await waits([]);
+
+  // two permissions with no call to tie them to: each ends with a result of its own tool and input
+  hook('PermissionRequest', { tool_name: 'Write', tool_input: { file_path: '/tmp/b' } });
+  hook('PermissionRequest', { tool_name: 'Write', tool_input: { file_path: '/tmp/c' } });
+  await waits(['Write', 'Write']);
+  hook('PostToolUse', { tool_name: 'Write', tool_use_id: 'p-write-b', tool_input: { file_path: '/tmp/b' }, tool_response: 'ok' });
+  const left = await waits(['Write']);
+  assert.equal(left.needsYou[0].text, '/tmp/c');
+  hook('Stop', {});
+  await waits([]);
+});
+
+test('a background subagent goes on after its turn stops, until its own SubagentStop', async () => {
+  waitHook('UserPromptSubmit', { prompt: 'watch the build' });
+  waitHook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'bg1', tool_input: { description: 'Watch CI', subagent_type: 'general-purpose', run_in_background: true } });
+  waitHook('SubagentStart', { agent_id: 'sub-bg', agent_type: 'general-purpose' });
+  waitHook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'fg1', tool_input: { description: 'Read the log', subagent_type: 'Explore' } });
+  waitHook('SubagentStart', { agent_id: 'sub-fg', agent_type: 'Explore' });
+  waitHook('Stop', {});
+  const subagentsOf = async () => (await waitingSession())?.subagentList || [];
+  const afterStop = await waitFor(async () => {
+    const list = await subagentsOf();
+    return list.find(subagent => subagent.id === 'sub-fg')?.ended && list;
+  });
+  assert.deepEqual(afterStop.find(subagent => subagent.id === 'sub-bg').ended, null, 'the background agent still runs');
+  waitHook('SubagentStop', { agent_id: 'sub-bg', agent_type: 'general-purpose' });
+  await waitFor(async () => (await subagentsOf()).find(subagent => subagent.id === 'sub-bg').ended);
+});
+
+test('a subagent whose call returns while it runs is a background one, without run_in_background', async () => {
+  const id = 'sess-async';
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', ...fields });
+  const subagent = async agentId => (await getJson('/api/sessions')).find(s => s.id === id)?.subagentList.find(s => s.id === agentId);
+  // as a real session logged it: the call returns 25ms after SubagentStart, the turn stops, the agent ends a minute later
+  hook('UserPromptSubmit', { prompt: 'wait a minute' });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'as-call', tool_input: { description: 'Wait 60s and report', subagent_type: 'general-purpose', prompt: 'sleep' } });
+  hook('SubagentStart', { agent_id: 'as-sub', agent_type: 'general-purpose' });
+  hook('PostToolUse', { tool_name: 'Agent', tool_use_id: 'as-call', tool_input: { description: 'Wait 60s and report', subagent_type: 'general-purpose', prompt: 'sleep' }, tool_response: 'launched' });
+  // and when the call's result lands before the SubagentStart
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'as-call-2', tool_input: { description: 'Watch the build', subagent_type: 'Explore' } });
+  hook('PostToolUse', { tool_name: 'Agent', tool_use_id: 'as-call-2', tool_input: { description: 'Watch the build', subagent_type: 'Explore' }, tool_response: 'launched' });
+  hook('SubagentStart', { agent_id: 'as-sub-2', agent_type: 'Explore' });
+  hook('Stop', {});
+  await waitFor(async () => (await getJson('/api/sessions')).find(s => s.id === id)?.busy === false);
+  for (const agentId of ['as-sub', 'as-sub-2']) {
+    const running = await subagent(agentId);
+    assert.deepEqual([running.background, running.ended], [true, null], `${agentId} still runs after the Stop`);
+  }
+  hook('SubagentStop', { agent_id: 'as-sub', agent_type: 'general-purpose' });
+  await waitFor(async () => (await subagent('as-sub'))?.ended);
+  hook('SessionEnd', { reason: 'other' });
+});
+
+test('an interrupt written while a turn runs ends the turn though no hook comes after it', async () => {
+  const id = 'sess-esc', tp = path.join(DATA_DIR, 'esc.jsonl');
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', transcript_path: tp, ...fields });
+  const sessionNow = async () => (await getJson('/api/sessions')).find(s => s.id === id);
+  fs.writeFileSync(tp, '');
+  hook('UserPromptSubmit', { prompt: 'write a long answer' });
+  await waitFor(async () => (await sessionNow())?.busy);
+  // the read right after the hook has passed; then you press Esc while the model writes (a busy session's transcript is
+  // polled: server.js)
+  await new Promise(resolve => setTimeout(resolve, 1200));
+  fs.appendFileSync(tp, JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'text', text: '[Request interrupted by user]' }] } }) + '\n');
+  await waitFor(async () => (await sessionNow())?.busy === false);
+});
+
+test("a subagent's interrupt with no agentId (an older sidechain row) does not end the main turn", async () => {
+  const id = 'sess-sidechain', tp = path.join(DATA_DIR, 'sidechain.jsonl');
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', transcript_path: tp, ...fields });
+  const sessionNow = async () => (await getJson('/api/sessions')).find(s => s.id === id);
+  fs.writeFileSync(tp, '');
+  hook('UserPromptSubmit', { prompt: 'look and build' });
+  hook('PreToolUse', { tool_name: 'Bash', tool_use_id: 'sc-main', tool_input: { command: 'make' } });
+  hook('PermissionRequest', { tool_name: 'Bash', tool_input: { command: 'make' } });
+  await waitFor(async () => (await sessionNow())?.needsYou.length === 1);
+  fs.appendFileSync(tp, JSON.stringify({ type: 'user', isSidechain: true, timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'text', text: '[Request interrupted by user for tool use]' }] } }) + '\n');
+  // the read after the next hook has seen the row
+  hook('Notification', { notification_type: 'idle_prompt', message: 'still here' });
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  const session = await sessionNow();
+  assert.equal(session.busy, true, 'the main turn still runs');
+  assert.equal(session.needsYou.length, 1, "the main agent's wait stays");
+  assert.equal((await getJson('/api/events?session=' + id)).filter(event => event.event === 'Interrupt').length, 0);
+  hook('Stop', {});
+});
+
+test('a subagent takes the description of its own call: by type, and never from a call refused at its prompt', async () => {
+  const id = 'sess-subcalls', tp = path.join(DATA_DIR, 'subcalls.jsonl');
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', transcript_path: tp, ...fields });
+  const subagent = async agentId => (await getJson('/api/sessions')).find(s => s.id === id)?.subagentList.find(s => s.id === agentId);
+  fs.writeFileSync(tp, '');
+  hook('UserPromptSubmit', { prompt: 'look around' });
+  // two calls in parallel, whose SubagentStarts land in the other order
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-a', tool_input: { description: 'Plan the change', subagent_type: 'Plan' } });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-b', tool_input: { description: 'Find the tests', subagent_type: 'Explore' } });
+  hook('SubagentStart', { agent_id: 'sc-explore', agent_type: 'Explore' });
+  hook('SubagentStart', { agent_id: 'sc-plan', agent_type: 'Plan' });
+  assert.equal((await waitFor(() => subagent('sc-explore'))).description, 'Find the tests');
+  assert.equal((await waitFor(() => subagent('sc-plan'))).description, 'Plan the change');
+  // refused at its prompt: only the transcript says so
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-refused', tool_input: { description: 'Delete the cache', subagent_type: 'Explore' } });
+  fs.appendFileSync(tp, JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'sc-refused', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } }) + '\n');
+  // the next call comes straight after, before the transcript would be read on its own
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-ok', tool_input: { description: 'Read the README', subagent_type: 'Explore' } });
+  hook('SubagentStart', { agent_id: 'sc-next', agent_type: 'Explore' });
+  assert.equal((await waitFor(() => subagent('sc-next'))).description, 'Read the README');
+  // the transcript's refusal read before the log gives that call's PreToolUse
+  fs.appendFileSync(tp, JSON.stringify({ type: 'user', timestamp: new Date().toISOString(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'sc-early', is_error: true, content: "The user doesn't want to proceed with this tool use." }] } }) + '\n');
+  hook('Notification', { notification_type: 'idle_prompt', message: 'read the transcript' });
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-early', tool_input: { description: 'Drop the table', subagent_type: 'Explore' } });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'sc-late', tool_input: { description: 'List the routes', subagent_type: 'Explore' } });
+  hook('SubagentStart', { agent_id: 'sc-last', agent_type: 'Explore' });
+  assert.equal((await waitFor(() => subagent('sc-last'))).description, 'List the routes');
+  hook('Stop', {});
+});
+
+test("a background subagent's wait outlasts its turn's Stop", async () => {
+  const id = 'sess-bgwait';
+  const hook = (eventName, fields) => runHook(eventName, { hook_event_name: eventName, session_id: id, cwd: '/tmp/waits', ...fields });
+  const waits = async expected => waitFor(async () => {
+    const session = (await getJson('/api/sessions')).find(s => s.id === id);
+    return session && JSON.stringify(session.needsYou.map(wait => wait.agentId)) === JSON.stringify(expected) && session;
+  });
+  hook('UserPromptSubmit', { prompt: 'watch CI' });
+  hook('PreToolUse', { tool_name: 'Agent', tool_use_id: 'bw-agent', tool_input: { description: 'Watch CI', subagent_type: 'general-purpose', run_in_background: true } });
+  hook('SubagentStart', { agent_id: 'bw-sub', agent_type: 'general-purpose' });
+  hook('PreToolUse', { agent_id: 'bw-sub', agent_type: 'general-purpose', tool_name: 'Bash', tool_use_id: 'bw-bash', tool_input: { command: 'gh run watch' } });
+  hook('PermissionRequest', { agent_id: 'bw-sub', agent_type: 'general-purpose', tool_name: 'Bash', tool_input: { command: 'gh run watch' } });
+  hook('PermissionRequest', { tool_name: 'Write', tool_input: { file_path: '/tmp/notes' } });
+  await waits(['bw-sub', null]);
+  hook('Stop', {});
+  await waits(['bw-sub']);
+  hook('PostToolUse', { agent_id: 'bw-sub', agent_type: 'general-purpose', tool_name: 'Bash', tool_use_id: 'bw-bash', tool_input: { command: 'gh run watch' }, tool_response: 'ok' });
+  await waits([]);
+  hook('SessionEnd', { reason: 'other' });
+});
+
 // raw request with a chosen Host header (fetch always sends the real one)
 function rawGet(p, host, headers = {}) {
   return new Promise((resolve, reject) => {

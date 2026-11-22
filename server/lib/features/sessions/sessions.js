@@ -2,22 +2,28 @@
 'use strict';
 const { MAX_EVENTS_PER_SESSION, MAX_ALL_EVENTS } = require('../../building-blocks/config');
 const { categoryOf, SUBAGENT_TOOLS } = require('./event-categories');
+const { trackNeedsYou } = require('./needs-you');
+const { trackSubagents } = require('./subagent-list');
 
 const TITLE_MAX = 140; // characters of the first prompt kept as the session's title
 const sessions = new Map(); // session id → session
 let lastSeq = 0;
+const DEFAULT_AGENT = 'claude'; // events logged before the hook named its agent came from Claude Code
 
 function newSession(id) {
   return {
-    id, cwd: null, started: null, last: null, ended: false, endReason: null,
+    id, agent: DEFAULT_AGENT, cwd: null, started: null, last: null, ended: false, endReason: null,
     model: null, permission_mode: null, transcript_path: null, source: null,
-    title: null, turns: 0, busy: false, subagents: 0, lastTool: null,
+    title: null, turns: 0, busy: false, subagents: 0, lastTool: null, promptAt: null,
     counts: {}, tools: {}, skills: {}, mcp: {}, agents: {},
     toolMs: 0, toolCalls: 0, failures: 0, modelSteps: 0,
     usage: { input: 0, output: 0, cache_read: 0, cache_write: 0, turns: 0, models: {} },
     context: null,
+    needsYou: [],     // what it waits on you for: [{ kind: permission | question | mcp, tool, text, since, agentId }]
+    subagentList: [], // [{ id, type, callId, description, background, started, ended }]
     events: [],
     pendingToolStarts: new Map(), // tool_use_id → when the call started (ms), until its result arrives
+    subagentDescriptionsWaiting: [], // what each subagent call asked, and whether it runs in the background, until its SubagentStart
   };
 }
 
@@ -52,7 +58,8 @@ function updateSessionFields(session, event, data) {
   // a subagent's events carry the main transcript too: it is taken only while the session has none
   if (data.transcript_path && (!data.agent_transcript_path || !session.transcript_path)) session.transcript_path = data.transcript_path;
   if (data.permission_mode) session.permission_mode = data.permission_mode;
-  if (data.model) session.model = typeof data.model === 'string' ? data.model : (data.model.id || data.model.display_name || session.model);
+  // a subagent's model request names the subagent's model, not the session's
+  if (data.model && data.agent_id == null) session.model = typeof data.model === 'string' ? data.model : (data.model.id || data.model.display_name || session.model);
   if (data.to_model) session.model = data.to_model;
 }
 
@@ -71,10 +78,18 @@ function updateLifecycle(session, event, data) {
     case 'UserPromptSubmit':
       session.turns++;
       session.busy = true;
+      if (!session.promptAt || event.ts > session.promptAt) session.promptAt = event.ts;
       if (!session.title && data.prompt) session.title = String(data.prompt).replace(/\s+/g, ' ').trim().slice(0, TITLE_MAX);
       break;
     case 'Stop':
     case 'StopFailure':
+      session.busy = false;
+      session.pendingToolStarts.clear();
+      break;
+    case 'Interrupt':
+      // read from the transcript, which can come after later prompts (a restart reads it all again): an older
+      // interrupt ends nothing that runs now
+      if (session.promptAt && event.ts < session.promptAt) break;
       session.busy = false;
       session.pendingToolStarts.clear();
       break;
@@ -110,6 +125,9 @@ function ingest(event) {
   event.category = categoryOf(event);
   const data = event.data || {};
   const session = sessionFor(event.session_id);
+  // every event says which agent it is from: the hook's own, or its session's (for events made from a transcript)
+  if (event.agent) session.agent = event.agent;
+  else event.agent = session.agent;
 
   updateSessionFields(session, event, data);
   increment(session.counts, event.category);
@@ -117,6 +135,8 @@ function ingest(event) {
   if (event.event === 'PreToolUse' && data.tool_name) countToolCall(session, event, data);
   if ((event.event === 'PostToolUse' || event.event === 'PostToolUseFailure') && data.tool_use_id) timeToolResult(session, event, data);
   if (event.category === 'error') session.failures++;
+  trackNeedsYou(session, event, data);
+  trackSubagents(session, event, data);
 
   insertByTime(session.events, event);
   if (session.events.length > MAX_EVENTS_PER_SESSION) session.events.splice(0, session.events.length - MAX_EVENTS_PER_SESSION);
@@ -125,7 +145,7 @@ function ingest(event) {
 
 // what the API sends for a session: everything but its events and the calls in flight
 function sessionSummary(session) {
-  const { events, pendingToolStarts, ...fields } = session;
+  const { events, pendingToolStarts, subagentDescriptionsWaiting, ...fields } = session;
   return { ...fields, eventCount: events.length, running: pendingToolStarts.size };
 }
 
