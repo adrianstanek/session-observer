@@ -101,6 +101,7 @@ function connectLiveUpdates() {
   stream.addEventListener('session', message => {
     const session = JSON.parse(message.data);
     state.sessions.set(session.id, session);
+    forgetSessionLinks();
     state.lastUpdateAt = Date.now();
     if (state.frozen) return scheduleRender('header');
     scheduleRender('sessions', 'header', 'mid');
@@ -119,6 +120,7 @@ function connectLiveUpdates() {
   stream.addEventListener('session-deleted', message => {
     const { id } = JSON.parse(message.data);
     state.sessions.delete(id);
+    forgetSessionLinks();
     if (state.scope === id) return resetView();
     state.events = state.events.filter(event => event.session_id !== id);
     state.frozenEvents = state.frozenEvents.filter(event => event.session_id !== id);
@@ -141,6 +143,7 @@ function connectLiveUpdates() {
 // the whole log changed (it was cleared, or the session in view is gone): back to every session
 function resetView() {
   state.sessions.clear();
+  forgetSessionLinks();
   state.events = [];
   state.frozenEvents = [];
   state.openEventSeqs.clear();
