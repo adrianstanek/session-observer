@@ -10,6 +10,7 @@
 'use strict';
 const crypto = require('crypto');
 const { QUESTION_TOOLS } = require('./event-categories');
+const { isRunningBackgroundSubagent } = require('./subagent-list');
 
 const WAITS_KEPT_MAX = 10;
 const CALLS_KEPT_MAX = 50;
@@ -86,7 +87,8 @@ function trackNeedsYou(session, event, data) {
     return;
   }
   if (ENDS_EVERY_WAIT.has(name)) {
-    session.needsYou = [];
+    // (a background agent goes on after its turn, and keeps waiting on you; only the session's end ends that)
+    session.needsYou = name === 'SessionEnd' ? [] : session.needsYou.filter(wait => isRunningBackgroundSubagent(session, wait.agentId));
     if (name === 'SessionEnd') openCalls.delete(session);
     return;
   }
@@ -120,12 +122,13 @@ function trackNeedsYou(session, event, data) {
 
 // what only the transcript shows: a call's tool_result (also when you refused the call at its prompt: no hook comes
 // then), or an interrupt ("[Request interrupted by user…]"). Each ends the waits that began before it, of the same
-// agent (an interrupt of the main agent: every wait); the transcript is read late, so a newer wait stays.
-function endWaitsFromTranscript(session, { ts, toolUseId = null, agentId = null, interrupted = false }) {
+// agent (an interrupt of the main agent: every wait); the transcript is read late, so a newer wait stays. A subagent's
+// row without an agentId stands for any subagent, never for the main agent.
+function endWaitsFromTranscript(session, { ts, toolUseId = null, agentId = null, subagent = agentId != null, interrupted = false }) {
   const beganBefore = wait => !ts || wait.since <= ts;
-  const sameAgent = wait => wait.agentId === agentId;
+  const sameAgent = wait => (subagent ? wait.agentId != null && (agentId == null || wait.agentId === agentId) : wait.agentId == null);
   if (interrupted) {
-    removeWaits(session, wait => beganBefore(wait) && (agentId == null || sameAgent(wait)));
+    removeWaits(session, wait => beganBefore(wait) && (!subagent || sameAgent(wait)));
     return;
   }
   removeWaits(session, wait => beganBefore(wait) && ((toolUseId && wait.key === 'tool:' + toolUseId)
