@@ -39,7 +39,9 @@ function initPointerHold() {
     pointerHeld = false;
     if (partsToRender.size) scheduleRender(); // what waited is drawn now (the view catches up on its own)
   };
-  for (const name of ['pointerup', 'pointercancel', 'blur']) addEventListener(name, release, true);
+  for (const name of ['pointerup', 'pointercancel']) addEventListener(name, release, true);
+  // only the window losing focus ends the hold: a button or input losing it (the press moves focus) must not
+  addEventListener('blur', event => { if (event.target === window) release(); }, true);
 }
 
 // every frame: the replay moves on and the view in #alt is drawn when something changed
