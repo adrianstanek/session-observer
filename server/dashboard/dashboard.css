@@ -34,18 +34,27 @@ body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, san
 button, select, input { font: inherit; color: var(--text); }
 button { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
 button:hover { border-color: var(--muted); }
+button:disabled { opacity: .5; cursor: default; }
+button:disabled:hover { border-color: var(--line); }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 button.on { border-color: var(--ok); color: var(--ok); }
 select, input[type=search] { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
 .muted { color: var(--muted); } .mono { font-family: var(--mono); } .err { color: var(--err); }
 
 /* top bar */
-#keysHelp { font-weight: 700; padding: 4px 9px; }
-.topbar { display: flex; align-items: center; gap: 14px; padding: 10px 4px; flex-wrap: wrap; }
+#keysHelp { font-weight: 700; padding: 4px 9px; min-width: 30px; }
+.topbar > button, .topbar > select { height: 30px; }
+#lang { max-width: 150px; text-overflow: ellipsis; }
+.topbar .hdr-sep { width: 1px; height: 20px; background: var(--line); }
+#clearLog { color: var(--muted); background: transparent; }
+#clearLog:hover { color: var(--err); border-color: color-mix(in srgb, var(--err) 55%, var(--line)); }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 10px 4px; flex-wrap: wrap; }
 .topbar h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
 .topbar h1 .logo { width: 24px; height: 24px; flex-shrink: 0; border-radius: 5px; box-shadow: 0 0 0 1px var(--line); } /* the outline keeps the dark tile apart from a dark page */
 .topbar h1 .ver { font: 500 12px var(--mono); color: var(--faint); letter-spacing: 0; align-self: flex-end; margin: 0 0 3px -2px; }
 .topbar .grow { flex: 1; }
+.topbar h1 { margin-right: 4px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); display: inline-block; flex-shrink: 0; }
 .dot.on { background: var(--ok); } .dot.busy { background: var(--ok); animation: blink 1.2s infinite; } .dot.bad { background: var(--err); }
@@ -282,6 +291,8 @@ svg.metro { display: block; }
 .sess-list .card .row1 { justify-content: flex-start; align-items: center; }
 .sess-list .card .name { -webkit-line-clamp: 1; font-weight: 500; }
 .sess-list .card.sel .name { font-weight: 600; }
+.sess-list .card .sline { color: var(--faint); font-size: 11.5px; margin: 1px 0 0 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sess-list .card .session-delete { opacity: 0; }
 .session-delete, .home-session-delete { flex: none; width: 25px; height: 25px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--muted); font: inherit; line-height: 1; cursor: pointer; opacity: .35; }
 .session-delete:hover, .home-session-delete:hover { border-color: color-mix(in srgb, var(--err) 50%, var(--line)); color: var(--err); opacity: 1; }
 .session-delete:focus-visible, .home-session-delete:focus-visible { outline: 2px solid var(--accent); opacity: 1; }
