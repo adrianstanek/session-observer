@@ -213,6 +213,10 @@ node scripts/demo.js
 
 The demo opens at http://localhost:4800.
 
+### Desktop notifications
+
+Choose **Notify** in the header to get a desktop notification when a session needs you (a permission, a question, an MCP server asking), and optionally when a turn finishes. The browser asks for permission the first time. Notifications appear only while the dashboard window is not focused. Click one to open that session.
+
 ### Dashboard languages
 
 The dashboard follows your browser language. Choose another from the language menu; the selection is saved.

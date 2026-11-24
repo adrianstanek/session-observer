@@ -16,6 +16,7 @@
   <span class="pill" id="hdrBusy" data-t-title="busyTitle" title="Sessions currently in the middle of a turn"></span>
   <button id="pause" data-t-title="freezeTitle" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
   <button id="theme">Theme: auto</button>
+  <select id="notify"></select>
   <select id="lang" data-t-title="language" data-t-aria="language" title="Language" aria-label="Language"></select>
   <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
 </header>
@@ -123,6 +124,8 @@
 <script src="dashboard/features/home/model.js"></script>
 <script src="dashboard/features/home/render.js"></script>
 <script src="dashboard/features/home/controls.js"></script>
+<script src="dashboard/features/alerts/model.js"></script>
+<script src="dashboard/features/alerts/controls.js"></script>
 <script src="dashboard/app/views.js"></script>
 <script src="dashboard/app/hover.js"></script>
 <script src="dashboard/app/view-controls.js"></script>

@@ -32,6 +32,13 @@ TRANSLATIONS.de = (() => {
     freeze: 'Einfrieren', unfreeze: n => `Fortsetzen${n ? ` (${n} neu)` : ''}`,
     theme: v => `Farbschema: ${v}`,
     clearLog: 'Log leeren', clearLogTitle: 'Das lokale Ereignislog löschen', clearConfirm: 'Alle aufgezeichneten Ereignisse löschen?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Benachrichtigen: aus', needsYou: 'Benachrichtigen: wenn du gebraucht wirst', alsoDone: 'Benachrichtigen: auch wenn fertig' },
+      title: 'Desktop-Benachrichtigungen, solange dieses Fenster nicht im Fokus ist',
+      blocked: 'Der Browser blockiert Benachrichtigungen für diese Seite. Erlaube sie in den Website-Einstellungen.',
+      needsYou: n => `Sitzung „${n}“ braucht dich`, done: n => `Sitzung „${n}“ ist fertig`, doneBody: 'Sie wartet auf deinen nächsten Prompt.',
+    },
     deleteSessionTitle: 'Diese Sitzung und ihre gespeicherten Daten löschen',
     deleteSessionConfirm: name => `„${name}“ und die gespeicherten Session-Observer-Daten löschen? Das originale App-Transkript bleibt erhalten. Dies kann nicht rückgängig gemacht werden.`,
     deleteSessionFailed: reason => `Die Session konnte nicht gelöscht werden: ${reason}`,

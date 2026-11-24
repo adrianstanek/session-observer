@@ -32,6 +32,13 @@ TRANSLATIONS.it = (() => {
     freeze: 'Blocca', unfreeze: n => `Riprendi${n ? ` (${n} nuovi)` : ''}`,
     theme: v => `Tema: ${v}`,
     clearLog: 'Svuota log', clearLogTitle: 'Elimina il log locale degli eventi', clearConfirm: 'Eliminare tutti gli eventi registrati?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Avvisa: no', needsYou: 'Avvisa: quando serve il tuo intervento', alsoDone: 'Avvisa: anche alla fine' },
+      title: 'Notifiche desktop mentre questa finestra non è in primo piano',
+      blocked: 'Il browser blocca le notifiche per questa pagina. Consentile nelle impostazioni del sito.',
+      needsYou: n => `La sessione «${n}» richiede il tuo intervento`, done: n => `La sessione «${n}» ha finito`, doneBody: 'Attende il tuo prossimo prompt.',
+    },
     deleteSessionTitle: 'Elimina questa sessione e i dati salvati',
     deleteSessionConfirm: name => `Eliminare “${name}” e i relativi dati salvati in Session Observer? Il transcript originale dell’app non verrà eliminato. L’azione non si può annullare.`,
     deleteSessionFailed: reason => `Impossibile eliminare la sessione: ${reason}`,

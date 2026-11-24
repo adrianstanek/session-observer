@@ -30,6 +30,13 @@ TRANSLATIONS.ja = (() => {
     freeze: '固定', unfreeze: n => `再開${n ? `（新着 ${n}）` : ''}`,
     theme: v => `テーマ: ${v}`,
     clearLog: 'ログを消去', clearLogTitle: 'ローカルのイベントログを削除', clearConfirm: '記録されたイベントをすべて削除しますか？',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: '通知: オフ', needsYou: '通知: 対応が必要なとき', alsoDone: '通知: 完了時も' },
+      title: 'このウィンドウが前面にないときにデスクトップ通知を表示',
+      blocked: 'ブラウザーがこのページの通知をブロックしています。サイトの設定で許可してください。',
+      needsYou: n => `セッション「${n}」が対応を待っています`, done: n => `セッション「${n}」が完了しました`, doneBody: '次のプロンプトを待っています。',
+    },
     deleteSessionTitle: 'このセッションと保存データを削除',
     deleteSessionConfirm: name => `「${name}」と Session Observer の保存データを削除しますか？元のアプリのトランスクリプトは削除されません。この操作は取り消せません。`,
     deleteSessionFailed: reason => `セッションを削除できませんでした: ${reason}`,

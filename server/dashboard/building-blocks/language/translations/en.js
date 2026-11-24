@@ -34,6 +34,13 @@ TRANSLATIONS.en = (() => {
     freeze: 'Freeze', unfreeze: n => `Unfreeze${n ? ` (${n} new)` : ''}`,
     theme: v => `Theme: ${v}`,
     clearLog: 'Clear log', clearLogTitle: 'Delete the local event log', clearConfirm: 'Delete all recorded events?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Notify: off', needsYou: 'Notify: needs you', alsoDone: 'Notify: also when done' },
+      title: 'Desktop notifications while this window is not in focus',
+      blocked: 'The browser blocks notifications for this page. Allow them in the site settings.',
+      needsYou: n => `${n} needs you`, done: n => `${n} is done`, doneBody: 'It waits for your next prompt.',
+    },
     deleteSessionTitle: 'Delete this session and its stored data',
     deleteSessionConfirm: name => `Delete “${name}” and its stored Session Observer data? The original app transcript will stay. This cannot be undone.`,
     deleteSessionFailed: reason => `Could not delete the session: ${reason}`,

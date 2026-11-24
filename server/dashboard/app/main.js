@@ -17,6 +17,7 @@ function initControls() {
   initSessionsControls();
   initOverviewControls();
   initHomeControls();
+  initAlertControls();
   initPointerHold();
   setInterval(() => { if (!state.frozen) scheduleRender('header', 'sessions', 'mid'); }, AGO_REFRESH_MS); // refresh "ago" labels
 }

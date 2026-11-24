@@ -30,6 +30,13 @@ TRANSLATIONS.zh = (() => {
     freeze: '冻结', unfreeze: n => `恢复${n ? `（${n} 条新事件）` : ''}`,
     theme: v => `主题：${v}`,
     clearLog: '清空日志', clearLogTitle: '删除本地事件日志', clearConfirm: '删除所有已记录的事件？',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: '通知：关闭', needsYou: '通知：需要你时', alsoDone: '通知：完成时也通知' },
+      title: '此窗口不在前台时显示桌面通知',
+      blocked: '浏览器已阻止此页面的通知。请在网站设置中允许。',
+      needsYou: n => `会话“${n}”需要你处理`, done: n => `会话“${n}”已完成`, doneBody: '正在等待你的下一条提示。',
+    },
     deleteSessionTitle: '删除此会话及其保存的数据',
     deleteSessionConfirm: name => `删除“${name}”及其保存在 Session Observer 中的数据吗？不会删除应用原始转录记录。此操作无法撤销。`,
     deleteSessionFailed: reason => `无法删除会话：${reason}`,

@@ -32,6 +32,13 @@ TRANSLATIONS.fr = (() => {
     freeze: 'Figer', unfreeze: n => `Reprendre${n ? ` (${n} nouveaux)` : ''}`,
     theme: v => `Thème : ${v}`,
     clearLog: 'Vider le journal', clearLogTitle: 'Supprimer le journal d’événements local', clearConfirm: 'Supprimer tous les événements enregistrés ?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Notifier : non', needsYou: 'Notifier : quand on a besoin de vous', alsoDone: 'Notifier : aussi à la fin' },
+      title: 'Notifications de bureau tant que cette fenêtre n’est pas au premier plan',
+      blocked: 'Le navigateur bloque les notifications de cette page. Autorisez-les dans les paramètres du site.',
+      needsYou: n => `La session « ${n} » a besoin de vous`, done: n => `La session « ${n} » a terminé`, doneBody: 'Elle attend votre prochain prompt.',
+    },
     deleteSessionTitle: 'Supprimer cette session et ses données enregistrées',
     deleteSessionConfirm: name => `Supprimer « ${name} » et ses données enregistrées dans Session Observer ? Le transcript original de l’application sera conservé. Cette action est irréversible.`,
     deleteSessionFailed: reason => `Impossible de supprimer la session : ${reason}`,

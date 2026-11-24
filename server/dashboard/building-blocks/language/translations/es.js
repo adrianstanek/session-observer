@@ -32,6 +32,13 @@ TRANSLATIONS.es = (() => {
     freeze: 'Congelar', unfreeze: n => `Reanudar${n ? ` (${n} nuevos)` : ''}`,
     theme: v => `Tema: ${v}`,
     clearLog: 'Borrar registro', clearLogTitle: 'Eliminar el registro local de eventos', clearConfirm: '¿Eliminar todos los eventos registrados?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Avisar: no', needsYou: 'Avisar: cuando te necesite', alsoDone: 'Avisar: también al terminar' },
+      title: 'Notificaciones de escritorio mientras esta ventana no está en primer plano',
+      blocked: 'El navegador bloquea las notificaciones de esta página. Permítelas en la configuración del sitio.',
+      needsYou: n => `La sesión «${n}» te necesita`, done: n => `La sesión «${n}» ha terminado`, doneBody: 'Espera tu próximo prompt.',
+    },
     deleteSessionTitle: 'Eliminar esta sesión y sus datos guardados',
     deleteSessionConfirm: name => `¿Eliminar “${name}” y sus datos guardados de Session Observer? El transcript original de la aplicación se conservará. Esta acción no se puede deshacer.`,
     deleteSessionFailed: reason => `No se pudo eliminar la sesión: ${reason}`,

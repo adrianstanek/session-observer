@@ -30,6 +30,13 @@ TRANSLATIONS.ko = (() => {
     freeze: '고정', unfreeze: n => `재개${n ? ` (새 이벤트 ${n})` : ''}`,
     theme: v => `테마: ${v}`,
     clearLog: '로그 지우기', clearLogTitle: '로컬 이벤트 로그 삭제', clearConfirm: '기록된 이벤트를 모두 삭제할까요?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: '알림: 끔', needsYou: '알림: 응답이 필요할 때', alsoDone: '알림: 완료될 때도' },
+      title: '이 창이 활성 상태가 아닐 때 데스크톱 알림 표시',
+      blocked: '브라우저가 이 페이지의 알림을 차단하고 있습니다. 사이트 설정에서 허용하세요.',
+      needsYou: n => `"${n}" 세션이 응답을 기다립니다`, done: n => `"${n}" 세션이 완료되었습니다`, doneBody: '다음 프롬프트를 기다립니다.',
+    },
     deleteSessionTitle: '이 세션과 저장된 데이터 삭제',
     deleteSessionConfirm: name => `“${name}” 세션과 Session Observer에 저장된 데이터를 삭제할까요? 원본 앱 트랜스크립트는 삭제되지 않습니다. 이 작업은 취소할 수 없습니다.`,
     deleteSessionFailed: reason => `세션을 삭제할 수 없습니다: ${reason}`,

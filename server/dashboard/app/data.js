@@ -103,6 +103,7 @@ function connectLiveUpdates() {
     state.sessions.set(session.id, session);
     forgetSessionLinks();
     state.lastUpdateAt = Date.now();
+    checkAlerts();
     if (state.frozen) return scheduleRender('header');
     scheduleRender('sessions', 'header', 'mid');
   });
@@ -168,6 +169,7 @@ async function loadSessions() {
     state.sessions = new Map(sessions.map(session => [session.id, session]));
     state.history = history;
   } catch { /* server down */ }
+  checkAlerts(); // the first call only records what already waits
 }
 
 // #session=<id> in the address opens that session

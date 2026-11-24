@@ -34,6 +34,13 @@ TRANSLATIONS.pl = (() => {
     freeze: 'Zatrzymaj', unfreeze: n => `Wznów${n ? ` (nowe: ${n})` : ''}`,
     theme: v => `Motyw: ${v}`,
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    alerts: {
+      modes: { off: 'Powiadomienia: wył.', needsYou: 'Powiadomienia: gdy czeka na Ciebie', alsoDone: 'Powiadomienia: także po zakończeniu' },
+      title: 'Powiadomienia na pulpicie, gdy to okno nie jest aktywne',
+      blocked: 'Przeglądarka blokuje powiadomienia tej strony. Zezwól na nie w ustawieniach witryny.',
+      needsYou: n => `Sesja „${n}” czeka na Ciebie`, done: n => `Sesja „${n}” skończyła turę`, doneBody: 'Czeka na Twój następny prompt.',
+    },
     deleteSessionTitle: 'Usuń tę sesję i zapisane dane',
     deleteSessionConfirm: name => `Usunąć sesję „${name}” i zapisane dane Session Observer? Oryginalny transkrypt aplikacji pozostanie. Tej operacji nie można cofnąć.`,
     deleteSessionFailed: reason => `Nie udało się usunąć sesji: ${reason}`,

@@ -1,5 +1,6 @@
 'use strict';
 // Session Observer dashboard — the header: connection, working sessions, Freeze, theme, language and Clear log.
+// (The Notify menu is features/alerts.)
 const NEXT_THEME = { auto: 'dark', dark: 'light', light: 'auto' };
 const PAGE_TITLE = document.title;
 
