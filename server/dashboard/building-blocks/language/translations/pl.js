@@ -88,7 +88,7 @@ TRANSLATIONS.pl = (() => {
     range: 'Zakres', range1h: 'ostatnia godzina', range6h: 'ostatnie 6 h', range24h: 'ostatnie 24 h', range7d: 'ostatnie 7 dni', rangeAll: 'wszystko',
     search: 'Szukaj', searchPh: 'prompty, odpowiedzi, polecenia, ścieżki, błędy…',
     group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy', agent: 'Agent', allAgents: 'wszyscy agenci', agentTitle: 'Pokaż sesje z Claude Code, z Codex albo z obu',
-    onlyProblems: 'tylko problemy', resetFilters: 'Wyczyść filtry', view: 'Widok',
+    onlyProblems: 'tylko problemy', filters: 'Filtry', resetFilters: 'Wyczyść filtry', view: 'Widok',
     replayBtn: '▶ Odtwórz', pauseBtn: '❚❚ Pauza', speedTitle: 'Prędkość odtwarzania', liveBtn: 'Na żywo',
     replaying: 'Odtwarzanie', paused: 'Wstrzymano',
 

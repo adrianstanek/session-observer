@@ -40,12 +40,19 @@
     </select>
   </label>
   <label class="search"><span data-t="search">Search</span><input type="search" id="q" data-t-ph="searchPh" placeholder="prompts, replies, commands, paths, errors…"></label>
-  <label id="groupFilter" data-t-title="groupTitle" title="Which part of the map: Files, Shell, Git, MCP…"><span data-t="group">Tool group</span><select id="station"></select></label>
-  <label id="agentFilter" style="display:none" data-t-title="agentTitle" title="Show sessions from Claude Code, Codex or both"><span data-t="agent">Agent</span>
-    <select id="agent"><option value="" data-t="allAgents">all agents</option><option value="claude">Claude Code</option><option value="codex">Codex</option></select>
-  </label>
-  <label class="check" id="problemsFilter"><input type="checkbox" id="problems"> <span data-t="onlyProblems">only problems</span></label>
-  <button id="clearFilters" style="margin-bottom:1px" data-t="resetFilters">Reset filters</button>
+  <!-- the filters that narrow what the view shows; the button counts the ones set -->
+  <details class="hmenu" id="filterMenu">
+    <summary><span data-t="filters">Filters</span><span class="hmenu-count" id="filterCount" hidden></span></summary>
+    <div class="hmenu-box panel">
+      <label id="groupFilter" data-t-title="groupTitle" title="Which part of the map: Files, Shell, Git, MCP…"><span data-t="group">Tool group</span><select id="station"></select></label>
+      <label id="agentFilter" style="display:none" data-t-title="agentTitle" title="Show sessions from Claude Code, Codex or both"><span data-t="agent">Agent</span>
+        <select id="agent"><option value="" data-t="allAgents">all agents</option><option value="claude">Claude Code</option><option value="codex">Codex</option></select>
+      </label>
+      <label class="check" id="problemsFilter"><input type="checkbox" id="problems"> <span data-t="onlyProblems">only problems</span></label>
+      <hr>
+      <button id="clearFilters" data-t="resetFilters">Reset filters</button>
+    </div>
+  </details>
 </section>
 
 <section class="panels" id="panels">

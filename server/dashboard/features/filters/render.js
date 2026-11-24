@@ -18,4 +18,7 @@ function renderCategoryChips() {
   });
   elementById('cats').innerHTML = `<span class="ttl">${iconSvg('core')} ${escapeHtml(TEXT.eventTypes)}</span>` + chips.join('');
   elementById('clearFilters').disabled = !filtersActive(); // Reset filters has nothing to do
+  // the Filters button counts the filters inside it, so one set there shows while the menu is shut
+  const inMenu = [state.group, state.agent, state.onlyProblems].filter(Boolean).length;
+  Object.assign(elementById('filterCount'), { hidden: !inMenu, textContent: inMenu || '' });
 }

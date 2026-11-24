@@ -52,14 +52,20 @@ function initHeaderButtons() {
     }
     scheduleRender('header');
   };
-  const settings = elementById('settings');
-  document.addEventListener('click', event => { if (settings.open && !settings.contains(event.target)) settings.open = false; });
-  settings.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !settings.open) return;
-    event.stopPropagation();
-    settings.open = false;
-    settings.querySelector('summary').focus();
+  // the dropdown menus (Settings here, Filters in the filter bar) close on a click outside them, or on Esc, which then
+  // goes no further (it does not also close the turn)
+  const menus = [...document.querySelectorAll('details.hmenu')];
+  document.addEventListener('click', event => {
+    for (const menu of menus) if (menu.open && !menu.contains(event.target)) menu.open = false;
   });
+  for (const menu of menus) {
+    menu.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !menu.open) return;
+      event.stopPropagation();
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    });
+  }
   elementById('hdrBusy').onclick = event => { if (event.target.closest('[data-go-home]')) setView('home'); };
   elementById('clearLog').onclick = async () => {
     if (!confirm(TEXT.clearConfirm)) return;

@@ -84,7 +84,7 @@ TRANSLATIONS.ko = (() => {
     range: '기간', range1h: '최근 1시간', range6h: '최근 6시간', range24h: '최근 24시간', range7d: '최근 7일', rangeAll: '전체',
     search: '검색', searchPh: '프롬프트, 응답, 명령, 경로, 오류…',
     group: '도구 그룹', groupTitle: '지도의 어느 부분인지: 파일, 셸, Git, MCP…', allGroups: '모든 그룹', agent: '에이전트', allAgents: '모든 에이전트', agentTitle: 'Claude Code, Codex 또는 둘 다의 세션 표시',
-    onlyProblems: '문제만', resetFilters: '필터 초기화', view: '보기',
+    onlyProblems: '문제만', filters: '필터', resetFilters: '필터 초기화', view: '보기',
     replayBtn: '▶ 재생', pauseBtn: '❚❚ 일시 정지', speedTitle: '재생 속도', liveBtn: '실시간',
     replaying: '재생 중', paused: '일시 정지됨',
 
