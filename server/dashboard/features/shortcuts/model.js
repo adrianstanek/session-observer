@@ -3,8 +3,7 @@
 // A row's keys: each entry is one way to do it ("or" between entries); "+" joins keys pressed together, a space keys
 // pressed one after the other. `what` is the TEXT.shortcuts key that says what they do.
 // The dashboard's own keys are handled in features/shortcuts/controls.js and features/details/controls.js. The Claude
-// Code and Codex keys are the common ones from each agent's docs (`docs`); the agents can change them, so the dialog
-// links there.
+// Code keys are the common ones from its docs (`docs`); Claude Code can change them, so the dialog links there.
 const SHORTCUT_SECTIONS = [
   {
     id: 'dashboard',
@@ -42,25 +41,6 @@ const SHORTCUT_SECTIONS = [
       { keys: ['!'], what: 'ccShell' },
       { keys: ['@'], what: 'mention' },
       { keys: ['?'], what: 'ccHelp' },
-    ],
-  },
-  {
-    id: 'codex',
-    docs: 'https://developers.openai.com/codex/cli/reference',
-    rows: [
-      { keys: ['Ctrl+C'], what: 'cxExit' },
-      { keys: ['Esc Esc'], what: 'cxFork' },
-      { keys: ['Enter'], what: 'cxSteer' },
-      { keys: ['Tab'], what: 'cxQueue' },
-      { keys: ['↑', '↓'], what: 'draftHistory' },
-      { keys: ['Ctrl+R'], what: 'searchHistory' },
-      { keys: ['Ctrl+O'], what: 'cxCopy' },
-      { keys: ['Ctrl+L'], what: 'cxClear' },
-      { keys: ['Alt+R'], what: 'cxRaw' },
-      { keys: ['F8'], what: 'cxVoice' },
-      { keys: ['/'], what: 'cxSlash' },
-      { keys: ['!'], what: 'cxShell' },
-      { keys: ['@'], what: 'mention' },
     ],
   },
 ];

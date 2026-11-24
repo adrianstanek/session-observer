@@ -219,7 +219,7 @@ Choose **Notify** under **⚙ Settings** in the header to get a desktop notifica
 
 ### Keyboard shortcuts
 
-Press **?** (or the **?** button in the header) for the list. **j** / **k** (or **]** / **[**) step through the turns, **Shift+J** / **Shift+K** through the sessions, **0** goes to All activity, **u** to the next session that needs you, **Esc** closes the turn, **/** goes to the search, and **1**–**5** switch between Home, Overview, Route, Chat and Context. The same dialog has tabs with common Claude Code and Codex keys, linked to each agent's docs.
+Press **?** (or the **?** button in the header) for the list. **j** / **k** (or **]** / **[**) step through the turns, **Shift+J** / **Shift+K** through the sessions, **0** goes to All activity, **u** to the next session that needs you, **Esc** closes the turn, **/** goes to the search, and **1**–**5** switch between Home, Overview, Route, Chat and Context. The same dialog has a tab with common Claude Code keys, linked to its docs.
 
 ### Dashboard languages
 
