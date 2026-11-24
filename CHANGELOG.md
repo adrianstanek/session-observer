@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.12.0](https://github.com/radekwojpl2/session-observer/compare/v0.11.1...v0.12.0) (2026-11-24)
+
+
+### Features
+
+* a Filters menu for tool group, agent and only problems ([9d27a25](https://github.com/radekwojpl2/session-observer/commit/9d27a251b24b49d0b16c109b786a77c1fcaa3550))
+* Claude Code and Codex keys in the shortcuts dialog ([a9f5f26](https://github.com/radekwojpl2/session-observer/commit/a9f5f267a9470aed6fbe1e19458d1de706ab7a3b))
+* desktop notifications when a session needs you ([a4a109a](https://github.com/radekwojpl2/session-observer/commit/a4a109ac7751cb958dfc89deba8cfd86106b96c5))
+* desktop notifications, keyboard shortcuts and a tidier dashboard ([119a69c](https://github.com/radekwojpl2/session-observer/commit/119a69c951522e03074ce5a4de0d358b394cdd7f))
+* drop the Codex tab from the keyboard shortcuts ([49c458d](https://github.com/radekwojpl2/session-observer/commit/49c458d2c293d451888d3c82312f1071d4190336))
+* keyboard navigation and a shortcuts dialog ([29b444f](https://github.com/radekwojpl2/session-observer/commit/29b444f0f8d7c73579319397ca10eecd2460f428))
+* one Settings menu for theme, notifications, language and Clear log ([d92dc58](https://github.com/radekwojpl2/session-observer/commit/d92dc58380b9c7451706b92cb8b843c1f56bbb5d))
+* remove Replay ([dd689e8](https://github.com/radekwojpl2/session-observer/commit/dd689e8ec75ab64e165f99b2dbfa772def5c5119))
+* show the app icon in desktop notifications ([93d92da](https://github.com/radekwojpl2/session-observer/commit/93d92da9b2d5632bd12978d71489a620f2aaf9fc))
+* switch sessions from the keyboard ([42b171c](https://github.com/radekwojpl2/session-observer/commit/42b171c8f7354c7aed56c89fb18309603b2e84d4))
+* tidy the dashboard header, session list and filters ([ff2f68b](https://github.com/radekwojpl2/session-observer/commit/ff2f68bde4d02544554e2cd3841b9750af188822))
+
+
+### Bug Fixes
+
+* line the Colour key up with the other Details sections ([02ec253](https://github.com/radekwojpl2/session-observer/commit/02ec2536ae4eb5350ce96e30a80c8863b1d4d0e8))
+
 ## [0.11.1](https://github.com/radekwojpl2/session-observer/compare/v0.11.0...v0.11.1) (2026-11-22)
 
 
