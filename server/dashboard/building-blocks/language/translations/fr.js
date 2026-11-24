@@ -36,6 +36,7 @@ TRANSLATIONS.fr = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'Raccourcis clavier', buttonTitle: 'Raccourcis clavier (?)', close: 'Fermer', or: 'ou', dashboard: 'Tableau de bord',
+      nextSession: 'Session suivante', prevSession: 'Session précédente', allSessions: 'Toute l’activité', needsYouSession: 'Session suivante qui a besoin de vous',
       nextTurn: 'Tour suivant', prevTurn: 'Tour précédent', closeTurn: 'Fermer le tour, ou quitter la recherche', search: 'Rechercher', views: 'Changer de vue', help: 'Afficher ou masquer cette liste',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Touches courantes de la documentation de Claude Code ; elles peuvent changer d’une version à l’autre. Sur macOS, Alt correspond à Option (certaines demandent Option comme Meta dans le terminal).',

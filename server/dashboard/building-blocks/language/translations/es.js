@@ -36,6 +36,7 @@ TRANSLATIONS.es = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'Atajos de teclado', buttonTitle: 'Atajos de teclado (?)', close: 'Cerrar', or: 'o', dashboard: 'Panel',
+      nextSession: 'Sesión siguiente', prevSession: 'Sesión anterior', allSessions: 'Toda la actividad', needsYouSession: 'Siguiente sesión que te necesita',
       nextTurn: 'Turno siguiente', prevTurn: 'Turno anterior', closeTurn: 'Cerrar el turno o salir de la búsqueda', search: 'Buscar', views: 'Cambiar de vista', help: 'Mostrar u ocultar esta lista',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Teclas habituales de la documentación de Claude Code; pueden cambiar entre versiones. En macOS, Alt es Option (algunas requieren Option como Meta en la terminal).',

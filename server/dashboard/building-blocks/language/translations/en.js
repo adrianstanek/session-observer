@@ -38,6 +38,7 @@ TRANSLATIONS.en = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'Keyboard shortcuts', buttonTitle: 'Keyboard shortcuts (?)', close: 'Close', or: 'or', dashboard: 'Dashboard',
+      nextSession: 'Next session', prevSession: 'Previous session', allSessions: 'All activity', needsYouSession: 'Next session that needs you',
       nextTurn: 'Next turn', prevTurn: 'Previous turn', closeTurn: 'Close the turn, or leave the search', search: 'Search', views: 'Switch view', help: 'Show or hide this list',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Common keys from the Claude Code docs; they can change between versions. On macOS, Alt is Option (some need Option set as Meta in the terminal).',

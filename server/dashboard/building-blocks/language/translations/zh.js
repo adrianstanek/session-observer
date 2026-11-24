@@ -34,6 +34,7 @@ TRANSLATIONS.zh = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: '键盘快捷键', buttonTitle: '键盘快捷键（?）', close: '关闭', or: '或', dashboard: '仪表板',
+      nextSession: '下一个会话', prevSession: '上一个会话', allSessions: '全部活动', needsYouSession: '下一个需要你处理的会话',
       nextTurn: '下一轮', prevTurn: '上一轮', closeTurn: '关闭这一轮，或退出搜索', search: '搜索', views: '切换视图', help: '显示或隐藏此列表',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Claude Code 文档中的常用按键；不同版本可能会变。在 macOS 上 Alt 即 Option（部分按键需要在终端中把 Option 设为 Meta）。',

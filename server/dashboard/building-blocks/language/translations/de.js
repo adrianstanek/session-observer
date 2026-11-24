@@ -36,6 +36,7 @@ TRANSLATIONS.de = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'Tastenkürzel', buttonTitle: 'Tastenkürzel (?)', close: 'Schließen', or: 'oder', dashboard: 'Dashboard',
+      nextSession: 'Nächste Sitzung', prevSession: 'Vorherige Sitzung', allSessions: 'Alle Aktivitäten', needsYouSession: 'Nächste Sitzung, die dich braucht',
       nextTurn: 'Nächste Runde', prevTurn: 'Vorherige Runde', closeTurn: 'Runde schließen oder die Suche verlassen', search: 'Suche', views: 'Ansicht wechseln', help: 'Diese Liste ein- oder ausblenden',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Häufige Tasten aus der Claude-Code-Dokumentation; sie können sich je nach Version ändern. Unter macOS ist Alt die Wahltaste (manche brauchen Option als Meta im Terminal).',

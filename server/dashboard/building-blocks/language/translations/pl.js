@@ -38,6 +38,7 @@ TRANSLATIONS.pl = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'Skróty klawiszowe', buttonTitle: 'Skróty klawiszowe (?)', close: 'Zamknij', or: 'lub', dashboard: 'Panel',
+      nextSession: 'Następna sesja', prevSession: 'Poprzednia sesja', allSessions: 'Cała aktywność', needsYouSession: 'Następna sesja, która czeka na Ciebie',
       nextTurn: 'Następna tura', prevTurn: 'Poprzednia tura', closeTurn: 'Zamknij turę lub wyjdź z wyszukiwania', search: 'Szukaj', views: 'Zmień widok', help: 'Pokaż lub ukryj tę listę',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Popularne klawisze z dokumentacji Claude Code; mogą się zmieniać między wersjami. Na macOS Alt to Option (niektóre wymagają ustawienia Option jako Meta w terminalu).',

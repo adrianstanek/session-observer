@@ -34,6 +34,7 @@ TRANSLATIONS.ko = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: '키보드 단축키', buttonTitle: '키보드 단축키 (?)', close: '닫기', or: '또는', dashboard: '대시보드',
+      nextSession: '다음 세션', prevSession: '이전 세션', allSessions: '모든 활동', needsYouSession: '응답을 기다리는 다음 세션',
       nextTurn: '다음 턴', prevTurn: '이전 턴', closeTurn: '턴 닫기 또는 검색 나가기', search: '검색', views: '보기 전환', help: '이 목록 표시 / 숨기기',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Claude Code 문서의 주요 키입니다. 버전에 따라 바뀔 수 있습니다. macOS에서 Alt는 Option입니다(일부는 터미널에서 Option을 Meta로 설정해야 합니다).',

@@ -34,6 +34,7 @@ TRANSLATIONS.ja = (() => {
     // the keyboard shortcuts dialog (? in the header)
     shortcuts: {
       title: 'キーボードショートカット', buttonTitle: 'キーボードショートカット (?)', close: '閉じる', or: 'または', dashboard: 'ダッシュボード',
+      nextSession: '次のセッション', prevSession: '前のセッション', allSessions: 'すべてのアクティビティ', needsYouSession: '対応を待っている次のセッション',
       nextTurn: '次のターン', prevTurn: '前のターン', closeTurn: 'ターンを閉じる / 検索から抜ける', search: '検索', views: 'ビューを切り替え', help: 'この一覧の表示 / 非表示',
       claudeCode: 'Claude Code', codex: 'Codex',
       claudeCodeNote: 'Claude Code のドキュメントにある主なキーです。バージョンによって変わることがあります。macOS では Alt は Option です（ターミナルで Option をメタキーに設定する必要があるものもあります）。',
