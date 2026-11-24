@@ -10,7 +10,6 @@ function initControls() {
   initFilterControls();
   applyTheme();
   initHeaderButtons();
-  initReplayControls();
   initViewClicks();
   initViewHover();
   initDetailsControls();

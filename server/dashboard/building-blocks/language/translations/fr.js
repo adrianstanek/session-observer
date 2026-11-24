@@ -87,11 +87,9 @@ TRANSLATIONS.fr = (() => {
     search: 'Rechercher', searchPh: 'prompts, réponses, commandes, chemins, erreurs…',
     group: 'Groupe d’outils', groupTitle: 'Quelle partie de la carte : Fichiers, Shell, Git, MCP…', allGroups: 'tous les groupes', agent: 'Agent', allAgents: 'tous les agents', agentTitle: 'Afficher les sessions de Claude Code, de Codex ou des deux',
     onlyProblems: 'problèmes seulement', filters: 'Filtres', resetFilters: 'Réinitialiser les filtres', view: 'Vue',
-    replayBtn: '▶ Rejouer', pauseBtn: '❚❚ Pause', speedTitle: 'Vitesse de relecture', liveBtn: 'Direct',
-    replaying: 'Relecture', paused: 'En pause',
 
     subagent: 'Sous-agent', subagentLc: 'sous-agent', mainAgent: 'Agent principal', mainAgentLc: 'agent principal',
-    turn: 'Tour', turnLc: 'tour', turnN: n => `Tour ${n}`, sessionStart: 'Début de session',
+    turn: 'Tour', turnN: n => `Tour ${n}`, sessionStart: 'Début de session',
     running: 'en cours', runningEll: 'en cours…', workingEll: 'au travail…', failedLc: 'échec', unfinished: 'inachevé',
     promptLc: 'prompt', tokens: 'jetons', outX: x => `${x} en sortie`, outTokens: x => `${x} jetons en sortie`,
     ofPct: (a, b, p) => `${a} sur ${b} (${p} %)`, ctxLc: 'contexte', nowLc: 'maintenant',

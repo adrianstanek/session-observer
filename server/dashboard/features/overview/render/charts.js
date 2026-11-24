@@ -11,7 +11,7 @@ function turnChartHtml(matchingTurns, width, filterNote) {
   const turns = matchingTurns.slice(-CHART_TURNS_MAX), count = turns.length;
   const plotHeight = 120, left = 46, bottom = 18, top = 12;
   if (!count) return overviewCardHtml(TEXT.turns, filterNote, `<div class="none">${escapeHtml(TEXT.noTurnsMatch)}</div>`, true);
-  const now = displayTime();
+  const now = Date.now();
   const durationOf = turn => (isTurnRunning(turn) ? now : Date.parse(turn.end)) - Date.parse(turn.start);
   const longest = Math.max(1000, ...turns.map(durationOf));
   const columnWidth = (width - left) / count, barWidth = Math.max(1, Math.min(28, columnWidth - 2));
@@ -40,7 +40,7 @@ function turnChartHtml(matchingTurns, width, filterNote) {
 // ---- context window use over the session (the main agent's model steps); compactions show as drops
 function contextPoints(session) {
   return state.events
-    .filter(event => event.event === 'ModelStep' && event.session_id === session.id && !event.data?.subagent && event.data?.tokens?.context && eventTime(event) <= replayLimit())
+    .filter(event => event.event === 'ModelStep' && event.session_id === session.id && !event.data?.subagent && event.data?.tokens?.context)
     .map(event => ({ time: eventTime(event), tokens: event.data.tokens.context, seq: event.seq }));
 }
 
@@ -94,11 +94,11 @@ function sparklineSvg(bins, highest) {
   return `<svg class="spark" viewBox="0 0 ${count} ${SPARK.height}" preserveAspectRatio="none"><line x1="0" y1="${SPARK.height}" x2="${count}" y2="${SPARK.height}"/>${bars}</svg>`;
 }
 
-// per group: sparkline bins of the last 15 minutes, problem counts and the latest event, up to the replay cursor
+// per group: sparkline bins of the last 15 minutes, problem counts and the latest event
 function groupStatistics(now) {
   const binsByGroup = {}, problemsByGroup = {}, latestByGroup = {};
   const spanStart = now - SPARK_SPAN_MS;
-  for (let index = 0; index < shownEventCount(); index++) {
+  for (let index = 0; index < state.events.length; index++) {
     const event = state.events[index], group = toolGroupOfEvent(event);
     if (!group) continue;
     if (isProblemEvent(event)) problemsByGroup[group] = (problemsByGroup[group] || 0) + 1;
@@ -141,7 +141,7 @@ function toolGroupCardHtml(group, statistics, running, now) {
 // Tool-group cards: count, problems, last-15-min sparkline, what is running right now or what ran last; click a
 // card to filter everything to that group.
 function toolGroupCardsHtml() {
-  const now = displayTime();
+  const now = Date.now();
   const statistics = groupStatistics(now);
   statistics.highestBin = Math.max(1, ...Object.values(statistics.binsByGroup).flat());
   const running = runningByGroup();

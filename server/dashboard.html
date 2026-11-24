@@ -61,15 +61,6 @@
     <div class="layouts" id="layouts" role="tablist" aria-label="View" data-t-aria="view"></div>
     <div class="map-wrap"><div id="mid"></div><div id="alt"></div></div>
     <div class="cats" id="cats"></div>
-    <div class="replay">
-      <button id="play" data-t="replayBtn">▶ Replay</button>
-      <div id="track"><div class="rail"></div><div id="ticks"></div><div class="fill" id="fill"></div><div class="thumb" id="thumb"></div></div>
-      <div id="rlabel"></div>
-      <select id="speed" title="Replay speed" data-t-title="speedTitle">
-        <option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option>
-      </select>
-      <button id="live" class="on" data-t="liveBtn">Live</button>
-    </div>
   </main>
   <aside class="panel" id="detail"></aside>
 </section>
@@ -114,9 +105,6 @@
 <script src="dashboard/features/sessions/controls.js"></script>
 <script src="dashboard/features/filters/render.js"></script>
 <script src="dashboard/features/filters/controls.js"></script>
-<script src="dashboard/features/replay/model.js"></script>
-<script src="dashboard/features/replay/render.js"></script>
-<script src="dashboard/features/replay/controls.js"></script>
 <script src="dashboard/features/overview/render/page.js"></script>
 <script src="dashboard/features/overview/render/charts.js"></script>
 <script src="dashboard/features/overview/render/lists.js"></script>

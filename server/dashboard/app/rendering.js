@@ -9,7 +9,6 @@ const RENDERERS = {
   cats: renderCategoryChips,
   mid: () => renderOverview(),
   detail: renderDetails,
-  replay: renderReplayBar,
   map: markViewDirty,
 };
 const ALL_PARTS = Object.keys(RENDERERS);
@@ -44,11 +43,10 @@ function initPointerHold() {
   addEventListener('blur', event => { if (event.target === window) release(); }, true);
 }
 
-// every frame: the replay moves on and the view in #alt is drawn when something changed
+// every frame: the view in #alt is drawn when something changed
 function animationLoop(now) {
   requestAnimationFrame(animationLoop);
   if (document.hidden) return;
-  if (state.replaying) advanceReplay(now);
   if (activityChanged) {
     activityChanged = false;
     viewNeedsDrawing = true;

@@ -85,11 +85,9 @@ TRANSLATIONS.ko = (() => {
     search: '검색', searchPh: '프롬프트, 응답, 명령, 경로, 오류…',
     group: '도구 그룹', groupTitle: '지도의 어느 부분인지: 파일, 셸, Git, MCP…', allGroups: '모든 그룹', agent: '에이전트', allAgents: '모든 에이전트', agentTitle: 'Claude Code, Codex 또는 둘 다의 세션 표시',
     onlyProblems: '문제만', filters: '필터', resetFilters: '필터 초기화', view: '보기',
-    replayBtn: '▶ 재생', pauseBtn: '❚❚ 일시 정지', speedTitle: '재생 속도', liveBtn: '실시간',
-    replaying: '재생 중', paused: '일시 정지됨',
 
     subagent: '서브에이전트', subagentLc: '서브에이전트', mainAgent: '메인 에이전트', mainAgentLc: '메인 에이전트',
-    turn: '턴', turnLc: '턴', turnN: n => `턴 ${n}`, sessionStart: '세션 시작',
+    turn: '턴', turnN: n => `턴 ${n}`, sessionStart: '세션 시작',
     running: '실행 중', runningEll: '실행 중…', workingEll: '작업 중…', failedLc: '실패', unfinished: '미완료',
     promptLc: '프롬프트', tokens: '토큰', outX: x => `출력 ${x}`, outTokens: x => `출력 토큰 ${x}`,
     ofPct: (a, b, p) => `${a} / ${b} (${p}%)`, ctxLc: '컨텍스트', nowLc: '현재',

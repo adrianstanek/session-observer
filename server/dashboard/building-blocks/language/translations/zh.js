@@ -85,11 +85,9 @@ TRANSLATIONS.zh = (() => {
     search: '搜索', searchPh: '提示词、回复、命令、路径、错误…',
     group: '工具组', groupTitle: '地图的哪一部分：文件、Shell、Git、MCP…', allGroups: '所有组', agent: '代理', allAgents: '所有代理', agentTitle: '显示来自 Claude Code、Codex 或两者的会话',
     onlyProblems: '只看问题', filters: '筛选', resetFilters: '重置筛选', view: '视图',
-    replayBtn: '▶ 回放', pauseBtn: '❚❚ 暂停', speedTitle: '回放速度', liveBtn: '实时',
-    replaying: '回放中', paused: '已暂停',
 
     subagent: '子代理', subagentLc: '子代理', mainAgent: '主代理', mainAgentLc: '主代理',
-    turn: '轮次', turnLc: '轮次', turnN: n => `第 ${n} 轮`, sessionStart: '会话开始',
+    turn: '轮次', turnN: n => `第 ${n} 轮`, sessionStart: '会话开始',
     running: '运行中', runningEll: '运行中…', workingEll: '工作中…', failedLc: '失败', unfinished: '未完成',
     promptLc: '提示词', tokens: '个 token', outX: x => `输出 ${x}`, outTokens: x => `${x} 个输出 token`,
     ofPct: (a, b, p) => `${a} / ${b}（${p}%）`, ctxLc: '上下文', nowLc: '当前',

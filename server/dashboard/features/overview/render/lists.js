@@ -79,7 +79,7 @@ function subagentsListHtml(events) {
     if (event.event === 'SubagentStop' && subagents.has(data.agent_id)) subagents.get(data.agent_id).end = eventTime(event);
   }
   if (!subagents.size) return '';
-  const now = displayTime();
+  const now = Date.now();
   const rows = [...subagents.values()].slice(-LIST_ROWS_MAX).reverse().map(subagent => {
     const duration = subagent.end ? escapeHtml(formatDuration(subagent.end - subagent.start)) : `<span style="color:var(--ok)">● ${escapeHtml(formatDuration(now - subagent.start))}</span>`;
     const tooltip = `${subagent.type}${subagent.description ? ' — ' + subagent.description : ''}\n${TEXT.startedAt(formatTime(subagent.start))}`;

@@ -89,12 +89,10 @@ TRANSLATIONS.en = (() => {
     search: 'Search', searchPh: 'prompts, replies, commands, paths, errors…',
     group: 'Tool group', groupTitle: 'Which part of the map: Files, Shell, Git, MCP…', allGroups: 'all groups', agent: 'Agent', allAgents: 'all agents', agentTitle: 'Show sessions from Claude Code, Codex or both',
     onlyProblems: 'only problems', filters: 'Filters', resetFilters: 'Reset filters', view: 'View',
-    replayBtn: '▶ Replay', pauseBtn: '❚❚ Pause', speedTitle: 'Replay speed', liveBtn: 'Live',
-    replaying: 'Replaying', paused: 'Paused',
 
     // shared words
     subagent: 'Subagent', subagentLc: 'subagent', mainAgent: 'Main agent', mainAgentLc: 'main agent',
-    turn: 'Turn', turnLc: 'turn', turnN: n => `Turn ${n}`, sessionStart: 'Session start',
+    turn: 'Turn', turnN: n => `Turn ${n}`, sessionStart: 'Session start',
     running: 'running', runningEll: 'running…', workingEll: 'working…', failedLc: 'failed', unfinished: 'unfinished',
     promptLc: 'prompt', tokens: 'tokens', outX: x => `${x} out`, outTokens: x => `${x} output tokens`,
     ofPct: (a, b, p) => `${a} of ${b} (${p}%)`, ctxLc: 'context', nowLc: 'now',
@@ -147,7 +145,7 @@ TRANSLATIONS.en = (() => {
     // chat
     noConversation: 'No conversation yet', openTurn: 'Open this turn', agentWorking: name => `${name} is working…`, codexContextNote: 'Read from Codex\'s own session file, whose format is not documented and can change, so some parts may be missing. Codex stores reasoning encrypted: it counts in the totals, but its text is not shown.',
 
-    // replay bar and event types
+    // event types
     eventTypes: 'Event types',
 
     // route

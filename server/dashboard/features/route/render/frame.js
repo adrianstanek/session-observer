@@ -30,19 +30,19 @@ function routeStateHtml(isLive, endEvent) {
 
 // live: what it is doing now, and the latest thing the model wrote in this turn
 function routeNowHtml(model) {
-  const now = displayTime();
+  const now = Date.now();
   const written = model.lastText
     ? ` · “${escapeHtml(shorten(model.lastText.text, 220))}” <span class="muted">${escapeHtml(TEXT.ago(formatAge(now - model.lastText.ts)))}</span>` : '';
   return `<div class="la"><b>${escapeHtml(TEXT.nowLbl)}</b> <span class="act">${escapeHtml(describeRouteActivity(model, now))}</span>${written}</div>`;
 }
 
-function routeHeaderHtml(turn, model, isLive, sessionTurns, limit) {
+function routeHeaderHtml(turn, model, isLive, sessionTurns) {
   const prompt = turn.prompt !== null ? escapeHtml(shorten(stripTags(turn.prompt), 240)) : `<span class="muted">${escapeHtml(TEXT.sessionStart)}</span>`;
   const subagents = model.branches.size;
   const counts = `${escapeHtml(countOf(model.stepCount, 'step'))} · ${escapeHtml(countOf(model.toolCount, 'tool'))}${subagents ? ` · ${escapeHtml(countOf(subagents, 'subagent'))}` : ''}`;
   const problems = model.problemCount ? `·<span class="err">${escapeHtml(countOf(model.problemCount, 'problem'))}</span>` : '';
   return `<div class="lhead${isLive ? ' live' : ''}"><div class="lp">${prompt}</div>
-    <div class="lm"><span class="state">${routeStateHtml(isLive, model.endEvent)}</span>·<span>${escapeHtml(baseName(state.sessions.get(turn.sessionId)?.cwd))}</span>·<span>${formatTime(turn.start)}</span>·<span>${counts}</span>${contextBadgeHtml(turnContextInfo(sessionTurns, turn, limit))}${problems}
+    <div class="lm"><span class="state">${routeStateHtml(isLive, model.endEvent)}</span>·<span>${escapeHtml(baseName(state.sessions.get(turn.sessionId)?.cwd))}</span>·<span>${formatTime(turn.start)}</span>·<span>${counts}</span>${contextBadgeHtml(turnContextInfo(sessionTurns, turn))}${problems}
 </div>${isLive ? routeNowHtml(model) : ''}</div>`;
 }
 
@@ -61,11 +61,11 @@ function turnNavigatorHtml(turn, pinned, sessionTurns) {
 }
 
 // header + scroll box + turn navigator around a drawn route
-function routeFrameHtml({ focused, pinned, sessionTurns, models, limit, boxHeight, svg, focusedY }) {
-  const model = models.get(focused.key) || buildRouteModel(focused, limit);
-  const isLive = !model.endEvent && (state.replayCursor != null || isTurnRunning(focused));
+function routeFrameHtml({ focused, pinned, sessionTurns, models, boxHeight, svg, focusedY }) {
+  const model = models.get(focused.key) || buildRouteModel(focused);
+  const isLive = !model.endEvent && isTurnRunning(focused);
   const scrollHeight = boxHeight - (isLive ? 70 : 50) - 48;
-  return routeHeaderHtml(focused, model, isLive, sessionTurns, limit)
+  return routeHeaderHtml(focused, model, isLive, sessionTurns)
     + `<div class="mscroll" data-focus="${escapeHtml(focused.key)}" data-fy="${isFinite(focusedY) ? focusedY : 0}" style="height:${scrollHeight}px">${svg}</div>`
     + turnNavigatorHtml(focused, pinned, sessionTurns);
 }

@@ -89,11 +89,9 @@ TRANSLATIONS.pl = (() => {
     search: 'Szukaj', searchPh: 'prompty, odpowiedzi, polecenia, ścieżki, błędy…',
     group: 'Grupa narzędzi', groupTitle: 'Która część mapy: Pliki, Powłoka, Git, MCP…', allGroups: 'wszystkie grupy', agent: 'Agent', allAgents: 'wszyscy agenci', agentTitle: 'Pokaż sesje z Claude Code, z Codex albo z obu',
     onlyProblems: 'tylko problemy', filters: 'Filtry', resetFilters: 'Wyczyść filtry', view: 'Widok',
-    replayBtn: '▶ Odtwórz', pauseBtn: '❚❚ Pauza', speedTitle: 'Prędkość odtwarzania', liveBtn: 'Na żywo',
-    replaying: 'Odtwarzanie', paused: 'Wstrzymano',
 
     subagent: 'Subagent', subagentLc: 'subagent', mainAgent: 'Główny agent', mainAgentLc: 'główny agent',
-    turn: 'Tura', turnLc: 'tura', turnN: n => `Tura ${n}`, sessionStart: 'Początek sesji',
+    turn: 'Tura', turnN: n => `Tura ${n}`, sessionStart: 'Początek sesji',
     running: 'w toku', runningEll: 'w toku…', workingEll: 'pracuje…', failedLc: 'niepowodzenie', unfinished: 'niedokończona',
     promptLc: 'prompt', tokens: 'tokenów', outX: x => `${x} wyj.`, outTokens: x => `${x} tokenów wyjściowych`,
     ofPct: (a, b, p) => `${a} z ${b} (${p}%)`, ctxLc: 'kontekst', nowLc: 'teraz',

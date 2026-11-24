@@ -59,7 +59,7 @@ const bubbleTime = ts => `<span class="bt">${formatTime(ts)}</span>`;
 // One turn as bubbles and chips, added to chat.html. A text bubble belongs to the model step it came from: hovering /
 // clicking it reaches that step's row in Details. A tool result can come in a later turn (a background command): its
 // placeholders are filled in the whole chat written so far.
-function addChatTurn(chat, turn, limit) {
+function addChatTurn(chat, turn) {
   const stepSeqByMessage = new Map(turn.events.filter(event => event.event === 'ModelStep' && event.data?.msg_id).map(event => [event.data.msg_id, event.seq]));
   const seqsOfText = event => [event.seq, stepSeqByMessage.get(event.data?.msg_id)].filter(seq => seq != null).join(' ');
   const runningToolIds = new Set();
@@ -76,7 +76,7 @@ function addChatTurn(chat, turn, limit) {
     chat.html = chat.html.replace(placeholder, value);
   };
 
-  for (const event of turn.events.filter(candidate => eventTime(candidate) <= limit && isShownInChat(candidate))) {
+  for (const event of turn.events.filter(isShownInChat)) {
     const data = event.data || {};
     switch (event.event) {
       case 'UserPromptSubmit':
@@ -117,7 +117,7 @@ function addChatTurn(chat, turn, limit) {
   }
   flushChips();
   chat.html += finalReplyBubble(stopEvent, modelSaidSomething);
-  if (!stopEvent && isTurnRunning(turn) && state.replayCursor == null) {
+  if (!stopEvent && isTurnRunning(turn)) {
     chat.html += `<div class="ctyping"><span class="dot busy"></span>${escapeHtml(TEXT.agentWorking(agentName(agentOfSession(turn.sessionId))))}</div>`;
   }
   chat.html += '</div>';
@@ -135,15 +135,15 @@ function finalReplyBubble(stopEvent, modelSaidSomething) {
 }
 
 function chatViewHtml() {
-  const limit = replayLimit(), showsSessionNames = state.scope === ALL_SESSIONS;
-  const turns = allTurns.filter(turn => eventTime(turn.events[0]) <= limit).slice(-CHAT_TURNS_MAX);
+  const showsSessionNames = state.scope === ALL_SESSIONS;
+  const turns = allTurns.slice(-CHAT_TURNS_MAX);
   if (!turns.length) return `<div class="chat"><div class="cempty">${TEXT.noConversation}</div></div>`;
   const chat = { html: '<div class="chat">' };
   let lastSessionId = null;
   for (const turn of turns) {
     if (showsSessionNames && turn.sessionId !== lastSessionId) chat.html += chatSessionHeader(turn.sessionId);
     lastSessionId = turn.sessionId;
-    addChatTurn(chat, turn, limit);
+    addChatTurn(chat, turn);
   }
   return removeUnfilledPlaceholders(chat.html) + '</div>';
 }

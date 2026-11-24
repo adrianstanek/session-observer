@@ -25,8 +25,6 @@ async function loadScope() {
   events.sort(byTimeThenSeq);
   state.events = events;
   state.frozenEvents = [];
-  state.replayCursor = null;
-  state.replaying = false;
   allTurns = buildTurns(events);
   if (state.selectedTurnKey && !findTurn(state.selectedTurnKey)) state.selectedTurnKey = null;
   rebuildActivity();
@@ -75,11 +73,9 @@ function updateResentEvent(event) {
 function takeEvent(event) {
   if (updateResentEvent(event)) return;
   const atEnd = insertEvent(event);
-  if (state.replayCursor == null) {
-    if (atEnd) applyEventToActivity(event);
-    else rebuildActivity(); // a late model step
-  }
-  scheduleRender('turns', 'cats', 'mid', 'replay', 'map');
+  if (atEnd) applyEventToActivity(event);
+  else rebuildActivity(); // a late model step
+  scheduleRender('turns', 'cats', 'mid', 'map');
   if (state.selectedTurnKey && event.session_id === state.selectedTurnKey.split(':')[0]) scheduleRender('detail');
 }
 
@@ -126,15 +122,15 @@ function connectLiveUpdates() {
     state.events = state.events.filter(event => event.session_id !== id);
     state.frozenEvents = state.frozenEvents.filter(event => event.session_id !== id);
     if (state.selectedTurnKey?.split(':')[0] === id) state.selectedTurnKey = null;
-    if (state.replayCursor == null) rebuildActivity();
+    rebuildActivity();
     scheduleRender(...ALL_PARTS);
   });
-  // older days were loaded: the sessions, and the events of this scope and range, once (a frozen or replaying page
-  // keeps its events until it goes live again)
+  // older days were loaded: the sessions, and the events of this scope and range, once (a frozen page
+  // keeps its events until it resumes)
   stream.addEventListener('history', message => {
     state.history = JSON.parse(message.data);
     loadSessions().then(() => {
-      if (state.frozen || state.replayCursor != null) return scheduleRender('sessions', 'header');
+      if (state.frozen) return scheduleRender('sessions', 'header');
       return loadScope();
     });
   });
@@ -150,8 +146,6 @@ function resetView() {
   state.openEventSeqs.clear();
   state.selectedTurnKey = null;
   state.scope = ALL_SESSIONS;
-  state.replayCursor = null;
-  state.replaying = false;
   try {
     const address = new URL(location.href);
     address.hash = '';

@@ -85,11 +85,9 @@ TRANSLATIONS.ja = (() => {
     search: '検索', searchPh: 'プロンプト、返答、コマンド、パス、エラー…',
     group: 'ツールグループ', groupTitle: 'マップのどの部分か: ファイル、シェル、Git、MCP…', allGroups: 'すべてのグループ', agent: 'エージェント', allAgents: 'すべてのエージェント', agentTitle: 'Claude Code、Codex、または両方のセッションを表示',
     onlyProblems: '問題のみ', filters: 'フィルター', resetFilters: 'フィルターをリセット', view: '表示',
-    replayBtn: '▶ 再生', pauseBtn: '❚❚ 一時停止', speedTitle: '再生速度', liveBtn: 'ライブ',
-    replaying: '再生中', paused: '一時停止中',
 
     subagent: 'サブエージェント', subagentLc: 'サブエージェント', mainAgent: 'メインエージェント', mainAgentLc: 'メインエージェント',
-    turn: 'ターン', turnLc: 'ターン', turnN: n => `ターン ${n}`, sessionStart: 'セッション開始',
+    turn: 'ターン', turnN: n => `ターン ${n}`, sessionStart: 'セッション開始',
     running: '実行中', runningEll: '実行中…', workingEll: '作業中…', failedLc: '失敗', unfinished: '未完了',
     promptLc: 'プロンプト', tokens: 'トークン', outX: x => `出力 ${x}`, outTokens: x => `出力トークン ${x}`,
     ofPct: (a, b, p) => `${a} / ${b}（${p}%）`, ctxLc: 'コンテキスト', nowLc: '現在',
