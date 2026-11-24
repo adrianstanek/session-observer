@@ -33,6 +33,11 @@ TRANSLATIONS.fr = (() => {
     theme: v => `Thème : ${v}`,
     clearLog: 'Vider le journal', clearLogTitle: 'Supprimer le journal d’événements local', clearConfirm: 'Supprimer tous les événements enregistrés ?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Raccourcis clavier', buttonTitle: 'Raccourcis clavier (?)', close: 'Fermer', or: 'ou', dashboard: 'Tableau de bord',
+      nextTurn: 'Tour suivant', prevTurn: 'Tour précédent', closeTurn: 'Fermer le tour, ou quitter la recherche', search: 'Rechercher', views: 'Changer de vue', help: 'Afficher ou masquer cette liste',
+    },
     alerts: {
       modes: { off: 'Notifier : non', needsYou: 'Notifier : quand on a besoin de vous', alsoDone: 'Notifier : aussi à la fin' },
       title: 'Notifications de bureau tant que cette fenêtre n’est pas au premier plan',

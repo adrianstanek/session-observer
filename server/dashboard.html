@@ -17,6 +17,7 @@
   <button id="pause" data-t-title="freezeTitle" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
   <button id="theme">Theme: auto</button>
   <select id="notify"></select>
+  <button id="keysHelp" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts (?)">?</button>
   <select id="lang" data-t-title="language" data-t-aria="language" title="Language" aria-label="Language"></select>
   <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
 </header>
@@ -58,6 +59,8 @@
   </main>
   <aside class="panel" id="detail"></aside>
 </section>
+
+<dialog id="shortcuts" class="panel"></dialog>
 
 <!-- Plain scripts sharing one global scope (no modules, no build). Order matters: a file uses names from the ones above it.
      building-blocks/ know nothing about the features; features/<feature>/ are grouped by function (model, render, controls);
@@ -126,6 +129,9 @@
 <script src="dashboard/features/home/controls.js"></script>
 <script src="dashboard/features/alerts/model.js"></script>
 <script src="dashboard/features/alerts/controls.js"></script>
+<script src="dashboard/features/shortcuts/model.js"></script>
+<script src="dashboard/features/shortcuts/render.js"></script>
+<script src="dashboard/features/shortcuts/controls.js"></script>
 <script src="dashboard/app/views.js"></script>
 <script src="dashboard/app/hover.js"></script>
 <script src="dashboard/app/view-controls.js"></script>

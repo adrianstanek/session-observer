@@ -40,6 +40,7 @@ select, input[type=search] { background: var(--panel); border: 1px solid var(--l
 .muted { color: var(--muted); } .mono { font-family: var(--mono); } .err { color: var(--err); }
 
 /* top bar */
+#keysHelp { font-weight: 700; padding: 4px 9px; }
 .topbar { display: flex; align-items: center; gap: 14px; padding: 10px 4px; flex-wrap: wrap; }
 .topbar h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
 .topbar h1 .logo { width: 24px; height: 24px; flex-shrink: 0; border-radius: 5px; box-shadow: 0 0 0 1px var(--line); } /* the outline keeps the dark tile apart from a dark page */
@@ -616,3 +617,17 @@ details.cx.grp .chip.err { color: var(--err); border-color: color-mix(in srgb, v
 .hsub::before { top: 12px; }
 .hsub svg { width: 12px; height: 12px; color: var(--s-agents); flex: none; }
 .hsub > .muted:not(:last-child) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* keyboard shortcuts dialog (features/shortcuts) */
+#shortcuts { padding: 0; width: min(620px, calc(100vw - 32px)); max-height: min(80vh, 720px); color: var(--text); box-shadow: 0 12px 40px rgba(0, 0, 0, .35); }
+#shortcuts::backdrop { background: rgba(0, 0, 0, .45); }
+#shortcuts .kbody { padding: 14px 18px 18px; }
+#shortcuts .khead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+#shortcuts h2 { font-size: 16px; margin: 0; }
+#shortcuts .ktabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+#shortcuts .ktabs .cur { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+#shortcuts .knote { margin: 0 0 8px; }
+#shortcuts .ktable { width: 100%; border-collapse: collapse; }
+#shortcuts .ktable td { padding: 6px 4px; border-top: 1px solid var(--line-2); vertical-align: top; }
+#shortcuts .kkeys { white-space: nowrap; width: 1%; padding-right: 18px; }
+#shortcuts kbd { font: 12px var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; }

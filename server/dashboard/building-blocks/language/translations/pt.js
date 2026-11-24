@@ -33,6 +33,11 @@ TRANSLATIONS.pt = (() => {
     theme: v => `Tema: ${v}`,
     clearLog: 'Limpar log', clearLogTitle: 'Apagar o log local de eventos', clearConfirm: 'Apagar todos os eventos registrados?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Atalhos de teclado', buttonTitle: 'Atalhos de teclado (?)', close: 'Fechar', or: 'ou', dashboard: 'Painel',
+      nextTurn: 'Próximo turno', prevTurn: 'Turno anterior', closeTurn: 'Fechar o turno ou sair da busca', search: 'Buscar', views: 'Trocar de visão', help: 'Mostrar ou ocultar esta lista',
+    },
     alerts: {
       modes: { off: 'Notificar: não', needsYou: 'Notificar: quando precisar de você', alsoDone: 'Notificar: também ao terminar' },
       title: 'Notificações na área de trabalho enquanto esta janela não está em foco',

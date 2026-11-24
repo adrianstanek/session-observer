@@ -31,6 +31,11 @@ TRANSLATIONS.zh = (() => {
     theme: v => `主题：${v}`,
     clearLog: '清空日志', clearLogTitle: '删除本地事件日志', clearConfirm: '删除所有已记录的事件？',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: '键盘快捷键', buttonTitle: '键盘快捷键（?）', close: '关闭', or: '或', dashboard: '仪表板',
+      nextTurn: '下一轮', prevTurn: '上一轮', closeTurn: '关闭这一轮，或退出搜索', search: '搜索', views: '切换视图', help: '显示或隐藏此列表',
+    },
     alerts: {
       modes: { off: '通知：关闭', needsYou: '通知：需要你时', alsoDone: '通知：完成时也通知' },
       title: '此窗口不在前台时显示桌面通知',

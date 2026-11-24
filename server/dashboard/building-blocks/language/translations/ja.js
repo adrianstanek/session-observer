@@ -31,6 +31,11 @@ TRANSLATIONS.ja = (() => {
     theme: v => `テーマ: ${v}`,
     clearLog: 'ログを消去', clearLogTitle: 'ローカルのイベントログを削除', clearConfirm: '記録されたイベントをすべて削除しますか？',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'キーボードショートカット', buttonTitle: 'キーボードショートカット (?)', close: '閉じる', or: 'または', dashboard: 'ダッシュボード',
+      nextTurn: '次のターン', prevTurn: '前のターン', closeTurn: 'ターンを閉じる / 検索から抜ける', search: '検索', views: 'ビューを切り替え', help: 'この一覧の表示 / 非表示',
+    },
     alerts: {
       modes: { off: '通知: オフ', needsYou: '通知: 対応が必要なとき', alsoDone: '通知: 完了時も' },
       title: 'このウィンドウが前面にないときにデスクトップ通知を表示',

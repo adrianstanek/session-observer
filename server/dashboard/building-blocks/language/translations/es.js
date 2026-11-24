@@ -33,6 +33,11 @@ TRANSLATIONS.es = (() => {
     theme: v => `Tema: ${v}`,
     clearLog: 'Borrar registro', clearLogTitle: 'Eliminar el registro local de eventos', clearConfirm: '¿Eliminar todos los eventos registrados?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Atajos de teclado', buttonTitle: 'Atajos de teclado (?)', close: 'Cerrar', or: 'o', dashboard: 'Panel',
+      nextTurn: 'Turno siguiente', prevTurn: 'Turno anterior', closeTurn: 'Cerrar el turno o salir de la búsqueda', search: 'Buscar', views: 'Cambiar de vista', help: 'Mostrar u ocultar esta lista',
+    },
     alerts: {
       modes: { off: 'Avisar: no', needsYou: 'Avisar: cuando te necesite', alsoDone: 'Avisar: también al terminar' },
       title: 'Notificaciones de escritorio mientras esta ventana no está en primer plano',

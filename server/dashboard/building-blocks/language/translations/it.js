@@ -33,6 +33,11 @@ TRANSLATIONS.it = (() => {
     theme: v => `Tema: ${v}`,
     clearLog: 'Svuota log', clearLogTitle: 'Elimina il log locale degli eventi', clearConfirm: 'Eliminare tutti gli eventi registrati?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Scorciatoie da tastiera', buttonTitle: 'Scorciatoie da tastiera (?)', close: 'Chiudi', or: 'o', dashboard: 'Dashboard',
+      nextTurn: 'Turno successivo', prevTurn: 'Turno precedente', closeTurn: 'Chiudi il turno o esci dalla ricerca', search: 'Cerca', views: 'Cambia vista', help: 'Mostra o nascondi questo elenco',
+    },
     alerts: {
       modes: { off: 'Avvisa: no', needsYou: 'Avvisa: quando serve il tuo intervento', alsoDone: 'Avvisa: anche alla fine' },
       title: 'Notifiche desktop mentre questa finestra non è in primo piano',

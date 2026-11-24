@@ -33,6 +33,11 @@ TRANSLATIONS.de = (() => {
     theme: v => `Farbschema: ${v}`,
     clearLog: 'Log leeren', clearLogTitle: 'Das lokale Ereignislog löschen', clearConfirm: 'Alle aufgezeichneten Ereignisse löschen?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Tastenkürzel', buttonTitle: 'Tastenkürzel (?)', close: 'Schließen', or: 'oder', dashboard: 'Dashboard',
+      nextTurn: 'Nächste Runde', prevTurn: 'Vorherige Runde', closeTurn: 'Runde schließen oder die Suche verlassen', search: 'Suche', views: 'Ansicht wechseln', help: 'Diese Liste ein- oder ausblenden',
+    },
     alerts: {
       modes: { off: 'Benachrichtigen: aus', needsYou: 'Benachrichtigen: wenn du gebraucht wirst', alsoDone: 'Benachrichtigen: auch wenn fertig' },
       title: 'Desktop-Benachrichtigungen, solange dieses Fenster nicht im Fokus ist',

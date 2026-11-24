@@ -35,6 +35,11 @@ TRANSLATIONS.en = (() => {
     theme: v => `Theme: ${v}`,
     clearLog: 'Clear log', clearLogTitle: 'Delete the local event log', clearConfirm: 'Delete all recorded events?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Keyboard shortcuts', buttonTitle: 'Keyboard shortcuts (?)', close: 'Close', or: 'or', dashboard: 'Dashboard',
+      nextTurn: 'Next turn', prevTurn: 'Previous turn', closeTurn: 'Close the turn, or leave the search', search: 'Search', views: 'Switch view', help: 'Show or hide this list',
+    },
     alerts: {
       modes: { off: 'Notify: off', needsYou: 'Notify: needs you', alsoDone: 'Notify: also when done' },
       title: 'Desktop notifications while this window is not in focus',

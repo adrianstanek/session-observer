@@ -31,6 +31,11 @@ TRANSLATIONS.ko = (() => {
     theme: v => `테마: ${v}`,
     clearLog: '로그 지우기', clearLogTitle: '로컬 이벤트 로그 삭제', clearConfirm: '기록된 이벤트를 모두 삭제할까요?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: '키보드 단축키', buttonTitle: '키보드 단축키 (?)', close: '닫기', or: '또는', dashboard: '대시보드',
+      nextTurn: '다음 턴', prevTurn: '이전 턴', closeTurn: '턴 닫기 또는 검색 나가기', search: '검색', views: '보기 전환', help: '이 목록 표시 / 숨기기',
+    },
     alerts: {
       modes: { off: '알림: 끔', needsYou: '알림: 응답이 필요할 때', alsoDone: '알림: 완료될 때도' },
       title: '이 창이 활성 상태가 아닐 때 데스크톱 알림 표시',

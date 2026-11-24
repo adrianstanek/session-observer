@@ -35,6 +35,11 @@ TRANSLATIONS.pl = (() => {
     theme: v => `Motyw: ${v}`,
     clearLog: 'Wyczyść log', clearLogTitle: 'Usuń lokalny log zdarzeń', clearConfirm: 'Usunąć wszystkie zapisane zdarzenia?',
     // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Skróty klawiszowe', buttonTitle: 'Skróty klawiszowe (?)', close: 'Zamknij', or: 'lub', dashboard: 'Panel',
+      nextTurn: 'Następna tura', prevTurn: 'Poprzednia tura', closeTurn: 'Zamknij turę lub wyjdź z wyszukiwania', search: 'Szukaj', views: 'Zmień widok', help: 'Pokaż lub ukryj tę listę',
+    },
     alerts: {
       modes: { off: 'Powiadomienia: wył.', needsYou: 'Powiadomienia: gdy czeka na Ciebie', alsoDone: 'Powiadomienia: także po zakończeniu' },
       title: 'Powiadomienia na pulpicie, gdy to okno nie jest aktywne',
