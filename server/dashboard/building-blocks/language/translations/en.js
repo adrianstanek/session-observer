@@ -25,7 +25,7 @@ TRANSLATIONS.en = (() => {
     themes: { auto: 'auto', dark: 'dark', light: 'light' },
 
     // header and filters (the page's own text)
-    language: 'Language', langAuto: 'Auto',
+    language: 'Language', settings: 'Settings', langAuto: 'Auto',
     verTitle: 'Version of the running server. It keeps running after a plugin update until it is restarted, so an older number here means an old server.',
     connTitle: 'Live connection to the local server', connecting: 'connecting…', live: 'live', disconnected: 'disconnected',
     lastUpdate: t => ` · last update ${t}`,

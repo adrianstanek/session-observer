@@ -23,7 +23,7 @@ TRANSLATIONS.es = (() => {
     views: { home: 'Inicio', overview: 'Resumen', route: 'Ruta', chat: 'Chat', context: 'Contexto' },
     themes: { auto: 'auto', dark: 'oscuro', light: 'claro' },
 
-    language: 'Idioma', langAuto: 'Auto',
+    language: 'Idioma', settings: 'Ajustes', langAuto: 'Auto',
     verTitle: 'Versión del servidor en ejecución. Sigue funcionando tras actualizar el plugin hasta que se reinicia, así que un número más antiguo aquí significa un servidor antiguo.',
     connTitle: 'Conexión en directo con el servidor local', connecting: 'conectando…', live: 'en directo', disconnected: 'desconectado',
     lastUpdate: t => ` · última actualización ${t}`,

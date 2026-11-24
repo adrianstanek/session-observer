@@ -15,12 +15,18 @@
   <span class="grow"></span>
   <span class="pill" id="hdrBusy" data-t-title="busyTitle" title="Sessions currently in the middle of a turn"></span>
   <button id="pause" data-t-title="freezeTitle" title="Freeze the screen; new events are buffered and applied when you resume">Freeze</button>
-  <button id="theme">Theme: auto</button>
-  <select id="notify"></select>
   <button id="keysHelp" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts (?)">?</button>
-  <select id="lang" data-t-title="language" data-t-aria="language" title="Language" aria-label="Language"></select>
-  <span class="hdr-sep" aria-hidden="true"></span>
-  <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
+  <!-- the settings: theme, notifications, language, and Clear log apart at the bottom -->
+  <details class="hmenu" id="settings">
+    <summary><span aria-hidden="true">⚙</span> <span data-t="settings">Settings</span></summary>
+    <div class="hmenu-box panel">
+      <button id="theme">Theme: auto</button>
+      <select id="notify"></select>
+      <label class="hmenu-row"><span data-t="language">Language</span><select id="lang" data-t-title="language" data-t-aria="language" title="Language" aria-label="Language"></select></label>
+      <hr>
+      <button id="clearLog" data-t-title="clearLogTitle" title="Delete the local event log" data-t="clearLog">Clear log</button>
+    </div>
+  </details>
 </header>
 
 <section class="panel filters" id="filters">

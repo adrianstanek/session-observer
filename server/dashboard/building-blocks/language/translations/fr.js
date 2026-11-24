@@ -23,7 +23,7 @@ TRANSLATIONS.fr = (() => {
     views: { home: 'Accueil', overview: 'Vue d’ensemble', route: 'Parcours', chat: 'Chat', context: 'Contexte' },
     themes: { auto: 'auto', dark: 'sombre', light: 'clair' },
 
-    language: 'Langue', langAuto: 'Auto',
+    language: 'Langue', settings: 'Réglages', langAuto: 'Auto',
     verTitle: 'Version du serveur en cours d’exécution. Il continue de tourner après une mise à jour du plugin jusqu’à son redémarrage : un numéro plus ancien ici signifie un ancien serveur.',
     connTitle: 'Connexion en direct au serveur local', connecting: 'connexion…', live: 'en direct', disconnected: 'déconnecté',
     lastUpdate: t => ` · dernière mise à jour ${t}`,

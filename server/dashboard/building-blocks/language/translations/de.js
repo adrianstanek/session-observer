@@ -23,7 +23,7 @@ TRANSLATIONS.de = (() => {
     views: { home: 'Start', overview: 'Übersicht', route: 'Route', chat: 'Chat', context: 'Kontext' },
     themes: { auto: 'auto', dark: 'dunkel', light: 'hell' },
 
-    language: 'Sprache', langAuto: 'Auto',
+    language: 'Sprache', settings: 'Einstellungen', langAuto: 'Auto',
     verTitle: 'Version des laufenden Servers. Er läuft nach einem Plugin-Update weiter, bis er neu gestartet wird; eine ältere Nummer hier bedeutet also einen alten Server.',
     connTitle: 'Live-Verbindung zum lokalen Server', connecting: 'verbinde…', live: 'live', disconnected: 'getrennt',
     lastUpdate: t => ` · letzte Aktualisierung ${t}`,

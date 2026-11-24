@@ -25,7 +25,7 @@ TRANSLATIONS.pl = (() => {
     views: { home: 'Start', overview: 'Przegląd', route: 'Trasa', chat: 'Czat', context: 'Kontekst' },
     themes: { auto: 'auto', dark: 'ciemny', light: 'jasny' },
 
-    language: 'Język', langAuto: 'Auto',
+    language: 'Język', settings: 'Ustawienia', langAuto: 'Auto',
     verTitle: 'Wersja działającego serwera. Działa dalej po aktualizacji wtyczki, dopóki nie zostanie uruchomiony ponownie, więc starszy numer oznacza stary serwer.',
     connTitle: 'Połączenie na żywo z lokalnym serwerem', connecting: 'łączenie…', live: 'na żywo', disconnected: 'rozłączono',
     lastUpdate: t => ` · ostatnia aktualizacja ${t}`,

@@ -21,7 +21,7 @@ TRANSLATIONS.ja = (() => {
     views: { home: 'ホーム', overview: '概要', route: 'ルート', chat: 'チャット', context: 'コンテキスト' },
     themes: { auto: '自動', dark: 'ダーク', light: 'ライト' },
 
-    language: '言語', langAuto: '自動',
+    language: '言語', settings: '設定', langAuto: '自動',
     verTitle: '実行中のサーバーのバージョン。プラグインを更新しても再起動するまで動き続けるので、ここの番号が古ければサーバーも古いままです。',
     connTitle: 'ローカルサーバーへのライブ接続', connecting: '接続中…', live: 'ライブ', disconnected: '切断',
     lastUpdate: t => ` · 最終更新 ${t}`,

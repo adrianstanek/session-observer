@@ -21,7 +21,7 @@ TRANSLATIONS.ko = (() => {
     views: { home: '홈', overview: '개요', route: '경로', chat: '채팅', context: '컨텍스트' },
     themes: { auto: '자동', dark: '다크', light: '라이트' },
 
-    language: '언어', langAuto: '자동',
+    language: '언어', settings: '설정', langAuto: '자동',
     verTitle: '실행 중인 서버의 버전입니다. 플러그인을 업데이트해도 다시 시작할 때까지 계속 실행되므로, 여기 번호가 오래되었다면 서버도 오래된 것입니다.',
     connTitle: '로컬 서버와의 실시간 연결', connecting: '연결 중…', live: '실시간', disconnected: '연결 끊김',
     lastUpdate: t => ` · 마지막 업데이트 ${t}`,

@@ -23,7 +23,7 @@ TRANSLATIONS.pt = (() => {
     views: { home: 'Início', overview: 'Visão geral', route: 'Rota', chat: 'Chat', context: 'Contexto' },
     themes: { auto: 'auto', dark: 'escuro', light: 'claro' },
 
-    language: 'Idioma', langAuto: 'Auto',
+    language: 'Idioma', settings: 'Configurações', langAuto: 'Auto',
     verTitle: 'Versão do servidor em execução. Ele continua rodando após uma atualização do plugin até ser reiniciado, então um número mais antigo aqui significa um servidor antigo.',
     connTitle: 'Conexão ao vivo com o servidor local', connecting: 'conectando…', live: 'ao vivo', disconnected: 'desconectado',
     lastUpdate: t => ` · última atualização ${t}`,

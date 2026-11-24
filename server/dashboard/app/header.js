@@ -1,5 +1,6 @@
 'use strict';
-// Session Observer dashboard — the header: connection, working sessions, Freeze, theme, language and Clear log.
+// Session Observer dashboard — the header: connection, working sessions, Freeze, and the Settings menu (theme, language,
+// Clear log).
 // (The Notify menu is features/alerts.)
 const NEXT_THEME = { auto: 'dark', dark: 'light', light: 'auto' };
 const PAGE_TITLE = document.title;
@@ -51,6 +52,14 @@ function initHeaderButtons() {
     }
     scheduleRender('header');
   };
+  const settings = elementById('settings');
+  document.addEventListener('click', event => { if (settings.open && !settings.contains(event.target)) settings.open = false; });
+  settings.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !settings.open) return;
+    event.stopPropagation();
+    settings.open = false;
+    settings.querySelector('summary').focus();
+  });
   elementById('hdrBusy').onclick = event => { if (event.target.closest('[data-go-home]')) setView('home'); };
   elementById('clearLog').onclick = async () => {
     if (!confirm(TEXT.clearConfirm)) return;
