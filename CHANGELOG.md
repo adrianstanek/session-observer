@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.0](https://github.com/radekwojpl2/session-observer/compare/v0.12.0...v0.13.0) (2026-11-24)
+
+
+### Features
+
+* GitHub links in the header: repo button, release notes on the version, Report an issue ([6b16986](https://github.com/radekwojpl2/session-observer/commit/6b16986c7089d1123a5ceedf844e91241f131e85))
+* GitHub links in the header: repo button, release notes on the version, Report an issue ([2ba1ccc](https://github.com/radekwojpl2/session-observer/commit/2ba1ccc766d4c953ab026a166634bb1947667944))
+
 ## [0.12.0](https://github.com/radekwojpl2/session-observer/compare/v0.11.1...v0.12.0) (2026-11-24)
 
 
