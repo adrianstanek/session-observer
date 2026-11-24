@@ -22,6 +22,7 @@ TRANSLATIONS.zh = (() => {
     themes: { auto: '自动', dark: '深色', light: '浅色' },
 
     language: '语言', settings: '设置', langAuto: '自动',
+    githubTitle: 'GitHub 上的 Session Observer', reportIssue: '报告问题', releaseNotes: '点击查看此版本的更改。',
     verTitle: '正在运行的服务器版本。插件更新后它会继续运行，直到重启为止，所以这里的版本号较旧就说明服务器是旧的。',
     connTitle: '与本地服务器的实时连接', connecting: '连接中…', live: '实时', disconnected: '已断开',
     lastUpdate: t => ` · 最近更新 ${t}`,

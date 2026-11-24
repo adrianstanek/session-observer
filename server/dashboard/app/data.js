@@ -91,8 +91,7 @@ function connectLiveUpdates() {
   stream.onopen = () => { state.connected = true; scheduleRender('header'); };
   stream.onerror = () => { state.connected = false; scheduleRender('header'); };
   stream.addEventListener('hello', message => {
-    const version = JSON.parse(message.data).version;
-    elementById('ver').textContent = version ? 'v' + version : '';
+    renderVersion(JSON.parse(message.data).version);
   });
   stream.addEventListener('session', message => {
     const session = JSON.parse(message.data);

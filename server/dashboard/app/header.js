@@ -1,9 +1,19 @@
 'use strict';
-// Session Observer dashboard — the header: connection, working sessions, Freeze, and the Settings menu (theme, language,
-// Clear log).
+// Session Observer dashboard — the header: the version (linked to its release notes), connection, working sessions,
+// Freeze, the Settings menu (theme, language, Report an issue, Clear log) and the GitHub button.
 // (The Notify menu is features/alerts.)
 const NEXT_THEME = { auto: 'dark', dark: 'light', light: 'auto' };
 const PAGE_TITLE = document.title;
+const REPO_URL = 'https://github.com/radekwojpl2/session-observer';
+
+// the server's version, linked to its release notes (release-please tags each release v<version>)
+function renderVersion(version) {
+  const label = elementById('ver');
+  label.textContent = version ? 'v' + version : '';
+  if (version) label.href = `${REPO_URL}/releases/tag/v${encodeURIComponent(version)}`;
+  else label.removeAttribute('href');
+  label.title = TEXT.verTitle + (version ? ' ' + TEXT.releaseNotes : '');
+}
 
 function renderHeader() {
   const connection = elementById('conn');
@@ -39,6 +49,8 @@ function initLanguageMenu() {
 }
 
 function initHeaderButtons() {
+  elementById('repoLink').href = REPO_URL;
+  elementById('reportIssue').href = REPO_URL + '/issues/new';
   elementById('theme').onclick = () => {
     state.theme = NEXT_THEME[state.theme] || 'auto';
     storage.set(SETTING_KEYS.theme, state.theme);

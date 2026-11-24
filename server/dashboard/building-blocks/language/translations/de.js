@@ -24,6 +24,7 @@ TRANSLATIONS.de = (() => {
     themes: { auto: 'auto', dark: 'dunkel', light: 'hell' },
 
     language: 'Sprache', settings: 'Einstellungen', langAuto: 'Auto',
+    githubTitle: 'Session Observer auf GitHub', reportIssue: 'Problem melden', releaseNotes: 'Klicken, um zu sehen, was sich in dieser Version geändert hat.',
     verTitle: 'Version des laufenden Servers. Er läuft nach einem Plugin-Update weiter, bis er neu gestartet wird; eine ältere Nummer hier bedeutet also einen alten Server.',
     connTitle: 'Live-Verbindung zum lokalen Server', connecting: 'verbinde…', live: 'live', disconnected: 'getrennt',
     lastUpdate: t => ` · letzte Aktualisierung ${t}`,

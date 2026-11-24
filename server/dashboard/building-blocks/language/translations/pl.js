@@ -26,6 +26,7 @@ TRANSLATIONS.pl = (() => {
     themes: { auto: 'auto', dark: 'ciemny', light: 'jasny' },
 
     language: 'Język', settings: 'Ustawienia', langAuto: 'Auto',
+    githubTitle: 'Session Observer na GitHubie', reportIssue: 'Zgłoś problem', releaseNotes: 'Kliknij, aby zobaczyć, co zmieniło się w tej wersji.',
     verTitle: 'Wersja działającego serwera. Działa dalej po aktualizacji wtyczki, dopóki nie zostanie uruchomiony ponownie, więc starszy numer oznacza stary serwer.',
     connTitle: 'Połączenie na żywo z lokalnym serwerem', connecting: 'łączenie…', live: 'na żywo', disconnected: 'rozłączono',
     lastUpdate: t => ` · ostatnia aktualizacja ${t}`,

@@ -26,6 +26,7 @@ TRANSLATIONS.en = (() => {
 
     // header and filters (the page's own text)
     language: 'Language', settings: 'Settings', langAuto: 'Auto',
+    githubTitle: 'Session Observer on GitHub', reportIssue: 'Report an issue', releaseNotes: 'Click to see what changed in this version.',
     verTitle: 'Version of the running server. It keeps running after a plugin update until it is restarted, so an older number here means an old server.',
     connTitle: 'Live connection to the local server', connecting: 'connecting…', live: 'live', disconnected: 'disconnected',
     lastUpdate: t => ` · last update ${t}`,
