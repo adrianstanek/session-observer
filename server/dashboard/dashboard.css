@@ -359,8 +359,7 @@ details[open] > summary::after { transform: translateY(-50%) rotate(90deg); }
 details > summary:hover::before { border-color: var(--accent); }
 details > summary:hover::after { background: var(--text); }
 :root { --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M7 5l4 4l-4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-details.key { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
-details.key summary { font-weight: 500; }
+details.key { margin-bottom: 14px; } /* a section like Prompt / Reply / Events, so the toggles line up */
 /* Details panel sections (Prompt / Reply / Events): the section label is the toggle */
 details.dsec > summary.lbl2 { display: block; line-height: 18px; }
 details.dsec:not([open]) > summary.lbl2 { margin-bottom: 0; }

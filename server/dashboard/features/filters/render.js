@@ -3,7 +3,7 @@
 const categoryColor = category => (CATEGORY_COLOR[category] === 'err' ? 'var(--err)' : `var(--s-${CATEGORY_COLOR[category]})`);
 
 // whether any filter is set (Range is a window, not a filter)
-const filtersActive = () => !!(state.searchText || state.group || state.category || state.onlyProblems || state.agent);
+const filtersActive = () => anyFilterActive() || !!state.agent;
 
 // a chip per event category in the loaded events, with its count and problems; a click filters to it
 function renderCategoryChips() {

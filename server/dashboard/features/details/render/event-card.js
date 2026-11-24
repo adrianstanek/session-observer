@@ -12,7 +12,7 @@ function colourKeyHtml(turn) {
   const techKey = techs.length
     ? `<div class="muted" style="margin-top:12px;font-size:12px">${escapeHtml(TEXT.langsInTurn)}</div><div class="keygrid">${techs.map(id => `<div>${techBadgeIcon(id)}<span>${escapeHtml(TECH_BADGES[id].name)}</span></div>`).join('')}</div>` : '';
   const groups = TOOL_GROUPS.map(group => `<div style="color:var(--s-${group.id})">${iconSvg(group.id)}<span style="color:var(--text)">${group.label}</span></div>`).join('');
-  return `<details class="key dsec" data-dsec="key"${isDetailSectionOpen('key', false) ? ' open' : ''}><summary>${escapeHtml(TEXT.colourKey)}</summary><div class="keygrid">${groups}
+  return `<details class="key dsec" data-dsec="key"${isDetailSectionOpen('key', false) ? ' open' : ''}><summary class="lbl2">${escapeHtml(TEXT.colourKey)}</summary><div class="keygrid">${groups}
     <div><span style="color:var(--ok)">●</span> ${escapeHtml(TEXT.running)}</div><div><span class="muted">·</span> ${escapeHtml(TEXT.event.done)}</div><div><span class="err">✕</span> ${escapeHtml(TEXT.failedDenied)}</div><div><span style="color:var(--s-model)">◆</span> ${escapeHtml(TEXT.modelReply)}</div></div>${techKey}</details>`;
 }
 
