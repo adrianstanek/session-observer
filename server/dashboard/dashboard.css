@@ -620,6 +620,8 @@ details.cx.grp .chip.err { color: var(--err); border-color: color-mix(in srgb, v
 
 /* keyboard shortcuts dialog (features/shortcuts) */
 #shortcuts { padding: 0; width: min(620px, calc(100vw - 32px)); max-height: min(80vh, 720px); color: var(--text); box-shadow: 0 12px 40px rgba(0, 0, 0, .35); }
+#shortcuts { overflow: auto; }
+#shortcuts a { color: var(--accent); }
 #shortcuts::backdrop { background: rgba(0, 0, 0, .45); }
 #shortcuts .kbody { padding: 14px 18px 18px; }
 #shortcuts .khead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
@@ -629,5 +631,6 @@ details.cx.grp .chip.err { color: var(--err); border-color: color-mix(in srgb, v
 #shortcuts .knote { margin: 0 0 8px; }
 #shortcuts .ktable { width: 100%; border-collapse: collapse; }
 #shortcuts .ktable td { padding: 6px 4px; border-top: 1px solid var(--line-2); vertical-align: top; }
-#shortcuts .kkeys { white-space: nowrap; width: 1%; padding-right: 18px; }
+#shortcuts .kkeys { width: 38%; padding-right: 18px; line-height: 1.9; }
+#shortcuts .kalt { white-space: nowrap; }
 #shortcuts kbd { font: 12px var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; }

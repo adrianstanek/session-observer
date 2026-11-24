@@ -2,7 +2,8 @@
 // Session Observer dashboard — keyboard shortcuts: the dialog, a tab per section of SHORTCUT_SECTIONS.
 let shortcutSection = SHORTCUT_SECTIONS[0].id;
 
-const keyHtml = keys => keys.map(key => key.split('+').map(part => `<kbd>${escapeHtml(part.trim())}</kbd>`).join('+'))
+// "Ctrl+R" → keys pressed together; "Esc Esc" → keys pressed one after the other
+const keyHtml = keys => keys.map(key => '<span class="kalt">' + key.split(' ').map(step => step.split('+').map(part => `<kbd>${escapeHtml(part)}</kbd>`).join('+')).join(' ') + '</span>')
   .join(` <span class="muted">${escapeHtml(TEXT.shortcuts.or)}</span> `);
 
 // what a row does; the view keys name the views as the tabs do
@@ -11,7 +12,8 @@ const shortcutText = row => (row.what === 'views' ? `${TEXT.shortcuts.views}: ${
 function shortcutSectionHtml(section) {
   const note = TEXT.shortcuts[section.id + 'Note'];
   const rows = section.rows.map(row => `<tr><td class="kkeys">${keyHtml(row.keys)}</td><td>${escapeHtml(shortcutText(row))}</td></tr>`).join('');
-  return (note ? `<p class="muted knote">${escapeHtml(note)}</p>` : '') + `<table class="ktable"><tbody>${rows}</tbody></table>`;
+  const docs = section.docs ? ` <a href="${escapeHtml(section.docs)}" target="_blank" rel="noopener noreferrer">${escapeHtml(TEXT.shortcuts.fullList)}</a>` : '';
+  return (note || docs ? `<p class="muted knote">${escapeHtml(note || '')}${docs}</p>` : '') + `<table class="ktable"><tbody>${rows}</tbody></table>`;
 }
 
 function renderShortcutsDialog() {

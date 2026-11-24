@@ -219,7 +219,7 @@ Choose **Notify** in the header to get a desktop notification when a session nee
 
 ### Keyboard shortcuts
 
-Press **?** (or the **?** button in the header) for the list. **j** / **k** (or **]** / **[**) step through the turns, **Esc** closes the turn, **/** goes to the search, and **1**–**5** switch between Home, Overview, Route, Chat and Context.
+Press **?** (or the **?** button in the header) for the list. **j** / **k** (or **]** / **[**) step through the turns, **Esc** closes the turn, **/** goes to the search, and **1**–**5** switch between Home, Overview, Route, Chat and Context. The same dialog has tabs with common Claude Code and Codex keys, linked to each agent's docs.
 
 ### Dashboard languages
 
