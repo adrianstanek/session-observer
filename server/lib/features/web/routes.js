@@ -9,10 +9,10 @@ const { sessionContext } = require('../context/session-context');
 const { addClient, broadcast } = require('../../building-blocks/live-updates');
 
 const ALL_SESSIONS = 'all'; // the session id in /api/events?session= that asks for every session's events
-const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+const ASSET_CONTENT_TYPES = { '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png' };
 // a file in the dashboard folder or its subfolders: every part of the path is a plain name (letters, digits, - and _,
 // never a dot), and the file has a known extension, so a request can't leave the folder
-const ASSET_PATH = /^[/]dashboard[/]((?:[A-Za-z0-9_-]+[/])*[A-Za-z0-9_-]+)([.]css|[.]js)$/;
+const ASSET_PATH = /^[/]dashboard[/]((?:[A-Za-z0-9_-]+[/])*[A-Za-z0-9_-]+)([.]css|[.]js|[.]png)$/;
 
 function sendJson(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -67,6 +67,9 @@ function serveDashboardPage(response) {
 function serveDashboardAsset(response, [, relativePath, extension]) {
   fs.readFile(path.join(DASHBOARD_ASSETS_DIR, ...relativePath.split('/')) + extension, (error, body) => {
     if (error) return sendError(response, 404, 'not found');
+    // the browser itself fetches a notification's icon, outside the page, so same-origin would block it;
+    // an image here is only the app logo, safe for anyone to load
+    if (extension === '.png') response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     response.writeHead(200, { 'Content-Type': ASSET_CONTENT_TYPES[extension], 'Cache-Control': 'no-store' });
     response.end(body);
   });

@@ -2,6 +2,8 @@
 // Session Observer dashboard — alerts: the Notify menu in the header, and the desktop notifications it turns on.
 // A notification shows only while the dashboard window is not focused; a click on it opens the session.
 const ALERT_BODY_MAX = 160;
+// the app icon (docs/brand/icon-eye/icon-eye-256.png) as a PNG file: Windows toasts don't draw SVG or data: icons
+const ALERT_ICON = 'dashboard/icon.png';
 const notificationsSupported = () => typeof Notification === 'function';
 
 function alertNotification(alert) {
@@ -15,7 +17,7 @@ function showAlert(alert) {
   const { title, body } = alertNotification(alert);
   try {
     // one notification per session: a newer one replaces the older
-    const notification = new Notification(title, { body, tag: 'so-' + alert.session.id, renotify: true, requireInteraction: alert.kind === 'needsYou' });
+    const notification = new Notification(title, { body, icon: ALERT_ICON, tag: 'so-' + alert.session.id, renotify: true, requireInteraction: alert.kind === 'needsYou' });
     notification.onclick = () => {
       window.focus();
       notification.close();

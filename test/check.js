@@ -43,7 +43,8 @@ const html = fs.readFileSync(path.join(ROOT, 'server', 'dashboard.html'), 'utf8'
 // data: URIs (the inline tab icon) are not files
 const refs = [...html.matchAll(/<(?:script[^>]*[ ]src|link[^>]*[ ]href)="([^"]+)"/g)].map(m => m[1]).filter(r => !r.startsWith('data:'));
 for (const r of refs) if (!fs.existsSync(path.join(ROOT, 'server', r))) fail(`server/dashboard.html: ${r} does not exist`);
-for (const f of walk(path.join(ROOT, 'server', 'dashboard')).map(p => rel(p).slice('server/'.length))) {
+// scripts and styles only: images (the notification icon) are loaded by code, not by the page
+for (const f of walk(path.join(ROOT, 'server', 'dashboard')).map(p => rel(p).slice('server/'.length)).filter(f => /[.](js|css)$/.test(f))) {
   if (!refs.includes(f)) fail(`server/${f}: not loaded by server/dashboard.html`);
 }
 // each script is strict on its own (they are separate files, so one 'use strict' no longer covers them all)
