@@ -10,13 +10,14 @@ function initControls() {
   initFilterControls();
   applyTheme();
   initHeaderButtons();
-  initReplayControls();
   initViewClicks();
   initViewHover();
   initDetailsControls();
   initSessionsControls();
   initOverviewControls();
   initHomeControls();
+  initAlertControls();
+  initShortcutControls();
   initPointerHold();
   setInterval(() => { if (!state.frozen) scheduleRender('header', 'sessions', 'mid'); }, AGO_REFRESH_MS); // refresh "ago" labels
 }

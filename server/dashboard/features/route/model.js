@@ -66,7 +66,7 @@ function assignLanes(stops, branches) {
   return maxLane;
 }
 
-function buildRouteModel(turn, limit) {
+function buildRouteModel(turn) {
   const route = createRouteBuilder();
   const { stops, branches, lastStepOfLane, addStop, branchOf } = route;
   const openToolStops = new Map();  // tool_use_id → its stop, until the result arrives
@@ -77,7 +77,7 @@ function buildRouteModel(turn, limit) {
   // a stop on the main line (never on a subagent's branch)
   const addMainStop = (event, group, label, detail) => addStop(stopFor(event, { group, label, detail }), null);
 
-  for (const event of turn.events.filter(candidate => eventTime(candidate) <= limit)) {
+  for (const event of turn.events) {
     const data = event.data || {}, group = toolGroupOfEvent(event) || 'other', branch = branchOf(data);
     lastEventTime = Math.max(lastEventTime, eventTime(event));
     switch (event.event) {
@@ -184,21 +184,21 @@ function buildRouteModel(turn, limit) {
 
 // ---- context at the end of a turn
 // the last main-line model step's context tokens (null if none reported yet)
-function turnEndContextTokens(turn, limit) {
+function turnEndContextTokens(turn) {
   let tokens = null;
   for (const event of turn.events) {
     const data = event.data;
-    if (event.event === 'ModelStep' && !data?.subagent && data?.agent_id == null && data?.tokens?.context && eventTime(event) <= limit) tokens = data.tokens.context;
+    if (event.event === 'ModelStep' && !data?.subagent && data?.agent_id == null && data?.tokens?.context) tokens = data.tokens.context;
   }
   return tokens;
 }
 
 // context at the end of this turn, its change from the end of the turn before, and how full the window is
-function turnContextInfo(sessionTurns, turn, limit) {
-  const tokens = turnEndContextTokens(turn, limit);
+function turnContextInfo(sessionTurns, turn) {
+  const tokens = turnEndContextTokens(turn);
   if (tokens == null) return null;
   let previous = null;
-  for (let index = sessionTurns.indexOf(turn) - 1; index >= 0 && previous == null; index--) previous = turnEndContextTokens(sessionTurns[index], limit);
+  for (let index = sessionTurns.indexOf(turn) - 1; index >= 0 && previous == null; index--) previous = turnEndContextTokens(sessionTurns[index]);
   const session = state.sessions.get(turn.sessionId);
   const window = contextWindowFor(session?.agent, session?.context?.window, tokens);
   const change = previous == null ? null : tokens - previous;

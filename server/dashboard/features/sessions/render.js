@@ -43,18 +43,21 @@ function sessionChipsHtml(session) {
     + (session.context ? `<span class="chip" title="${escapeHtml(TEXT.ctxWindow)}">${escapeHtml(TEXT.ctxShort)} ${Math.round(session.context.pct * 100)}%</span>` : '');
 }
 
-// The list shows only the state dot and the title; the rest is in a card that floats beside it on hover.
-function sessionCardHtml(session) {
+// The list shows the state dot, the title, and under it when and where; the rest is in a card that floats beside it on hover.
+// The agent badge shows only when the list has sessions of more than one agent.
+function sessionCardHtml(session, showAgent) {
   const [status, dotClass] = sessionStatus(session);
   const outputTokens = session.usage ? session.usage.output : 0;
   const lastTool = !session.ended && session.lastTool
     ? `<div class="meta">${escapeHtml(TEXT.lastLbl)} <b>${escapeHtml(toolDisplayName(session.lastTool.name))}</b> <span class="mono">${escapeHtml(shorten(session.lastTool.arg, 60))}</span></div>` : '';
   const name = escapeHtml(sessionName(session));
-  const agentTag = seesSeveralAgents() ? agentBadgeHtml(session.agent, 'agent-tag') : '';
+  const agentTag = showAgent ? agentBadgeHtml(session.agent, 'agent-tag') : '';
+  const where = [session.last ? formatAgo(session.last) : '', baseName(session.cwd || '')].filter(Boolean).join(' · ');
   const meta = `${session.last ? escapeHtml(formatAgo(session.last)) : ''} · ${escapeHtml(countOf(session.turns || 0, 'turn'))} · ${escapeHtml(countOf(session.toolCalls || 0, 'tool'))}`
     + (outputTokens ? ` · ${escapeHtml(TEXT.outX(formatCompactNumber(outputTokens)))}` : '');
   return `<div class="card ${session.id === state.scope ? 'sel' : ''}" data-id="${escapeHtml(session.id)}">
         <div class="row1"><span class="${dotClass}" title="${status}"></span><span class="name">${name}</span>${agentTag}<button class="session-delete" type="button" data-delete-session="${escapeHtml(session.id)}" title="${escapeHtml(TEXT.deleteSessionTitle)}" aria-label="${escapeHtml(TEXT.deleteSessionTitle)}">×</button></div>
+        ${where ? `<div class="sline">${escapeHtml(where)}</div>` : ''}
         <template class="sdet"><div class="row1"><span class="name">${name}</span><span class="state"><span class="${dotClass}"></span>${status}</span></div>
         <div class="meta">${meta}</div>${lastTool}
         <div class="chips">${sessionChipsHtml(session)}</div></template>
@@ -72,6 +75,7 @@ function renderSessions() {
   // the agent filter shows once there is more than one agent to choose from (or one is chosen)
   elementById('agentFilter').style.display = seesSeveralAgents() || state.agent ? '' : 'none';
   const sessions = visibleSessions();
+  const showAgent = new Set(sessions.map(session => session.agent || DEFAULT_AGENT)).size > 1;
   const panel = elementById('sessions'), scrollTop = panel.scrollTop;
   panel.innerHTML = `
     <div class="card ${state.scope === ALL_SESSIONS ? 'sel' : ''}" data-id="all">
@@ -79,7 +83,7 @@ function renderSessions() {
       <div class="meta">${escapeHtml(TEXT.everySession)}</div>
     </div>
     <div class="sect">${escapeHtml(TEXT.sessions)} <span>${sessions.length}</span></div>
-    <div class="sess-list">${sessions.map(sessionCardHtml).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>${olderSessionsHtml()}`;
+    <div class="sess-list">${sessions.map(session => sessionCardHtml(session, showAgent)).join('') || `<div class="empty">${escapeHtml(TEXT.noSessions)}</div>`}</div>${olderSessionsHtml()}`;
   panel.scrollTop = scrollTop;
   renderSessionHoverCard(); // the list was rebuilt: refresh (or hide) the hover card
 }

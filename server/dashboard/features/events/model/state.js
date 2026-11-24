@@ -1,5 +1,5 @@
 'use strict';
-// Session Observer dashboard — the page state: what is loaded, selected, filtered, replayed and shown.
+// Session Observer dashboard — the page state: what is loaded, selected, filtered and shown.
 const ALL_SESSIONS = 'all';
 const DEFAULT_RANGE_MS = 24 * 60 * 60 * 1000; // the time range shown until another one is picked
 
@@ -17,12 +17,6 @@ const state = {
   category: '',
   onlyProblems: false,
   agent: storage.get(SETTING_KEYS.agent, ''), // '' = every agent, or one agent's id (agents.js)
-  // replay
-  replayCursor: null,       // the replayed time (ms); null while following live
-  replaying: false,
-  replaySpeed: Number(storage.get(SETTING_KEYS.replaySpeed, 5)),
-  replayIndex: 0,           // how many events the replay has applied
-  lastReplayTick: 0,
   // live updates
   frozen: false,            // Freeze: new events wait in frozenEvents until resumed
   frozenEvents: [],
@@ -38,11 +32,6 @@ let turnBySeq = new Map();
 
 const rangeCutoffIso = () => (state.rangeMs ? new Date(Date.now() - state.rangeMs).toISOString() : null);
 const anyFilterActive = () => !!(state.group || state.category || state.onlyProblems || state.searchText);
-// now, or the replayed time
-const displayTime = () => state.replayCursor ?? Date.now();
-const replayLimit = () => state.replayCursor ?? Infinity;
-// how many of the loaded events are shown: all of them live, those up to the replay cursor while replaying
-const shownEventCount = () => (state.replayCursor == null ? state.events.length : Math.min(state.replayIndex, state.events.length));
 const findTurn = key => allTurns.find(turn => turn.key === key);
 const selectedTurn = () => (state.selectedTurnKey ? findTurn(state.selectedTurnKey) : null);
 

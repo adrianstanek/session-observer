@@ -26,6 +26,40 @@ async function loadOlderSessions(button) {
   button.disabled = false;
 }
 
+// ---- switching sessions from the keyboard (features/shortcuts): the list's order, All activity first
+
+// the sessions panel scrolls just enough to show the selected card
+function revealSelectedSession() {
+  renderSessions();
+  const panel = elementById('sessions');
+  const card = panel.querySelector('.card.sel');
+  if (!card) return;
+  const cardBox = card.getBoundingClientRect(), panelBox = panel.getBoundingClientRect();
+  if (cardBox.top < panelBox.top) panel.scrollTop -= panelBox.top - cardBox.top;
+  else if (cardBox.bottom > panelBox.bottom) panel.scrollTop += cardBox.bottom - panelBox.bottom;
+}
+
+function selectSessionFromKeyboard(id) {
+  if (id === state.scope) return;
+  selectScope(id);
+  revealSelectedSession();
+}
+
+// the next (+1) or previous (-1) entry of the sessions panel
+function selectAdjacentSession(direction) {
+  const ids = [ALL_SESSIONS, ...visibleSessions().map(session => session.id)];
+  const index = ids.indexOf(state.scope);
+  const next = index < 0 ? 0 : Math.max(0, Math.min(ids.length - 1, index + direction));
+  selectSessionFromKeyboard(ids[next]);
+}
+
+// the next session waiting on you, longest-waiting first, round and round
+function selectNextSessionNeedingYou() {
+  const ids = sessionsNeedingYou([...state.sessions.values()]).map(session => session.id);
+  if (!ids.length) return;
+  selectSessionFromKeyboard(ids[(ids.indexOf(state.scope) + 1) % ids.length]);
+}
+
 function initSessionsControls() {
   elementById('sessions').onclick = event => {
     const deleteButton = event.target.closest('[data-delete-session]');

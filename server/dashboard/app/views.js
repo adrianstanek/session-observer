@@ -25,8 +25,9 @@ function setView(id, historyMode = 'push') {
   document.querySelector('.stage').dataset.layout = id;
   elementById('filters').dataset.layout = id;
   elementById('panels').dataset.layout = id;
-  elementById('layouts').innerHTML = VIEWS.map(view =>
-    `<button role="tab" aria-selected="${view.id === id}" data-layout="${view.id}" class="${view.id === id ? 'cur' : ''}">${view.label}</button>`).join('');
+  // each tab's tooltip names its key (1 – 5, features/shortcuts)
+  elementById('layouts').innerHTML = VIEWS.map((view, index) =>
+    `<button role="tab" aria-selected="${view.id === id}" data-layout="${view.id}" class="${view.id === id ? 'cur' : ''}" title="${escapeHtml(view.label)} (${index + 1})" aria-keyshortcuts="${index + 1}">${view.label}</button>`).join('');
   viewNeedsDrawing = true;
   activityChanged = true;
   renderDetails(); // Details follows the Context view's order

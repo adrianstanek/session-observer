@@ -10,7 +10,7 @@ function setAgentFilter(agent) {
   state.agent = agent;
   elementById('agent').value = agent;
   storage.set(SETTING_KEYS.agent, agent);
-  scheduleRender('sessions');
+  scheduleRender('sessions', 'cats');
   loadScope();
 }
 

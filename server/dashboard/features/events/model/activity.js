@@ -1,5 +1,5 @@
 'use strict';
-// Session Observer dashboard — running totals of activity, rebuilt up to the replay cursor: counts by tool group, the
+// Session Observer dashboard — running totals of activity: counts by tool group, the
 // tool calls and subagents in flight, and the busy sessions. The Overview's group cards and the Route read them.
 function emptyActivity() {
   return {
@@ -53,16 +53,9 @@ function applyEventToActivity(event) {
   activityChanged = true;
 }
 
-// all events up to the replay cursor (or all of them, live)
+// from all the loaded events
 function rebuildActivity() {
   activity = emptyActivity();
-  const limit = replayLimit();
-  let index = 0;
-  for (; index < state.events.length; index++) {
-    const event = state.events[index];
-    if (eventTime(event) > limit) break;
-    applyEventToActivity(event);
-  }
-  state.replayIndex = index;
+  for (const event of state.events) applyEventToActivity(event);
   activityChanged = true;
 }

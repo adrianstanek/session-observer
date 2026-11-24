@@ -12,8 +12,9 @@ const storage = {
 // the keys the page's settings are saved under; each is read in one file and written in another. (The language's key
 // is LANGUAGE_STORAGE_KEY in i18n.js, which loads before this file.)
 const SETTING_KEYS = {
-  theme: 'so.theme', layout: 'so.layout', range: 'so.range', replaySpeed: 'so.speed', detailSections: 'so.dsec',
+  theme: 'so.theme', layout: 'so.layout', range: 'so.range', detailSections: 'so.dsec',
   agent: 'so.agent', contextRange: 'so.ctxMode', contextOrder: 'so.ctxOrder', contextBookkeeping: 'so.ctxMeta',
+  alerts: 'so.notify',
 };
 
 // CSS animations restart when their element is re-rendered: this placeholder becomes a negative delay that keeps

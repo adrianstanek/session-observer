@@ -21,7 +21,7 @@ function loadRendering() {
     buildTurns: () => [],
     renderHeader: () => rendered.push('header'),
     renderSessions: () => rendered.push('sessions'),
-    renderCategoryChips: () => {}, renderOverview: () => {}, renderDetails: () => {}, renderReplayBar: () => {},
+    renderCategoryChips: () => {}, renderOverview: () => {}, renderDetails: () => {},
     markViewDirty: () => {},
     viewNeedsDrawing: false,
   });

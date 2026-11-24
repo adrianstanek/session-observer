@@ -57,14 +57,8 @@ function roundedPolylinePath(points) {
 }
 
 // ---- which turns are drawn
-// the turn to show: the selected one, else the latest that started by the replay cursor
-function routeTurn(limit) {
-  const pinned = selectedTurn();
-  if (pinned) return pinned;
-  let latest = null;
-  for (const turn of allTurns) if (Date.parse(turn.start) <= limit) latest = turn;
-  return latest;
-}
+// the turn to show: the selected one, else the latest
+const routeTurn = () => selectedTurn() || allTurns[allTurns.length - 1] || null;
 
 // this session's turns, newest first (at most ROUTE_TURNS_MAX, always including the focused one)
 function routeTurnChain(sessionTurns, focused) {
@@ -90,11 +84,11 @@ const isRouteTurnOpen = turn => routeTurnOpen.get(turn.key) === true;
 
 // The stops of every open turn, numbered across the whole drawing, plus the end-of-turn stops and the tails of
 // subagents still running.
-function collectRouteStops(chain, now, limit) {
+function collectRouteStops(chain, now) {
   const stops = [], models = new Map(), runningTailIndexes = [];
   const newest = chain[0];
   for (const turn of chain) {
-    const model = buildRouteModel(turn, limit), offset = stops.length;
+    const model = buildRouteModel(turn), offset = stops.length;
     models.set(turn.key, model);
     if (!isRouteTurnOpen(turn)) continue;
     let furthest = 0;
@@ -105,7 +99,7 @@ function collectRouteStops(chain, now, limit) {
       stops.push(stop);
       furthest = Math.max(furthest, stop.position);
     }
-    const isLive = !model.endEvent && turn === newest && (state.replayCursor != null || isTurnRunning(turn));
+    const isLive = !model.endEvent && turn === newest && isTurnRunning(turn);
     const mainLineRunning = model.stops.some(stop => stop.running && stop.lane === 0);
     if (model.endEvent || (isLive && !mainLineRunning)) stops.push(endOfTurnStop(turn, model, stops, offset, furthest, now));
     for (const branch of model.branches.values()) if (!branch.closed && branch.running) runningTailIndexes.push(branch.lastStopIndex + offset);
@@ -213,12 +207,12 @@ function linkPaths({ from, to, kind, lane }, rows, rightEdge) {
 const endStopColor = stop => (stop.failed ? 'var(--err)' : stop.isPending ? 'var(--faint)' : 'var(--ok)');
 
 function turnDividerSvg(row, drawing) {
-  const { focused, pinned, sessionTurns, models, limit, usableWidth, fullWidth } = drawing;
+  const { focused, pinned, sessionTurns, models, usableWidth, fullWidth } = drawing;
   const turn = row.dividerTurn, number = sessionTurns.indexOf(turn) + 1, isFocused = turn.key === focused.key, y = row.dividerY + DIVIDER.lineTop;
   const model = models.get(turn.key);
   const summary = row.collapsed && model
     ? ` · ${countOf(model.stepCount, 'step')} · ${countOf(model.toolCount, 'tool')}${model.problemCount ? ` · ✕${model.problemCount}` : ''}` : '';
-  const context = turnContextInfo(sessionTurns, turn, limit);
+  const context = turnContextInfo(sessionTurns, turn);
   const promptColumns = context
     ? Math.max(DIVIDER.minPromptColumns, Math.floor((usableWidth - DIVIDER.badgeSpace) / DIVIDER.charWidth) - DIVIDER.prefixColumns)
     : DIVIDER.promptColumnsWithoutBadge;
@@ -316,17 +310,16 @@ function stopSvg(stop, drawing) {
 }
 
 function routeViewHtml() {
-  const box = viewBox(), boxWidth = box.clientWidth, boxHeight = box.clientHeight, now = displayTime();
+  const box = viewBox(), boxWidth = box.clientWidth, boxHeight = box.clientHeight, now = Date.now();
   if (boxWidth < ROUTE_MIN_BOX.width || boxHeight < ROUTE_MIN_BOX.height) return '';
-  const limit = replayLimit();
   const pinned = selectedTurn();
-  const focused = routeTurn(limit);
+  const focused = routeTurn();
   if (!focused) return `<div class="empty">${escapeHtml(TEXT.noTurnsRoute)}</div>`;
 
-  const sessionTurns = allTurns.filter(turn => turn.sessionId === focused.sessionId && Date.parse(turn.start) <= limit);
+  const sessionTurns = allTurns.filter(turn => turn.sessionId === focused.sessionId);
   const chain = routeTurnChain(sessionTurns, focused);
   updateOpenTurns(chain, focused);
-  const { stops, models, runningTailIndexes } = collectRouteStops(chain, now, limit);
+  const { stops, models, runningTailIndexes } = collectRouteStops(chain, now);
 
   const usableWidth = Math.max(160, boxWidth - 2 * ROUTE.sidePadding - 30);
   const fullWidth = usableWidth + 2 * ROUTE.sidePadding;
@@ -334,7 +327,7 @@ function routeViewHtml() {
   const links = routeLinks(stops);
   const height = placeRowsVertically(rows, stops, links);
   const drawing = {
-    focused, pinned, sessionTurns, models, limit, now, usableWidth, fullWidth,
+    focused, pinned, sessionTurns, models, now, usableWidth, fullWidth,
     rightEdge: fullWidth - ROUTE.edgeInset,
     lineKeys: stopLineKeys(stops),
     dimClass: stop => (pinned && stop.turnKey !== focused.key ? ' dim' : ''),
@@ -349,5 +342,5 @@ function routeViewHtml() {
 
   const focusedRow = rows.find(row => row.dividerTurn === focused);
   const focusedY = focusedRow ? Math.max(0, focusedRow.dividerY - 6) : 0;
-  return routeFrameHtml({ focused, pinned, sessionTurns, models, limit, boxHeight, svg, focusedY });
+  return routeFrameHtml({ focused, pinned, sessionTurns, models, boxHeight, svg, focusedY });
 }

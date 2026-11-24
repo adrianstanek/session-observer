@@ -25,7 +25,7 @@ TRANSLATIONS.en = (() => {
     themes: { auto: 'auto', dark: 'dark', light: 'light' },
 
     // header and filters (the page's own text)
-    language: 'Language', langAuto: 'Auto',
+    language: 'Language', settings: 'Settings', langAuto: 'Auto',
     verTitle: 'Version of the running server. It keeps running after a plugin update until it is restarted, so an older number here means an old server.',
     connTitle: 'Live connection to the local server', connecting: 'connecting…', live: 'live', disconnected: 'disconnected',
     lastUpdate: t => ` · last update ${t}`,
@@ -34,6 +34,39 @@ TRANSLATIONS.en = (() => {
     freeze: 'Freeze', unfreeze: n => `Unfreeze${n ? ` (${n} new)` : ''}`,
     theme: v => `Theme: ${v}`,
     clearLog: 'Clear log', clearLogTitle: 'Delete the local event log', clearConfirm: 'Delete all recorded events?',
+    // the Notify menu in the header, and the desktop notifications it turns on
+    // the keyboard shortcuts dialog (? in the header)
+    shortcuts: {
+      title: 'Keyboard shortcuts', buttonTitle: 'Keyboard shortcuts (?)', close: 'Close', or: 'or', dashboard: 'Dashboard',
+      nextSession: 'Next session', prevSession: 'Previous session', allSessions: 'All activity', needsYouSession: 'Next session that needs you',
+      nextTurn: 'Next turn', prevTurn: 'Previous turn', closeTurn: 'Close the turn, or leave the search', search: 'Search', views: 'Switch view', help: 'Show or hide this list',
+      claudeCode: 'Claude Code',
+      claudeCodeNote: 'Common keys from the Claude Code docs; they can change between versions. On macOS, Alt is Option (some need Option set as Meta in the terminal).',
+      fullList: 'Full list',
+      ccInterrupt: 'Interrupt, or clear the prompt; press twice to exit',
+      ccEsc: 'Interrupt Claude, or close a dialog',
+      ccRewind: 'Clear the prompt; on an empty prompt, go back to an earlier point',
+      ccModes: 'Cycle the permission modes, plan mode among them',
+      ccTranscript: 'Show or hide the transcript',
+      searchHistory: 'Search earlier prompts',
+      ccBackground: 'Send a running command or agent to the background',
+      ccTasks: 'Show or hide the task list',
+      ccEditor: 'Write the prompt in your text editor',
+      ccStash: 'Set the prompt aside, or bring it back',
+      ccImage: 'Paste an image (Alt+V on Windows)',
+      ccModel: 'Switch the model',
+      newline: 'New line in the prompt',
+      ccSlash: 'Run a command or a skill',
+      ccShell: 'Shell mode: run a command; Claude sees its output',
+      mention: 'Add a file by its path',
+      ccHelp: 'All shortcuts (on an empty prompt)',
+    },
+    alerts: {
+      modes: { off: 'Notify: off', needsYou: 'Notify: needs you', alsoDone: 'Notify: also when done' },
+      title: 'Desktop notifications while this window is not in focus',
+      blocked: 'The browser blocks notifications for this page. Allow them in the site settings.',
+      needsYou: n => `${n} needs you`, done: n => `${n} is done`, doneBody: 'It waits for your next prompt.',
+    },
     deleteSessionTitle: 'Delete this session and its stored data',
     deleteSessionConfirm: name => `Delete “${name}” and its stored Session Observer data? The original app transcript will stay. This cannot be undone.`,
     deleteSessionFailed: reason => `Could not delete the session: ${reason}`,
@@ -43,13 +76,11 @@ TRANSLATIONS.en = (() => {
     range: 'Range', range1h: 'last 1 h', range6h: 'last 6 h', range24h: 'last 24 h', range7d: 'last 7 d', rangeAll: 'everything',
     search: 'Search', searchPh: 'prompts, replies, commands, paths, errors…',
     group: 'Tool group', groupTitle: 'Which part of the map: Files, Shell, Git, MCP…', allGroups: 'all groups', agent: 'Agent', allAgents: 'all agents', agentTitle: 'Show sessions from Claude Code, Codex or both',
-    onlyProblems: 'only problems', resetFilters: 'Reset filters', view: 'View',
-    replayBtn: '▶ Replay', pauseBtn: '❚❚ Pause', speedTitle: 'Replay speed', liveBtn: 'Live',
-    replaying: 'Replaying', paused: 'Paused',
+    onlyProblems: 'only problems', filters: 'Filters', resetFilters: 'Reset filters', view: 'View',
 
     // shared words
     subagent: 'Subagent', subagentLc: 'subagent', mainAgent: 'Main agent', mainAgentLc: 'main agent',
-    turn: 'Turn', turnLc: 'turn', turnN: n => `Turn ${n}`, sessionStart: 'Session start',
+    turn: 'Turn', turnN: n => `Turn ${n}`, sessionStart: 'Session start',
     running: 'running', runningEll: 'running…', workingEll: 'working…', failedLc: 'failed', unfinished: 'unfinished',
     promptLc: 'prompt', tokens: 'tokens', outX: x => `${x} out`, outTokens: x => `${x} output tokens`,
     ofPct: (a, b, p) => `${a} of ${b} (${p}%)`, ctxLc: 'context', nowLc: 'now',
@@ -102,7 +133,7 @@ TRANSLATIONS.en = (() => {
     // chat
     noConversation: 'No conversation yet', openTurn: 'Open this turn', agentWorking: name => `${name} is working…`, codexContextNote: 'Read from Codex\'s own session file, whose format is not documented and can change, so some parts may be missing. Codex stores reasoning encrypted: it counts in the totals, but its text is not shown.',
 
-    // replay bar and event types
+    // event types
     eventTypes: 'Event types',
 
     // route

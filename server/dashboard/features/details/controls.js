@@ -52,7 +52,7 @@ function initDetailsPanel() {
 // Esc closes the turn; [ and ] step through the turns
 function initKeyboard() {
   document.addEventListener('keydown', event => {
-    if (event.target.matches('input, select, textarea')) return;
+    if (event.target.matches('input, select, textarea') || elementById('shortcuts').open) return;
     if (event.key === 'Escape') closeSelectedTurn();
     else if (event.key === '[') selectAdjacentTurn(-1);
     else if (event.key === ']') selectAdjacentTurn(1);
