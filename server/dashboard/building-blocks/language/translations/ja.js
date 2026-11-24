@@ -22,6 +22,7 @@ TRANSLATIONS.ja = (() => {
     themes: { auto: '自動', dark: 'ダーク', light: 'ライト' },
 
     language: '言語', settings: '設定', langAuto: '自動',
+    githubTitle: 'GitHub の Session Observer', reportIssue: '問題を報告', releaseNotes: 'クリックすると、このバージョンの変更点を表示します。',
     verTitle: '実行中のサーバーのバージョン。プラグインを更新しても再起動するまで動き続けるので、ここの番号が古ければサーバーも古いままです。',
     connTitle: 'ローカルサーバーへのライブ接続', connecting: '接続中…', live: 'ライブ', disconnected: '切断',
     lastUpdate: t => ` · 最終更新 ${t}`,

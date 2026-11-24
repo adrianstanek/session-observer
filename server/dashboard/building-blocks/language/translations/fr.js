@@ -24,6 +24,7 @@ TRANSLATIONS.fr = (() => {
     themes: { auto: 'auto', dark: 'sombre', light: 'clair' },
 
     language: 'Langue', settings: 'Réglages', langAuto: 'Auto',
+    githubTitle: 'Session Observer sur GitHub', reportIssue: 'Signaler un problème', releaseNotes: 'Cliquez pour voir ce qui a changé dans cette version.',
     verTitle: 'Version du serveur en cours d’exécution. Il continue de tourner après une mise à jour du plugin jusqu’à son redémarrage : un numéro plus ancien ici signifie un ancien serveur.',
     connTitle: 'Connexion en direct au serveur local', connecting: 'connexion…', live: 'en direct', disconnected: 'déconnecté',
     lastUpdate: t => ` · dernière mise à jour ${t}`,

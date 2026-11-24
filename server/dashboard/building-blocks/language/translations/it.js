@@ -24,6 +24,7 @@ TRANSLATIONS.it = (() => {
     themes: { auto: 'auto', dark: 'scuro', light: 'chiaro' },
 
     language: 'Lingua', settings: 'Impostazioni', langAuto: 'Auto',
+    githubTitle: 'Session Observer su GitHub', reportIssue: 'Segnala un problema', releaseNotes: 'Clicca per vedere cosa è cambiato in questa versione.',
     verTitle: 'Versione del server in esecuzione. Continua a girare dopo un aggiornamento del plugin finché non viene riavviato, quindi un numero più vecchio qui indica un server vecchio.',
     connTitle: 'Connessione in tempo reale al server locale', connecting: 'connessione…', live: 'in diretta', disconnected: 'disconnesso',
     lastUpdate: t => ` · ultimo aggiornamento ${t}`,

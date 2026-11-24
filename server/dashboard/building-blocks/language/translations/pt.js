@@ -24,6 +24,7 @@ TRANSLATIONS.pt = (() => {
     themes: { auto: 'auto', dark: 'escuro', light: 'claro' },
 
     language: 'Idioma', settings: 'Configurações', langAuto: 'Auto',
+    githubTitle: 'Session Observer no GitHub', reportIssue: 'Relatar um problema', releaseNotes: 'Clique para ver o que mudou nesta versão.',
     verTitle: 'Versão do servidor em execução. Ele continua rodando após uma atualização do plugin até ser reiniciado, então um número mais antigo aqui significa um servidor antigo.',
     connTitle: 'Conexão ao vivo com o servidor local', connecting: 'conectando…', live: 'ao vivo', disconnected: 'desconectado',
     lastUpdate: t => ` · última atualização ${t}`,
