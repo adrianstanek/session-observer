@@ -1,0 +1,14 @@
+# Dependabot: the repo has no npm dependencies (Node built-ins only), so the GitHub Actions the workflows use
+# are its only dependencies. Security updates are switched on in the repo settings; this file adds weekly
+# version updates for those Actions, grouped into one PR.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(deps)"
