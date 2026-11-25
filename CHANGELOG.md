@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/radekwojpl2/session-observer/compare/v0.14.0...v0.14.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* resolve CodeQL alerts ([2fa8ef8](https://github.com/radekwojpl2/session-observer/commit/2fa8ef89e72e14ccbe9e4eeb5bf57ede44a8f5cc))
+* resolve CodeQL alerts ([8e7fe7f](https://github.com/radekwojpl2/session-observer/commit/8e7fe7f5e7e300e077dc9678dfdf1cea869e357c))
+
 ## [0.14.0](https://github.com/radekwojpl2/session-observer/compare/v0.13.0...v0.14.0) (2026-11-25)
 
 
