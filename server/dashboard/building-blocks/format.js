@@ -27,7 +27,8 @@ const underscoresToSpaces = text => String(text || '').replace(/_/g, ' ');
 
 // Cut to a number of columns. East Asian wide characters (CJK, kana, hangul, fullwidth forms) take two, as they do
 // on screen.
-const WIDE_CHARACTER = /[ᄀ-ᅟ⺀-〾ぁ-㏿㐀-䶿一-鿿ꥠ-꥿가-힣豈-﫿︰-﹏＀-｠￠-￦]/;
+// Written as escapes: the compatibility block starts at \uf900, which looks like (and normalizes to) \u8c48.
+const WIDE_CHARACTER = /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua960-\ua97f\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
 const columnsOf = char => (WIDE_CHARACTER.test(char) ? 2 : 1);
 function truncateToColumns(text, maxColumns) {
   text = String(text ?? '');

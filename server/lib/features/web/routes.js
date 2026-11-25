@@ -20,6 +20,11 @@ function sendJson(response, status, body) {
 }
 
 const sendError = (response, status, message) => sendJson(response, status, { error: message });
+// an unexpected failure: the details (file paths, say) go to the server's log, not to the client
+function sendServerError(response, error) {
+  console.error(error);
+  sendError(response, 500, 'server error, see the server log');
+}
 
 // Why a request that isn't from this server's own pages is refused, or null when it is fine.
 function foreignRequestRefusal(request) {
@@ -94,7 +99,7 @@ function serveContext(response, url) {
   try {
     sendJson(response, 200, sessionContext(session));
   } catch (error) {
-    sendError(response, 500, String(error.message || error));
+    sendServerError(response, error);
   }
 }
 
@@ -124,12 +129,12 @@ function createRequestHandler({ clearLog, deleteSession, logHistory, loadOlderDa
     const asset = ASSET_PATH.exec(url.pathname);
     if (asset) return serveDashboardAsset(response, asset);
     if (url.pathname === '/api/clear' && request.method === 'POST') {
-      try { clearLog(); } catch (error) { return sendError(response, 500, String(error.message || error)); }
+      try { clearLog(); } catch (error) { return sendServerError(response, error); }
       broadcast('reset', {});
       return sendJson(response, 200, { ok: true });
     }
     if (url.pathname === '/api/history/older' && request.method === 'POST') {
-      try { return sendJson(response, 200, loadOlderDays()); } catch (error) { return sendError(response, 500, String(error.message || error)); }
+      try { return sendJson(response, 200, loadOlderDays()); } catch (error) { return sendServerError(response, error); }
     }
     const deleteMatch = request.method === 'DELETE' && url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
     if (deleteMatch) {
@@ -139,7 +144,7 @@ function createRequestHandler({ clearLog, deleteSession, logHistory, loadOlderDa
         if (!deleteSession(sessionId)) return sendError(response, 404, 'unknown session');
         return sendJson(response, 200, { ok: true });
       } catch (error) {
-        return sendError(response, 500, String(error.message || error));
+        return sendServerError(response, error);
       }
     }
     const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : null;
