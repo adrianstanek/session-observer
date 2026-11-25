@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/radekwojpl2/session-observer/compare/v0.13.0...v0.14.0) (2026-11-25)
+
+
+### Features
+
+* stable session order: newest started by default, or by name or project ([2314a74](https://github.com/radekwojpl2/session-observer/commit/2314a742b7d5ee14868a2557979deae533b40346))
+* stable session order: newest started by default, or by name or project ([a9061fd](https://github.com/radekwojpl2/session-observer/commit/a9061fd60da348e8808bb79393ca6ba06e5d7d70))
+
 ## [0.13.0](https://github.com/radekwojpl2/session-observer/compare/v0.12.0...v0.13.0) (2026-11-24)
 
 
