@@ -12,6 +12,7 @@ const net = require('node:net');
 
 const ROOT = path.join(__dirname, '..');
 const HOOK = path.join(ROOT, 'scripts', 'hook.js');
+const STATUSLINE = path.join(ROOT, 'scripts', 'claude-statusline.js');
 const SERVER = path.join(ROOT, 'server', 'server.js');
 const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'so-test-'));
 const LOG = path.join(DATA_DIR, 'events.jsonl');
@@ -152,6 +153,49 @@ test('nothing else is served from the dashboard folder', async () => {
     '/dashboard/features/..%2F..%2Fserver.js', '/dashboard/features/%2e%2e/%2e%2e/server.js', '/dashboard//app.js', '/dashboard/features/.js']) {
     assert.equal((await get(p)).status, 404, p);
   }
+});
+
+test('Claude status line corrects the context window for its session and model without adding activity', async () => {
+  const id = 'observed-context', tp = path.join(DATA_DIR, 'observed-transcript.jsonl');
+  const model = 'claude-opus-5-5';
+  runHook('SessionStart', { session_id: id, cwd: '/tmp/proj', transcript_path: tp });
+  const assistant = {
+    type: 'assistant', timestamp: new Date().toISOString(),
+    message: { role: 'assistant', id: 'observed-reply', model, usage: { input_tokens: 1000, cache_read_input_tokens: 128000, output_tokens: 400 },
+      content: [{ type: 'text', text: 'OK' }] },
+  };
+  fs.writeFileSync(tp, JSON.stringify(assistant) + '\n');
+  const summary = async () => (await getJson('/api/sessions')).find(session => session.id === id);
+  const estimated = await waitFor(async () => { const session = await summary(); return session?.context && session; });
+  assert.equal(Math.round(estimated.context.pct * 100), 65);
+
+  const sendWindow = (session_id, modelId, window) => {
+    const input = JSON.stringify({ session_id, model: { id: modelId }, cwd: '/tmp/private', context_window: { context_window_size: window } }) + '\n';
+    const result = spawnSync(process.execPath, [STATUSLINE], { input, env: env(), encoding: 'utf8', timeout: 10000 });
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout, input);
+  };
+  sendWindow('no-hook-session', model, 1000000);
+  sendWindow(id, 'claude-sonnet-5-5', 1000000);
+  await waitFor(async () => (await summary()).observedContext?.model === 'claude-sonnet-5-5');
+  assert.equal((await summary()).context.window, 200000);
+  assert.ok(!(await getJson('/api/sessions')).some(session => session.id === 'no-hook-session'));
+
+  sendWindow(id, model, 1000000);
+  const corrected = await waitFor(async () => { const session = await summary(); return session.context.window === 1000000 && session; });
+  assert.equal(corrected.context.tokens, 129000);
+  assert.equal(Math.round(corrected.context.pct * 100), 13);
+  assert.equal(corrected.eventCount, estimated.eventCount);
+  assert.equal(corrected.last, estimated.last);
+  assert.equal((await getJson('/api/context?session=' + id)).window, 1000000);
+
+  sendWindow(id, model, 0);
+  const files = fs.readdirSync(path.join(DATA_DIR, 'context-windows'));
+  const samples = files.map(file => JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'context-windows', file), 'utf8')));
+  assert.deepEqual(samples, [{ model, window: 1000000 }, { model, window: 1000000 }]);
+  const response = await fetch(base + '/api/sessions/' + id, { method: 'DELETE', headers: { Origin: base } });
+  assert.equal(response.status, 200);
+  assert.equal(fs.readdirSync(path.join(DATA_DIR, 'context-windows')).length, 1);
 });
 
 test('context: the whole transcript, in full, with subagents and the request shape', async () => {
