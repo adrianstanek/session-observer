@@ -62,13 +62,12 @@ function sessionRowHtml(session, startedUnder) {
       + (folded ? `<li class="hsub muted">${escapeHtml(TEXT.home.more(folded))}</li>` : '');
   }
   const name = homeSessionName(session);
-  const pinTitle = session.pinned ? TEXT.home.unpinSession : TEXT.home.pinSession;
   const project = compact && session.cwd ? `<span class="hpath" title="${escapeHtml(session.cwd)}">· ${escapeHtml(baseName(session.cwd) || session.cwd)}</span>` : '';
   return `<li class="hsess act-${activity} ${session.id === state.scope ? 'sel' : ''}">
       <button class="hsess-main" type="button" ${openAttributes(session)}><span class="${HOME_DOT[activity]}"></span>
         <span class="hsess-content"><span class="hsess-title"><span class="hname" title="${escapeHtml(name)}">${escapeHtml(name)}</span>${homeAgentTag(session)}<span class="hstate">${escapeHtml(TEXT.sessionState[activity])}</span></span>
         <span class="hsess-meta">${escapeHtml(countOf(session.turns || 0, 'turn'))}${session.last ? ` · ${escapeHtml(formatAgo(session.last))}` : ''}${project}${lastTool}</span></span></button>
-      <button class="home-session-pin" type="button" data-pin-session="${escapeHtml(session.id)}" title="${escapeHtml(pinTitle)}" aria-label="${escapeHtml(TEXT.home.pinSession)}" aria-pressed="${!!session.pinned}">${iconSvg('pin')}</button>
+      ${sessionPinHtml(session, 'home-session-pin')}
       ${compact ? '' : `<button class="home-session-delete" type="button" data-delete-session="${escapeHtml(session.id)}" title="${escapeHtml(TEXT.deleteSessionTitle)}" aria-label="${escapeHtml(TEXT.deleteSessionTitle)}">×</button>`}
       ${children ? `<ul>${children}</ul>` : ''}</li>`;
 }
