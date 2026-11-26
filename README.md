@@ -127,6 +127,21 @@ Restart Claude Code after installing so the hooks load.
 
 To update later, run `/session-observer:update` in Claude Code. It updates the marketplace and the plugin (reinstalling if the version did not change), stops the old dashboard server and starts the new one.
 
+#### Optional: report the exact Claude Code context window
+
+Claude Code sends the active model's actual context window to its [status line command](https://code.claude.com/docs/en/statusline#context-window-fields). To share that size with Session Observer, pipe the status line input through the filter from a local checkout. In your Claude Code `settings.json`, prepend the filter to your existing `statusLine.command`. For example:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node \"/absolute/path/to/session-observer/scripts/claude-statusline.js\" | sh \"$HOME/.claude/statusline.sh\""
+  }
+}
+```
+
+The filter passes the original input through to your existing command. It saves only the model ID and window size in `context-windows/` under the dashboard data directory, keyed by a hash of the session ID. Session Observer keeps estimating the window for sessions without a matching report.
+
 ### Codex
 
 Codex can load the hooks as a desktop plugin or from its CLI hook config.

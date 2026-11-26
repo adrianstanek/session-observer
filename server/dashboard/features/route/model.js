@@ -191,23 +191,25 @@ function buildRouteModel(turn) {
 
 // ---- context at the end of a turn
 // the last main-line model step's context tokens (null if none reported yet)
-function turnEndContextTokens(turn) {
-  let tokens = null;
-  for (const event of turn.events) {
-    const data = event.data;
-    if (event.event === 'ModelStep' && !data?.subagent && data?.agent_id == null && data?.tokens?.context) tokens = data.tokens.context;
+function turnEndContextStep(turn) {
+  for (let index = turn.events.length - 1; index >= 0; index--) {
+    const { event, data } = turn.events[index];
+    if (event === 'ModelStep' && !data?.subagent && data?.agent_id == null && data?.tokens?.context) return data;
   }
-  return tokens;
+  return null;
 }
 
 // context at the end of this turn, its change from the end of the turn before, and how full the window is
 function turnContextInfo(sessionTurns, turn) {
-  const tokens = turnEndContextTokens(turn);
-  if (tokens == null) return null;
+  const step = turnEndContextStep(turn);
+  if (!step) return null;
+  const tokens = step.tokens.context;
   let previous = null;
-  for (let index = sessionTurns.indexOf(turn) - 1; index >= 0 && previous == null; index--) previous = turnEndContextTokens(sessionTurns[index]);
+  for (let index = sessionTurns.indexOf(turn) - 1; index >= 0 && previous == null; index--) {
+    previous = turnEndContextStep(sessionTurns[index])?.tokens.context ?? null;
+  }
   const session = state.sessions.get(turn.sessionId);
-  const window = contextWindowFor(session?.agent, session?.context?.window, tokens);
+  const window = contextWindowFor(session, tokens, step.model);
   const change = previous == null ? null : tokens - previous;
   return contextSize(tokens, change, window, change == null ? '' : signedTokens(change));
 }
