@@ -15,11 +15,11 @@
 
 ## Screenshots
 
-Screenshots come from real Claude Code and Codex sessions. The numbered labels were added for this README; the dashboard doesn't show them.
+The Home screenshot uses example sessions. The other screenshots come from real Claude Code and Codex sessions. The numbered labels were added for this README; the dashboard doesn't show them.
 
-![Home with sessions grouped by project, agent badges, status and nested subagents](docs/home.jpg)
+![Home showing a pinned session above the sessions grouped by project](docs/home.jpg)
 
-*Home: every session by project, with its agent, status and subagents.*
+*Home: pinned sessions above the project tree. Click a session's pin to add or remove it. Pins survive dashboard restarts and stay visible outside the selected date range.*
 
 ![Overview with session totals, a Turns chart, context over time, activity by group and the open turn in Details](docs/overview.jpg)
 
